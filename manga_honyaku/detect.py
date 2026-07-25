@@ -104,10 +104,13 @@ def detect(image: Image.Image, model, processor, conf: float = 0.35, imgsz: int 
 
 
 def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) -> dict:
-    """Build the page file. Only text-carrying regions become regions.
+    """Build the page file.
 
-    The enclosing `bubble` boxes are dropped: they roughly double the count and
-    every one of them duplicates a text_bubble that is already listed.
+    Only text-carrying detections become regions; a `bubble` detection carries
+    no words and numbering them alongside the text would double the ids the
+    agent has to read. They are still kept, unnumbered, because `clean` needs
+    the outline to find a bubble's interior and detect is the only stage that
+    is allowed to load the model.
     """
     text = [f for f in found if f[0] in PREFIX]
     text.sort(key=lambda f: (f[0], f[1][1]))  # class, then down the page
@@ -132,6 +135,7 @@ def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) ->
         "img_height": image.height,
         "detector": {"model": DETECTOR, "conf": conf, "imgsz": imgsz},
         "regions": regions,
+        "bubbles": [f[1] for f in found if f[0] == "bubble"],
     }
 
 

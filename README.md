@@ -28,11 +28,17 @@ translation and re-rendering never re-runs detection.
 ```sh
 uv run python -m manga_honyaku.detect   raw/*.jpg --work work   # -> work/<page>.json
 uv run python -m manga_honyaku.annotate raw/*.jpg --work work   # -> work/<page>.boxes.png
+uv run python -m manga_honyaku.clean    raw/*.jpg --work work   # -> work/<page>.clean.png
+                                                                #    work/<page>.masks.png
 ```
 
 `--conf` sets the detection threshold (default 0.35).
 
-`clean` and `render` are not implemented yet.
+`clean` erases in-bubble text only. Free-floating text is left in place: most of
+it is sound effects, which must not be disturbed, and the rest sits on artwork
+that only an inpainting model could restore.
+
+`render` is not implemented yet.
 
 ## Apple Silicon
 
