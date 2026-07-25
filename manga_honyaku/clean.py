@@ -24,12 +24,13 @@ Derived from meangrinch/MangaTranslator (Apache-2.0); see NOTICE.
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
+
+from manga_honyaku.page import load_page
 
 # Bubble interiors are paper and everything drawn on them is ink. Nothing about
 # that split is marginal, so a fixed threshold holds up better here than an
@@ -174,7 +175,7 @@ def main() -> None:
     args = ap.parse_args()
 
     for page in args.pages:
-        data = json.loads((args.work / f"{page.stem}.json").read_text())
+        data = load_page(args.work, page.stem)
         cleaned, masks = clean(Image.open(page).convert("RGB"), data)
         cleaned.save(args.work / f"{page.stem}.clean.png")
         masks.save(args.work / f"{page.stem}.masks.png")

@@ -17,6 +17,8 @@ import torch
 from PIL import Image
 from transformers import RTDetrImageProcessor, RTDetrV2ForObjectDetection
 
+from manga_honyaku.page import detected_path
+
 # The weights are referenced, never vendored. Set this to a local directory to
 # reuse a copy you already have instead of filling the Hugging Face cache again.
 DETECTOR = os.environ.get(
@@ -145,26 +147,16 @@ def main() -> None:
     ap.add_argument("--work", type=Path, default=Path("work"))
     ap.add_argument("--conf", type=float, default=0.35)
     ap.add_argument("--imgsz", type=int, default=640)
-    ap.add_argument(
-        "--force",
-        action="store_true",
-        help="re-detect pages that already have a page file, discarding the "
-        "reading order, speakers and translations written into it",
-    )
     args = ap.parse_args()
 
     args.work.mkdir(parents=True, exist_ok=True)
     model, processor = load_detector()
 
     for page in args.pages:
-        out = args.work / f"{page.stem}.json"
-        # The page file is the one artifact that is not derived: everything the
-        # agent works out about the page is written into it, and detect would
-        # otherwise overwrite that on the next run.
-        if out.exists() and not args.force:
-            print(f"{page.name}  {out} exists, skipping")
-            continue
-
+        # Overwriting is safe: this file holds nothing but detector output. What
+        # the agent works out lives in <page>.read.json and is never written
+        # here — see page.py for why they are separate.
+        out = detected_path(args.work, page.stem)
         image = Image.open(page).convert("RGB")
         found = detect(image, model, processor, conf=args.conf, imgsz=args.imgsz)
         data = page_file(page, image, found, args.conf, args.imgsz)

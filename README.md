@@ -32,6 +32,10 @@ uv run python -m manga_honyaku.clean    raw/*.jpg --work work   # -> work/<page>
                                                                 #    work/<page>.masks.png
 ```
 
+Every one of those files is derived and can be deleted. The agent's reading —
+classes, order, speakers, translations — is the exception, and lives apart from
+them in `work/<page>.read.json` so that re-running `detect` cannot overwrite it.
+
 `--conf` sets the detection threshold (default 0.35).
 
 `clean` erases in-bubble text by repainting the bubble's own paper. Free-floating
