@@ -34,9 +34,11 @@ uv run python -m manga_honyaku.clean    raw/*.jpg --work work   # -> work/<page>
 
 `--conf` sets the detection threshold (default 0.35).
 
-`clean` erases in-bubble text only. Free-floating text is left in place: most of
-it is sound effects, which must not be disturbed, and the rest sits on artwork
-that only an inpainting model could restore.
+`clean` erases in-bubble text by repainting the bubble's own paper. Free-floating
+text is painted out as a plain white rectangle, and only where the agent has
+classified the region — an unclassified one might be a sound effect, which is
+artwork and has to survive. On a page margin the white is invisible; over drawn
+artwork it is a visible patch.
 
 `render` is not implemented yet.
 

@@ -145,16 +145,29 @@ def main() -> None:
     ap.add_argument("--work", type=Path, default=Path("work"))
     ap.add_argument("--conf", type=float, default=0.35)
     ap.add_argument("--imgsz", type=int, default=640)
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="re-detect pages that already have a page file, discarding the "
+        "reading order, speakers and translations written into it",
+    )
     args = ap.parse_args()
 
     args.work.mkdir(parents=True, exist_ok=True)
     model, processor = load_detector()
 
     for page in args.pages:
+        out = args.work / f"{page.stem}.json"
+        # The page file is the one artifact that is not derived: everything the
+        # agent works out about the page is written into it, and detect would
+        # otherwise overwrite that on the next run.
+        if out.exists() and not args.force:
+            print(f"{page.name}  {out} exists, skipping")
+            continue
+
         image = Image.open(page).convert("RGB")
         found = detect(image, model, processor, conf=args.conf, imgsz=args.imgsz)
         data = page_file(page, image, found, args.conf, args.imgsz)
-        out = args.work / f"{page.stem}.json"
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
         counts = {c: sum(1 for f in found if f[0] == c) for c in sorted({f[0] for f in found})}

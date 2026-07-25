@@ -9,9 +9,14 @@ returns boxes, not masks. Rather than add a segmentation model back, the
 interior is recovered from the artwork: inside a detected bubble box, the
 interior is simply the largest region of paper that the outline encloses.
 
-Free-floating text is left alone. Most of it is sound effects, which the design
-requires be left untouched, and the rest sits directly on artwork that only an
-inpainting model could restore — a decision this stage does not need to make.
+Free-floating text is painted out as a white rectangle. There is no outline to
+follow and no way to know what the artwork behind it looked like, so nothing
+subtler is available without an inpainting model. On a page margin the result is
+invisible; over drawn artwork it is a white patch, and that is the trade.
+
+Which free-floating regions get erased is the agent's call, not this stage's: a
+sound effect is artwork and must survive, and only a reader can tell one from a
+line of unbubbled speech. Regions the agent has not classified are left alone.
 
 Derived from meangrinch/MangaTranslator (Apache-2.0); see NOTICE.
 """
@@ -34,7 +39,6 @@ PAPER = 200
 # Regions the agent has ruled out. Erasing a declined region would leave a hole
 # with nothing to put in it, and an effect drawn as lettering is artwork.
 KEEP = {"sfx"}
-
 
 def _touches_edge(stats: np.ndarray, i: int, h: int, w: int) -> bool:
     return (
@@ -115,27 +119,49 @@ def lobe_for(region: dict, bubbles: list[list[float]]) -> list[float] | None:
     return min(holding, key=lambda b: (b[2] - b[0]) * (b[3] - b[1]))
 
 
+def free_mask(shape: tuple[int, int], box: list[float]) -> np.ndarray:
+    """The box itself, not a pixel more.
+
+    The design notes that these boxes are cropped tight and asks what margin
+    they need. For erasing, none: the chapter title's box ends on the very row
+    where the panel's top rule begins, so any margin at all cuts the rule. A
+    margin is still likely wanted before OCR, where reading a clipped glyph
+    costs nothing but a wider crop.
+    """
+    x1, y1, x2, y2 = box
+    mask = np.zeros(shape, bool)
+    mask[int(y1) : int(y2), int(x1) : int(x2)] = True
+    return mask
+
+
 def clean(page: Image.Image, data: dict) -> tuple[Image.Image, Image.Image]:
     art = np.asarray(page).copy()
     gray = np.asarray(page.convert("L"))
     masks = np.zeros(gray.shape, np.uint8)
 
     for index, region in enumerate(data["regions"], start=1):
-        if region["detector_class"] != "text_bubble":
-            continue
         if region.get("status") == "declined" or region.get("class") in KEEP:
             continue
-        box = lobe_for(region, data.get("bubbles", []))
-        if box is None:
-            continue
-        mask = interior(gray, box, region["box"])
-        if mask is None:
+
+        if region["detector_class"] == "text_bubble":
+            box = lobe_for(region, data.get("bubbles", []))
+            if box is None:
+                continue
+            mask = interior(gray, box, region["box"])
+            if mask is None:
+                continue
+            # Repaint with the bubble's own paper rather than white, so a bubble
+            # that is toned or tinted does not come back as a white hole.
+            paper = art[mask & (gray > PAPER)]
+            art[mask] = np.median(paper, axis=0) if len(paper) else 255
+        elif region.get("class"):
+            # Unclassified free-floating text is left alone: a sound effect is
+            # artwork, and telling one from unbubbled speech takes a reader.
+            mask = free_mask(gray.shape, region["box"])
+            art[mask] = 255
+        else:
             continue
 
-        # Repaint with the bubble's own paper rather than white, so a bubble
-        # that is toned or tinted does not come back as a white hole.
-        paper = art[mask & (gray > PAPER)]
-        art[mask] = np.median(paper, axis=0) if len(paper) else 255
         masks[mask] = index
 
     return Image.fromarray(art), Image.fromarray(masks, mode="L")
