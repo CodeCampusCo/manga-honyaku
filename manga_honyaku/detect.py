@@ -33,6 +33,34 @@ DEVICE = torch.device("cpu")
 PREFIX = {"text_bubble": "B", "text_free": "F"}
 
 
+def _iou(a: list[float], b: list[float]) -> float:
+    x1, y1 = max(a[0], b[0]), max(a[1], b[1])
+    x2, y2 = min(a[2], b[2]), min(a[3], b[3])
+    if x2 <= x1 or y2 <= y1:
+        return 0.0
+    overlap = (x2 - x1) * (y2 - y1)
+    areas = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1])
+    return overlap / (areas - overlap)
+
+
+def dedupe(found, threshold: float = 0.5):
+    """Keep the highest-scoring box where several cover the same thing.
+
+    RT-DETR does not need NMS as a rule, and over a chapter of 227 regions only
+    one thing produced duplicates: a panel edge of screentone, whose dot lattice
+    read as a column of vertical text and returned five near-identical boxes at
+    up to 0.95 IoU. No pair of genuine regions came close to the threshold —
+    adjacent lobes of a conjoined bubble overlap, but nothing like this much.
+    """
+    kept: list = []
+    for region in sorted(found, key=lambda f: f[2], reverse=True):
+        if not any(
+            k[0] == region[0] and _iou(k[1], region[1]) > threshold for k in kept
+        ):
+            kept.append(region)
+    return kept
+
+
 def load_detector():
     model = RTDetrV2ForObjectDetection.from_pretrained(DETECTOR).to(DEVICE).eval()
     processor = RTDetrImageProcessor.from_pretrained(DETECTOR)
@@ -56,16 +84,23 @@ def detect(image: Image.Image, model, processor, conf: float = 0.35, imgsz: int 
     )[0]
 
     names = model.config.id2label
-    return [
+    w, h = image.width, image.height
+    found = [
         (
             names[int(label)],
-            [round(float(v), 1) for v in box.tolist()],
+            # Boxes run past the edge of the page — clamp here so that no later
+            # stage has to crop or mask against a negative coordinate.
+            [
+                round(min(max(v, 0.0), limit), 1)
+                for v, limit in zip(box.tolist(), (w, h, w, h))
+            ],
             round(float(score), 3),
         )
         for box, score, label in zip(
             result["boxes"], result["scores"], result["labels"]
         )
     ]
+    return dedupe(found)
 
 
 def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) -> dict:
