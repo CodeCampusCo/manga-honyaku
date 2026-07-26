@@ -46,30 +46,45 @@ shape, minimising the sum of slack cubed, plus a penalty when a continuation lin
 would start with a short Thai token. That is the line breaker doing its own job,
 not a search around it. Their geometry and shaping stack are not worth porting.
 
-## Size comes from the original, in steps
+## Size comes from the original: a tag, and a stylesheet
 
-A letterer works from a small set of sizes. **Give the translation the same set
-and let the original choose which one each line gets.**
+A letterer works from a small set of sizes. **Give the translation the same set,
+let the original choose which one each region gets, and keep what each one is
+worth somewhere a person can change it by eye.** That is a tag on the element and
+a stylesheet beside it, and the split is the same one HTML makes for the same
+reason.
 
-Recover the original's size as `sqrt(box_area / japanese_character_count)` —
-Japanese sets on a square grid, so that holds whichever way the text ran.
-Measure it across a chapter and the steps appear: on one, 154 of 212 bubbles
-fell between 39 and 57px, a tail below, a tail above, six one-off panels far
-above.
-
-Write the steps in `series/lettering.md`: for each, the multiple of the base size
-the translation is set at and the ceiling in the original's own pixels that
-selects it. Then **write nothing per region** — choosing a step is measurement.
-
-- **Keep the ceilings absolute, in the original's pixels.** Normalise against a
-  page's own median and a page the artist lettered loud comes back ordinary.
-- **Steps are for bubbles.** Free-floating text is not speech and belongs to no
+- **Measure once, when the page is prepared, and write the answer down.**
+  `sqrt(box_area / japanese_character_count)` — Japanese sets on a square grid,
+  so it holds whichever way the text ran. The number is a property of the
+  artwork and never changes, so measuring it at every render is work done
+  repeatedly to reach the same answer.
+- **Cluster the measurements to find the bands, once.** The artist's own sizes
+  come out in a handful of clumps with gaps between them; put the boundaries in
+  the gaps. 656 bubbles across three chapters clustered at 41, 52, 69 and 109px.
+  Do this per work — but check it, because it may not move: those three chapters
+  had medians of 46.2, 45.4 and 45.9.
+- **Store the tag, not the size.** `"size": "loud"` in the working file. What
+  `loud` is worth in Thai belongs in the stylesheet, because it is the one thing
+  here a person has to judge with their eyes rather than measure.
+- **Do not average, and do not chase precision.** Take a first value, render,
+  look, adjust the one number. The measurement's job was to sort regions into
+  groups; the group's size is not a measurement at all.
+- **Tags are for bubbles.** Free-floating text is not speech and belongs to no
   set; it fills the box it was drawn into. A chapter heading is this case.
-- **Exclude a pause-only bubble from the measurement.** Its box is sized for a
-  beat of silence; one character in a large box reads as enormous lettering.
-- **A step that overflows brings that one region down; the step does not move.**
+- **Exclude a pause-only region.** Its box is sized for a beat of silence; one
+  character in a large box measures as enormous lettering.
+- **A tag that overflows brings that one region down; the tag does not move.**
 
-`weight` is the one thing left in the working file, and it is not size. **Ink
+Why bands at all, rather than `thai = measured × k`? Because the measurement is
+noisy — the detector's box is looser on some regions than others, and
+punctuation and furigana count as characters. Across 46 groups of bubbles that
+were one sentence in the original, and so were certainly lettered the same, the
+measured sizes spread by 10% at the median and 32% at the ninth decile, and 11
+of the 46 straddled a band boundary. A continuous mapping puts that noise
+straight onto the page.
+
+`weight` is the other thing in the working file, and it is not size. **Ink
 density tells a display face from a body face** — dark pixels over the region's
 box against the speech bubbles on the same page; a display face measures about
 twice.
@@ -115,12 +130,12 @@ twice.
 | What it looks like | What it is |
 | --- | --- |
 | Two long lines in every bubble | Something other than the region's box handed to the breaker |
-| Sizes swinging across a page | Fitting each bubble to what it can hold instead of to a step |
+| Sizes swinging across a page | Fitting each bubble to what it can hold instead of to its tag |
 | One sentence at two sizes | Utterance grouping not applied to the size |
 | A name split across lines | Not in `words.txt` |
 | A line opening with `?` or a stray `“` | Punctuation attached to the wrong side |
 | Empty boxes that look like letters | Font lacks the glyph; nothing checked |
-| Heading no bigger than speech | Sized from the step ladder instead of filling its box |
+| Heading no bigger than speech | Given a tag instead of filling its own box |
 | A pause bubble lettered enormous | Its one character measured against its whole box |
 | A loud page comes back ordinary | Sizes normalised against that page's own median |
 

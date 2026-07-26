@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import sys
 import unicodedata
@@ -72,12 +71,11 @@ OPENING = set("“‘([{<«")
 ORPHAN_CLUSTERS = 3
 ORPHAN_PENALTY = 5000.0
 
-# Fallbacks only. Every size a page is lettered at comes from series/lettering.md
-# — a base and a set of named steps — because a letterer works from a small set
-# of sizes and the translation should use the same set the same way. Nothing here
-# is a size to letter at; these exist so a series with no file still renders.
-BASE = 22
-STEPS = {"normal": 1.0}
+# Fallbacks only. What each named size is worth comes from
+# series/lettering.json, because a letterer works from a small set of sizes and
+# the translation should use the same set the same way. Nothing here is a size to
+# letter at; these exist so a series with no file still renders.
+SIZES = {"quiet": 24, "normal": 34, "loud": 50, "shout": 67, "display": 101}
 FLOOR = 9
 
 # Thai stacks marks above and below the base letter, so lines need more room
@@ -107,82 +105,22 @@ def missing_glyphs(font: ImageFont.FreeTypeFont, text: str) -> set[str]:
 
 
 def settings(series: Path) -> dict:
-    """This work's lettering values, from series/lettering.md.
+    """This work's lettering values, from series/lettering.json.
 
-    Typography is not one rule that fits every work. The code measures the mask
-    and executes a layout; what a band should be, how much clearance an outline
-    of this weight wants, how much room a face needs between lines — those vary
-    by work and by font, and they are recorded where the rest of the series'
-    conventions are rather than compiled in.
+    Typography is not one rule that fits every work. The code measures and
+    executes; what the steps are, how much room a face needs between lines, how
+    small is too small — those vary by work and by font, and they are recorded
+    with the rest of the series' conventions rather than compiled in.
+
+    `lettering.md` beside it holds the reasoning and the measurements that
+    produced these numbers, and nothing reads it. The numbers were once a table
+    in that document, parsed by rules the document never stated.
 
     Absent values fall back to the defaults above, so a series with no file
     letters the way this one started out.
     """
-    path = series / "lettering.md"
-    if not path.exists():
-        return {}
-    found = {}
-    section = ""
-    for line in path.read_text().splitlines():
-        if line.startswith("#"):
-            section = line.strip("# ").lower()
-            continue
-        cells = [c.strip() for c in line.split("|")]
-        if len(cells) < 4 or set(cells[1]) <= set("-: ") or not cells[2]:
-            continue
-        try:
-            numbers = [float(v) for v in cells[2].split()]
-        except ValueError:
-            continue
-        found.setdefault(section, {})[cells[1]] = (
-            numbers[0] if len(numbers) == 1 else tuple(numbers)
-        )
-    return found
-
-
-def original_size(region: dict) -> float | None:
-    """What the Japanese in this region was lettered at.
-
-    Japanese sets on a square grid, so a box of area A holding n characters was
-    lettered at about sqrt(A / n) whichever way the text ran.
-
-    A bubble holding only a pause is excluded: one character in a box sized for
-    a beat of silence reads as enormous lettering, and the dots are drawn at
-    ordinary size.
-    """
-    source = region.get("source") or ""
-    if not any(unicodedata.category(c).startswith(("L", "N")) for c in source):
-        return None
-    characters = len([c for c in source if not c.isspace()])
-    if not characters:
-        return None
-    x1, y1, x2, y2 = region["box"]
-    return math.sqrt((x2 - x1) * (y2 - y1) / characters)
-
-
-def step_for(region: dict, steps: dict) -> tuple[str, float]:
-    """The series step this region's original size falls under.
-
-    A letterer works from a small set of sizes, so the translation uses the same
-    set and the original chooses which. Nothing about this is a judgement, which
-    is why it is measured here rather than written into the working file.
-    """
-    size = original_size(region)
-    ladder = sorted(
-        ((name, v) for name, v in steps.items() if isinstance(v, tuple)),
-        key=lambda item: item[1][1],
-    )
-    if not ladder:
-        return "normal", 1.0
-    if size is None:
-        for name, (multiple, _) in ladder:
-            if name == "normal":
-                return name, multiple
-        return ladder[0][0], ladder[0][1][0]
-    for name, (multiple, ceiling) in ladder:
-        if size <= ceiling:
-            return name, multiple
-    return ladder[-1][0], ladder[-1][1][0]
+    path = series / "lettering.json"
+    return json.loads(path.read_text()) if path.exists() else {}
 
 
 def lexicon(series: Path):
@@ -365,11 +303,8 @@ def render(
     values: dict | None = None,
 ):
     values = values or {}
-    sizes = values.get("sizes", {})
-    other = values.get("other values", {})
-    base = sizes.get("base", BASE)
-    steps = {k: v for k, v in sizes.items() if k != "base"} or STEPS
-    line_spacing = other.get("line_spacing", LINE_SPACING)
+    sizes = values.get("sizes") or SIZES
+    line_spacing = values.get("line_spacing", LINE_SPACING)
     image = page.copy()
     draw = ImageDraw.Draw(image)
 
@@ -382,8 +317,7 @@ def render(
         warn(f"{data['page']}: font has no glyph for {''.join(sorted(absent))}")
 
     weights = {"regular": font_path, **(weights or {})}
-    scale = math.sqrt(image.width * image.height / 1_000_000)
-    smallest = max(4, round(other.get("floor", FLOOR) * scale))
+    smallest = max(4, int(values.get("floor", FLOOR)))
     placements = []
 
     for index, region in enumerate(data["regions"], start=1):
@@ -401,8 +335,10 @@ def render(
         bx, by, bw, bh = box
 
         if region.get("bubble"):
-            _, multiple = step_for(region, steps)
-            wanted = max(smallest, round(base * multiple * scale))
+            # The tag was written when the page was prepared, from what the
+            # Japanese was lettered at. What it is worth in Thai is the
+            # stylesheet's to say, and a person's to adjust by eye.
+            wanted = max(smallest, sizes.get(region.get("size"), sizes["normal"]))
         else:
             # Free-floating text takes no step. Its box is the lettering's own
             # extent, drawn around it, so filling that box is the answer the

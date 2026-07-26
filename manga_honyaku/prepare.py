@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import unicodedata
 from pathlib import Path
 
 from PIL import Image
@@ -35,6 +37,49 @@ from manga_honyaku.page import agent_path, detector_path
 # `render` read absent and null alike.
 SLOTS = {"source": None, "role": None}
 
+# What the Japanese in a region was lettered at, in the original's own pixels,
+# and the name that carries. Measured once here rather than at every render: the
+# number is a property of the artwork and it never changes again.
+#
+# The bands are where this artist's own sizes fall. Clustering 656 bubbles across
+# three chapters put them at 41, 52, 69 and 109px with nothing much between, and
+# the boundaries below sit in those gaps. A small tail under 35 is the muttering.
+#
+# The name is a tag, not a size. What each one is set at in Thai is the
+# stylesheet's business — series/lettering.json — so that a size can be changed
+# by eye without anything being measured again.
+BANDS = ((35, "quiet"), (47, "normal"), (60, "loud"), (88, "shout"))
+LARGEST = "display"
+
+
+def lettered_at(box: list[float], source: str) -> float | None:
+    """The size the Japanese was set at, from the box and the character count.
+
+    Japanese sets on a square grid, so a box of area A holding n characters was
+    lettered at about sqrt(A / n) whichever way the text ran.
+
+    A region holding only a pause is excluded: one character in a box sized for a
+    beat of silence measures as enormous lettering, and the dots were drawn at
+    ordinary size.
+    """
+    if not any(unicodedata.category(c).startswith(("L", "N")) for c in source):
+        return None
+    characters = len([c for c in source if not c.isspace()])
+    if not characters:
+        return None
+    x1, y1, x2, y2 = box
+    return math.sqrt((x2 - x1) * (y2 - y1) / characters)
+
+
+def size_of(box: list[float], source: str) -> str:
+    measured = lettered_at(box, source)
+    if measured is None:
+        return "normal"
+    for ceiling, name in BANDS:
+        if measured < ceiling:
+            return name
+    return LARGEST
+
 
 def reading(detected: dict, image: Image.Image | None, reader) -> dict:
     regions = []
@@ -42,6 +87,7 @@ def reading(detected: dict, image: Image.Image | None, reader) -> dict:
         entry = {**region, **SLOTS}
         if reader is not None:
             entry["source"] = read(image, region["box"], reader)
+        entry["size"] = size_of(region["box"], entry["source"] or "")
         regions.append(entry)
 
     return {
