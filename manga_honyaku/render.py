@@ -116,9 +116,9 @@ def settings(series: Path) -> dict:
     small is too small — those vary by work and by font, and they are recorded
     with the rest of the series' conventions rather than compiled in.
 
-    `lettering.md` beside it holds the reasoning and the measurements that
-    produced these numbers, and nothing reads it. The numbers were once a table
-    in that document, parsed by rules the document never stated.
+    These numbers were once a table in a prose document, parsed by rules the
+    document never stated. How to arrive at them for a new work is in the
+    `thai-manga-lettering` skill.
 
     Absent values fall back to the defaults above, so a series with no file
     letters the way this one started out.

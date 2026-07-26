@@ -58,8 +58,11 @@ stalker says `ฉัน` while he is arguing and `กู` in the panel where he 
 knife, and that shift does work the vocabulary alone cannot. The grid is a
 starting position, not a lookup table.
 
-What belongs in `style.md` is only the exception: which character, on
-which page, is allowed past the default.
+The grid covers the cases a work would otherwise write down for itself: a
+working adult woman is `ฉัน` however deferential the line, and a villain reaches
+`กู` at the moment he stops choosing words. Nothing about either belongs in a
+work's own file — what the character actually says is already in the working
+file, page by page.
 
 ## Honorifics carry the same information — read them
 
@@ -109,14 +112,36 @@ translation of it.
 
 ## Thai lengthens by opening the vowel
 
-`ちゃ〜ん` drawn out is `จางงง`: the `ั` in `จัง` opens to `า`. Keeping the
-original vowel and adding a mark after it spells a different syllable, not a
-longer one.
+A syllable held is a syllable whose vowel opens: `ちゃ〜ん` is `จางงง`, where the
+`ั` of `จัง` becomes `า` and the final consonant runs on.
 
-The same instinct handles the symbols a Thai comic face does not carry — **♥ ♡
-★ ☆ ♪ 「」 ○** are tone markers, so render them the way Thai marks tone: in the
-wording and a drawn-out vowel, not by substituting a symbol the face happens to
-have. What a particular work does about them belongs in `lettering.md`.
+The same move carries the symbols a Thai comic face has no glyph for — **♥ ♡ ★
+☆ ♪ 「」 ○**. They are tone markers, so render them the way Thai marks tone: in
+the wording and the drawn-out vowel. A character who ends most of her lines with
+`♥` reads as herself in Thai through the vowels and the word choice, never
+through a particle she would not otherwise use.
+
+Where the original uses a CJK bracket or a censoring circle, take the shape:
+`【】` becomes `[]` and `◯◯◯` becomes `OOO`. What `◯◯◯` says is that a word has
+been withheld, and three circles say that in either script.
+
+## Conventions that hold across works
+
+These need no deciding per work; a work's own file records only where it departs.
+
+- **Sound effects are artwork.** Not translated, not painted over. They were
+  drawn into the page.
+- **Text inside the drawing is translated and recorded, and the drawing is left
+  alone** — signs, phone screens, flyers, product labels. The Thai reaches the
+  reader through the working file rather than by overwriting the picture.
+- **`…` at the end of a line is a character trailing off,** not an ellipsis of
+  omitted words. Thai keeps the `…` and lets the sentence stay unfinished.
+- **Keep the question mark wherever the Japanese has one.** Thai does not need it
+  — `เหรอ` and `ปะ` already mark the question — but in a bubble it is part of the
+  lettering's rhythm rather than grammar, and dropping it flattens a beat the
+  artist drew. A question the Japanese wrote without one gets none.
+- **Text drawn on a slant is lettered level.** Nothing rotates text, and level
+  Thai beside a skewed phone screen reads fine at print size.
 
 ## Keep the series files current as you go
 
@@ -125,16 +150,19 @@ have. What a particular work does about them belongs in `lettering.md`.
   character's speech habits, because those are what make chapter 8 sound like
   chapter 1. Name a voice group (`passerby`, `commenter`) rather than inventing
   a character, and give it its own entry the moment it is named.
-- **`glossary.md`** — every agreed transliteration and term, with the
-  reason. Nothing reads it but you; it is what makes chapter 8 say what chapter
-  1 said.
+- **`glossary.md`** — every agreed transliteration and term, with the reason.
+  Nothing reads it but you; it is what makes chapter 8 say what chapter 1 said.
+  Per work, always — two works that both need `事務所` write it down twice, and
+  that is cheaper than a shared list that grows with every work and serves none
+  of them well.
 - **`words.txt`** — one Thai word per line, and the line breaker's whole
   dictionary. A different list for a different reason: it holds what stops
   meaning anything when cut in half, which is names and transliterations. Not
   phrases — see the `thai-manga-lettering` skill for what a phrase in there
-  costs.
+  costs. Per work, for the same reason as the glossary.
+- **`style.md`** — only where this work departs from the conventions above. A
+  work with no departures needs no file.
 - **`summary.md`** — capped length, rewritten rather than appended.
-- **`style.md`** — the conventions this work settled on.
 
 ## Read the page before you translate any of it
 

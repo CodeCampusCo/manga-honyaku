@@ -73,8 +73,11 @@ reason.
 - **Tags are for bubbles.** Free-floating text is not speech and belongs to no
   set; it fills the box it was drawn into. A chapter heading is this case.
 - **Exclude a pause-only region.** Its box is sized for a beat of silence; one
-  character in a large box measures as enormous lettering.
+  character in a large box measures as enormous lettering — give it the ordinary
+  speech tag, which is what the dots were drawn at.
 - **A tag that overflows brings that one region down; the tag does not move.**
+- **A chapter heading is free-floating text and fills its own box.** What makes
+  it a heading is the face, so it takes `weight` rather than a tag.
 
 Why bands at all, rather than `thai = measured × k`? Because the measurement is
 noisy — the detector's box is looser on some regions than others, and
