@@ -186,21 +186,28 @@ def step_for(region: dict, steps: dict) -> tuple[str, float]:
 
 
 def lexicon(series: Path):
-    """The series glossary, as words the segmenter must not break apart.
+    """The segmenter's dictionary: pythainlp's, plus `series/words.txt`.
 
-    A transliterated name is in no Thai dictionary: ชิโนบุ segments as ชิ|โน|บุ
-    and the line breaker duly breaks a character into ชิโน and บุ on separate
-    lines. The glossary already holds every agreed transliteration, so it is
-    the list to hand the segmenter.
+    One Thai word per line, nothing else in the file. It used to be a table in
+    `glossary.md` and the parsing — find the heading, find the rows, take the
+    second cell — was a set of rules invented here that the file itself never
+    stated, and that a later edit could break in silence.
+
+    What belongs in it: words that mean nothing once cut in half. Names, and
+    transliterations no Thai dictionary carries — `ชิโนบุ` otherwise segments as
+    `ชิ|โน|บุ` and lands across two lines. What does not: a phrase whose parts
+    are ordinary words. In the dictionary a phrase is a single token, and a
+    token that will not fit its box brings the whole bubble's size down —
+    `ไอดอลกราเวีย` measures 139px against a 96px box and cost one caption a
+    third of its size, and the caption sharing its utterance the same.
+
+    Called once per run: the Trie costs about 200ms to build, and every page
+    after the first reuses it.
     """
-    path = series / "glossary.md"
+    path = series / "words.txt"
     if not path.exists():
         return None
-    terms = set()
-    for line in path.read_text().splitlines():
-        cells = [c.strip() for c in line.split("|")]
-        if len(cells) >= 4 and cells[2] and not set(cells[2]) <= set("-: "):
-            terms.add(cells[2])
+    terms = {word.strip() for word in path.read_text().splitlines() if word.strip()}
     if not terms:
         return None
     return Trie(set(thai_words()) | terms)

@@ -125,9 +125,14 @@ have. What a particular work does about them belongs in `series/lettering.md`.
   character's speech habits, because those are what make chapter 8 sound like
   chapter 1. Name a voice group (`passerby`, `commenter`) rather than inventing
   a character, and give it its own entry the moment it is named.
-- **`series/glossary.md`** — every agreed transliteration and term. It doubles
-  as the line breaker's custom dictionary, so anything that must not split
-  across lines belongs in it: names, loanwords, coined terms.
+- **`series/glossary.md`** — every agreed transliteration and term, with the
+  reason. Nothing reads it but you; it is what makes chapter 8 say what chapter
+  1 said.
+- **`series/words.txt`** — one Thai word per line, and the line breaker's whole
+  dictionary. A different list for a different reason: it holds what stops
+  meaning anything when cut in half, which is names and transliterations. Not
+  phrases — see the `thai-manga-lettering` skill for what a phrase in there
+  costs.
 - **`series/summary.md`** — capped length, rewritten rather than appended.
 - **`series/style.md`** — the conventions this work settled on.
 
