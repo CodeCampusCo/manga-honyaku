@@ -67,28 +67,35 @@ file, page by page.
 ## Honorifics carry the same information — read them
 
 Japanese name suffixes do work Thai has its own forms for, so the original is
-telling you which Thai word to reach for. **Whatever you choose, hold it across
-the whole work** — a reader notices a character who is `คุณ` in one chapter and
-`ซัง` in the next.
+telling you which Thai word to reach for.
 
 | Japanese | Thai | How |
 | --- | --- | --- |
-| さん | **คุณ**, or transliterate **ซัง** | Fits nearly everywhere. Thai readers know `ซัง` and neither reads as foreign; pick one. |
+| さん | **คุณ** | Fits nearly everywhere. Thai readers also read `ซัง`, but `คุณ` is the one to use, so that it is the same in every work and never a thing to decide. |
 | ちゃん | **จัง** — transliterate | Adult to a girl, and to boys too. The role Thai fills with `หนู`, but manga Thai does not use `หนู` here. |
 | くん | **คุง** — transliterate | Adult to a child; a senior to a junior they are close to — a student, a junior at work. |
 | 様 | **ท่าน** | Never transliterate. |
 | 先生 | **อาจารย์**, **หมอ**, **ทนาย** — from context | Closer to *master* than to *teacher*: any credentialed expert, including a mangaka. Thai defaults to "อาจารย์ = schoolteacher" but does accept `อาจารย์` for a mangaka. Read the panel before choosing. |
 | 先輩 / 後輩 | **พี่** / **น้อง** | Kinship words work as pronouns in Thai and land this better than a literal translation. |
 
-Watch for a suffix attached to a **role rather than a name** — `バイト君`,
-`店長さん`. Transliterating there produces nonsense; use the Thai kinship or
-title form and record the exception.
+**A bare name stays bare.** Where the Japanese drops the suffix, so does the
+Thai: `忍って` is the name as a vocative, with nothing in front of it.
+
+**A suffix on a role rather than a name takes the Thai kinship or title form** —
+`バイト君` is `น้องพาร์ทไทม์`, `店長さん` is `คุณผู้จัดการร้าน`. Transliterating a
+role produces nonsense.
 
 ## Politeness lands once per utterance
 
 `ค่ะ` / `ครับ` at the end of every bubble in a three-bubble sentence reads as
 three sentences. Put the particle on the utterance, not on the bubble — usually
 the last one — and let the rest carry the register through word choice.
+
+Who gets one at all follows the same distance the pronouns do. A woman speaking
+politely ends with `ค่ะ`. **Men among themselves take no particle**: `ครับ`
+between peers reads as sarcasm, and is for speaking to someone above them.
+`はい` answering a question is itself `ค่ะ` or `ครับ`, and does not count as the
+sentence-final particle.
 
 Give the same treatment to a pronoun split across bubbles: `私 / 頑張ります!`
 is `ฉัน` then `จะตั้งใจทำให้เต็มที่ค่ะ!`, not `ฉัน` then `ฉันจะ…`.
@@ -160,8 +167,8 @@ These need no deciding per work; a work's own file records only where it departs
   meaning anything when cut in half, which is names and transliterations. Not
   phrases — see the `thai-manga-lettering` skill for what a phrase in there
   costs. Per work, for the same reason as the glossary.
-- **`style.md`** — only where this work departs from the conventions above. A
-  work with no departures needs no file.
+- **`style.md`** — only if this work departs from the conventions above, which
+  is rare enough that most works never need the file.
 - **`summary.md`** — capped length, rewritten rather than appended.
 
 ## Read the page before you translate any of it

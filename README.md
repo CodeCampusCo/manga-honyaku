@@ -31,7 +31,6 @@ series/<work>/
     words.txt            one Thai word per line; the line breaker's dictionary
     glossary.md          terms, honorifics, agreed transliterations
     characters.md        who they are, and how each one speaks
-    style.md             only where this work departs from the skills
     summary.md           rolling plot summary
     questions.md         unresolved items
 
