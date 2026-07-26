@@ -20,30 +20,78 @@ To reuse a copy you already have:
 export MANGA_HONYAKU_DETECTOR=/path/to/comic-text-and-bubble-detector
 ```
 
-## Stages
+## A work on disk
 
-Each stage is a separate command over the same `work/` directory, so editing a
-translation and re-rendering never re-runs detection.
+One directory per work. Nothing is configured but where the scans are.
+
+```
+series/<work>/
+    raw.txt              one line: the path to the scans
+    lettering.json       the size bands, and what each size is worth in Thai
+    words.txt            one Thai word per line; the line breaker's dictionary
+    glossary.md          terms, honorifics, agreed transliterations
+    characters.md        who they are, and how each one speaks
+    style.md             decisions that hold for the whole work
+    lettering.md         the reasoning behind lettering.json
+    summary.md           rolling plot summary
+    questions.md         unresolved items
+
+    pages/               <id>.agent.json — the translation
+    build/               <id>.detector.json .boxes.png .clean.png .masks.png
+    out/                 <id>.png
+```
+
+A page is identified by its path under the scans, without the suffix: `X0006`,
+or `01/ch02/003` where a work ships as volume and chapter directories. `pages/`,
+`build/` and `out/` take whatever shape the scans have, so neither layout is a
+case anything handles.
+
+`pages/` is kept apart from `build/` because everything in `build/` rebuilds from
+the scans in seconds and nothing in `pages/` rebuilds at all.
+
+## Commands
+
+Every stage takes the work's directory, then the pages. Naming no page means the
+whole work; naming a directory means everything under it.
+
+```sh
+uv run python -m manga_honyaku.detect   series/<work>     # -> build/<id>.detector.json
+uv run python -m manga_honyaku.annotate series/<work>     # -> build/<id>.boxes.png
+uv run python -m manga_honyaku.prepare  series/<work>     # -> pages/<id>.agent.json
+#   prepare also OCRs the Japanese into it, and tags each region with the size
+#   the original was lettered at; --no-ocr leaves the reading to the agent
+#   the agent then reads the page and edits pages/<id>.agent.json
+uv run python -m manga_honyaku.clean    series/<work>     # -> build/<id>.clean.png
+                                                           #    build/<id>.masks.png
+uv run python -m manga_honyaku.render   series/<work>     # -> out/<id>.png
+```
+
+```sh
+uv run python -m manga_honyaku.render series/<work> X0006          # one page
+uv run python -m manga_honyaku.render series/<work> X0006 X0007    # several
+uv run python -m manga_honyaku.render series/<work> 01/ch02        # a chapter
+```
+
+Pass every page you want in one command rather than one command per page: the
+segmenter's dictionary takes about 200ms to build and is built once per run.
+
+```sh
+uv run python -m manga_honyaku.sheet out/X0006.png out/X0007.png -o /tmp/look.png
+```
+
+`sheet` scales pages down to the largest size a reader keeps, so a batch costs
+what one full-resolution page costs. It reports the width each page ended up at.
+
+## Stages
 
 The pipeline runs one way — each stage reads the artifact before it and writes
 the one after.
 
-```sh
-uv run python -m manga_honyaku.detect   raw/*.jpg --work work   # -> work/<page>.detector.json
-uv run python -m manga_honyaku.annotate raw/*.jpg --work work   # -> work/<page>.boxes.png
-uv run python -m manga_honyaku.prepare  raw/*.jpg --work work   # -> work/<page>.agent.json
-#   prepare also OCRs the Japanese into it; --no-ocr leaves that to the agent
-#   the agent then reads the page and edits work/<page>.agent.json
-uv run python -m manga_honyaku.clean    raw/*.jpg --work work   # -> work/<page>.clean.png
-                                                                #    work/<page>.masks.png
-uv run python -m manga_honyaku.render   raw/*.jpg --work work   # -> out/<page>.png
-```
-
-`work/<page>.agent.json` is the working file and the only one that cannot be
+`pages/<id>.agent.json` is the working file and the only one that cannot be
 rebuilt: everything the agent works out about a page is written into it. `detect`
 overwrites its own output freely; `prepare` will not overwrite a working file
 without `--force`. To change detection after a page has been read, start again
-from raw.
+from the scans.
 
 `--conf` sets the detection threshold (default 0.35). Detection and OCR both
 download their weights on first run; neither is vendored.
@@ -54,30 +102,35 @@ agent has given a role, and never those roled `sfx` or `image_text` — both are
 artwork. On a page margin the white is invisible; over drawn artwork it is a
 visible patch.
 
+`render` lays the Thai into each region's own box — where the original's
+lettering sat — breaks it to that column, and comes down a size while it
+overflows. Nothing else: the box is the right rectangle for the translation for
+the same reason it was right for the original.
+
+Size comes from a tag on the region, written once when the page was prepared from
+what the Japanese in that box was lettered at. `lettering.json` says what each tag
+is worth in Thai, quoted against a stated page height, so it can be adjusted by
+eye without anything being measured again.
+
+`words.txt` is the line breaker's dictionary: without it a transliterated name is
+broken across lines as though it were several words. Keep phrases out of it — a
+phrase there is a single token, and a token that will not fit its box brings the
+whole bubble's size down.
+
+## Fonts
+
 `render` letters in **2005_iannnnnJPG**, a Thai comic face by iannnnn released
 free for commercial use through [f0nt.com](https://www.f0nt.com/release/iannnnnjpg/).
 It is in `fonts/`; see `NOTICE`. `--font` and `--font-bold`, or
-`MANGA_HONYAKU_FONT` and `MANGA_HONYAKU_FONT_BOLD`, point elsewhere.
+`MANGA_HONYAKU_FONT` and `MANGA_HONYAKU_FONT_BOLD`, point elsewhere. A region may
+ask for the bolder cut with `weight` — a chapter heading is set in a display face
+at twice the ink density of the bubbles.
 
 The face carries no `♥ ♡ ★ ☆ ♪ 「」 ○` and no CJK brackets. `render` reports any
 character it cannot draw before drawing the page.
 
-Another face works if its vowel and tone marks have zero advance width — Thai comic faces do,
-and that is what lets the marks stack without a shaping engine.
-
-Thai is laid out inside each region's own box, so the translation sits where the
-Japanese sat, and centred on the bubble within it. Lettering is sized as a
-fixed fraction of the size the original was lettered at, which `render` recovers
-from each region's box and the length of its Japanese. The size is chosen before
-the text is wrapped, so the same original size gives the same Thai size
-everywhere; a region that cannot hold its line at that size is the only one that
-comes down. A region may override that with
-`scale`, and ask for a bolder cut with `weight` if `--font-bold` is given — a
-chapter heading is set in a display face at twice the ink density of the bubbles
-and needs both.
-`series/glossary.md`
-is read as a word list: without it a transliterated name is broken across lines
-as though it were several words.
+Another face works if its vowel and tone marks have zero advance width — Thai
+comic faces do, and that is what lets the marks stack without a shaping engine.
 
 ## Apple Silicon
 
