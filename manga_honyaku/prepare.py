@@ -51,7 +51,6 @@ def reading(detected: dict, image: Image.Image | None, reader) -> dict:
         "img_height": detected["img_height"],
         "detector": detected["detector"],
         "regions": regions,
-        "utterances": [],
         "questions": [],
     }
 

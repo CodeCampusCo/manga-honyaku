@@ -36,6 +36,7 @@ uv run python -m manga_honyaku.prepare  raw/*.jpg --work work   # -> work/<page>
 #   the agent then reads the page and edits work/<page>.agent.json
 uv run python -m manga_honyaku.clean    raw/*.jpg --work work   # -> work/<page>.clean.png
                                                                 #    work/<page>.masks.png
+uv run python -m manga_honyaku.render   raw/*.jpg --work work   # -> out/<page>.png
 ```
 
 `work/<page>.agent.json` is the working file and the only one that cannot be
@@ -53,7 +54,11 @@ agent has given a role, and never those roled `sfx` or `image_text` — both are
 artwork. On a page margin the white is invisible; over drawn artwork it is a
 visible patch.
 
-`render` is not implemented yet.
+`render` needs a Thai font: pass `--font` or set `MANGA_HONYAKU_FONT`. None is
+bundled. The font's vowel and tone marks must have zero advance width — Thai
+comic faces do, and it is what lets the marks stack without a shaping engine.
+Anything the font cannot draw is reported before the page is drawn, because a
+missing glyph comes out as an empty box that still looks like lettering.
 
 ## Apple Silicon
 

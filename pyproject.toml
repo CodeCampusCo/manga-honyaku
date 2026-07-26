@@ -12,6 +12,7 @@ dependencies = [
     "transformers>=4.49",
     "pillow>=11",
     "opencv-python-headless>=5.0.0.93",
+    "pythainlp>=5.3.4",
 ]
 
 [tool.uv]
