@@ -62,7 +62,19 @@ FONT_BOLD = os.environ.get(
 # word ends.
 ENGINE = os.environ.get("MANGA_HONYAKU_SEGMENTER", "newmm")
 
+# How finely a line may be broken, tried in this order at every size before the
+# size comes down. A bubble is a tall oval because Japanese ran down it, so a
+# phrase that will not wrap across is stacked down instead: `อะไรนะ` set as
+# `อะ / ไร / นะ` is how Thai manga has filled these bubbles for as long as there
+# has been Thai manga. `dict` breaks at syllables — `ติด|ต่อ|มา`, `ขอบ|คุณ` —
+# and clusters are below it, for the word no syllable will fit either, where
+# `ติ|ด|ต่|อ|มา` reads as a typo but is still better than nothing.
+GRAINS = (None, "dict", "tcc_p")
+
 THAI_MIN, THAI_MAX = 0x0E00, 0x0E7F
+
+# Marks that open rather than close, and so belong to the word after them.
+OPENING = set("“‘([{<«")
 
 # A continuation line starting with a Thai token this short or shorter is a stub
 # left by a break inside a compound. The penalty has to outweigh the raggedness
@@ -218,20 +230,30 @@ def tokenise(text: str, custom=None) -> list[tuple[str, bool]]:
     """
     tokens: list[tuple[str, bool]] = []
     space = False
+    pending = ""
     for token in word_tokenize(text, engine=ENGINE, custom_dict=custom):
         if not token:
             continue
         if token.isspace():
             space = True
             continue
-        # The segmenter hands back `?` and `…` as tokens of their own, and a
-        # line breaker told to stand as tall as it can will happily start a line
-        # with one. Punctuation belongs to the word it follows.
-        if tokens and not space and not any(c.isalnum() for c in token):
-            tokens[-1] = (tokens[-1][0] + token, tokens[-1][1])
+        # The segmenter hands back `?`, `…` and quotes as tokens of their own,
+        # and a line breaker told to stand as tall as it can will start a line
+        # with one. Punctuation belongs to the word it leans on — which for an
+        # opening mark is the word after it, not the word before.
+        if not any(c.isalnum() for c in token):
+            if token in OPENING:
+                pending += token
+            elif tokens and not space and not pending:
+                tokens[-1] = (tokens[-1][0] + token, tokens[-1][1])
+            else:
+                tokens.append((pending + token, space))
+                pending, space = "", False
             continue
-        tokens.append((token, space))
-        space = False
+        tokens.append((pending + token, space))
+        pending, space = "", False
+    if pending:
+        tokens.append((pending, space))
     return tokens
 
 
@@ -299,16 +321,21 @@ def break_lines(
 
 
 def wrap(
-    text: str, font: ImageFont.FreeTypeFont, width: float, clusters: bool, custom=None
+    text: str, font: ImageFont.FreeTypeFont, width: float, grain, custom=None
 ) -> list[str] | None:
+    """Lines at one column width, breaking no finer than `grain` asks for.
+
+    A token wider than the column is split; anything that fits is left whole, so
+    a finer grain only ever reaches the words that need it.
+    """
     tokens = tokenise(text, custom)
-    if clusters:
+    if grain:
         broken: list[tuple[str, bool]] = []
         for token, space in tokens:
             if font.getlength(token) <= width:
                 broken.append((token, space))
             else:
-                parts = [p for p in subword_tokenize(token, engine="tcc_p") if p]
+                parts = [p for p in subword_tokenize(token, engine=grain) if p]
                 broken.extend(
                     (part, space if k == 0 else False) for k, part in enumerate(parts)
                 )
@@ -436,22 +463,26 @@ def lay_out(
     where it stops: upstream squeezes only until nothing collides, which leaves
     the first, widest, shortest block that happens to be legal. Taking the
     tallest instead is what fills a bubble that is taller than it is wide.
+
+    Grain is tried inside the size search, not around it, so a phrase that will
+    not wrap at word boundaries is stacked more finely at the size the original
+    asked for rather than lettered smaller to make the words fit across.
     """
     _, _, width, height = box
-    for clusters in (False, True):
-        best = None
-        low, high = smallest, largest
-        while low <= high:
-            size = (low + high) // 2
-            if size <= 0:
-                break
-            font = ImageFont.truetype(font_path, size)
-            line_height = int(size * line_spacing)
+    best = None
+    low, high = smallest, largest
+    while low <= high:
+        size = (low + high) // 2
+        if size <= 0:
+            break
+        font = ImageFont.truetype(font_path, size)
+        line_height = int(size * line_spacing)
 
-            fitted = None
+        fitted = None
+        for grain in GRAINS:
             column = float(width)
             for _ in range(squeezes):
-                lines = wrap(text, font, column, clusters, custom)
+                lines = wrap(text, font, column, grain, custom)
                 if lines is None:
                     # Narrowing only makes it taller; it will not start fitting.
                     break
@@ -466,15 +497,17 @@ def lay_out(
                     elif fitted is None or len(lines) > len(fitted):
                         fitted = lines
                 column *= 0.90
-
             if fitted is not None:
-                best = (font, fitted, line_height)
-                low = size + 1
-            else:
-                high = size - 1
-        if best is not None:
-            return best
-    return None
+                # A coarser grain held at this size. Going finer would only buy
+                # breaks inside words that did not need breaking.
+                break
+
+        if fitted is not None:
+            best = (font, fitted, line_height)
+            low = size + 1
+        else:
+            high = size - 1
+    return best
 
 
 def render(

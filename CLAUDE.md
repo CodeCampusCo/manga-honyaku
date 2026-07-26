@@ -16,6 +16,10 @@ detection or OCR.
 
 Artifacts and code are written in English.
 
+Look at pages through `python -m manga_honyaku.sheet` rather than opening them at
+full size. It scales a batch to the largest size a reader actually keeps, so four
+pages cost what one full-resolution page costs.
+
 ## Translating
 
 Read the whole page before translating any of it, and keep `series/` current as you
