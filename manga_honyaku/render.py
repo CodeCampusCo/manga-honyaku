@@ -8,13 +8,19 @@ A region is drawn only where `clean` erased something. The mask is the record of
 that: no mask, no space to draw into, and a sound effect or a phone screen that
 was deliberately left alone does not get Thai painted over it.
 
-The geometry and the sizing are MangaTranslator's, ported rather than
-reinvented. A rectangle is grown from the bubble's own centre out to its
-outline — moving that centre to the deepest point when it lands in the waist
-between two conjoined lobes — and the size is binary-searched within a narrow
-band quoted for a one-megapixel page. Between them those two produce a page
-that letters evenly, which is the thing several attempts at deriving a size
-per bubble did not.
+The geometry, the sizing and the collision test are MangaTranslator's, ported
+rather than reinvented. A rectangle is grown from the bubble's own centre out to
+its outline — moving that centre to the deepest point when it lands in the waist
+between two conjoined lobes — the size is binary-searched within a narrow band
+quoted for a one-megapixel page, and a laid-out block is checked corner by
+corner against the mask rather than against that rectangle.
+
+Thai is written horizontally, but a bubble is taller than it is wide, and Thai
+lettering in manga is set to the bubble: a stack of short lines rather than two
+long ones. So the column is narrowed a tenth at a time and the layout kept is
+the one that stands tallest — the most lines the bubble will hold. That last
+part is where this departs from upstream, which stops at the first width that
+does not collide and so keeps the widest, shortest block that is merely legal.
 
 Thai needs no complex-text shaping here. Its marks stack above and below the base
 letter, and in a font that gives them zero advance — every Thai comic face does —
@@ -74,6 +80,11 @@ ORPHAN_PENALTY = 5000.0
 # the pair for a series.
 BAND = (11, 22)
 PADDING = 4.0
+
+# How many times a column is narrowed by a tenth in search of a taller
+# block. Upstream stops at the first that does not collide and needs three;
+# going on until the text will not wrap any narrower needs more.
+SQUEEZES = 9
 
 # Thai stacks marks above and below the base letter, so lines need more room
 # between them than the font's own metrics suggest.
@@ -135,6 +146,12 @@ def tokenise(text: str, custom=None) -> list[tuple[str, bool]]:
             continue
         if token.isspace():
             space = True
+            continue
+        # The segmenter hands back `?` and `…` as tokens of their own, and a
+        # line breaker told to stand as tall as it can will happily start a line
+        # with one. Punctuation belongs to the word it follows.
+        if tokens and not space and not any(c.isalnum() for c in token):
+            tokens[-1] = (tokens[-1][0] + token, tokens[-1][1])
             continue
         tokens.append((token, space))
         space = False
@@ -289,22 +306,58 @@ def safe_box(mask: np.ndarray, padding: float):
     return int(round(cx - box_w / 2)), int(round(cy - box_h / 2)), box_w, box_h
 
 
+def collides(lines, font, line_height: int, box, mask: np.ndarray) -> bool:
+    """Whether any line would cross the outline. Ported from _check_collision.
+
+    Each line is centred in the box and the block is centred in it vertically,
+    which is where it will be drawn; the four corners of every line are then
+    tested against the mask. Corners are what a rectangle has and an oval does
+    not, so they are where a block that fits the box but not the bubble sticks
+    out.
+    """
+    bx, by, bw, bh = box
+    mask_h, mask_w = mask.shape
+    y = by + (bh - line_height * len(lines)) / 2
+    for line in lines:
+        line_w = font.getlength(line)
+        x = bx + (bw - line_w) / 2
+        y1, y2 = int(y), int(y + line_height)
+        x1, x2 = int(x), int(x + line_w)
+        for px, py in ((x1, y1), (x2, y1), (x1, y2), (x2, y2)):
+            if not mask[
+                max(0, min(py, mask_h - 1)), max(0, min(px, mask_w - 1))
+            ]:
+                return True
+        y += line_height
+    return False
+
+
 def lay_out(
     text: str,
-    width: int,
-    height: int,
+    box,
+    mask: np.ndarray,
     font_path: str,
     smallest: int,
     largest: int,
     custom=None,
 ):
-    """The largest size in the band whose wrapped block fits the rectangle.
+    """The largest size that fits inside the outline, not merely inside the box.
 
-    Binary search over the band, as MangaTranslator does. Word boundaries are
-    tried at every size before any size is tried with breaks inside a word:
-    reversing that keeps the text large and splits ติดต่อมา as ติดต่|อมา, which
-    reads as a typo rather than as a line break.
+    Thai is written horizontally, but a bubble is taller than it is wide, and
+    Thai lettering in manga is set to the bubble rather than to the line: a
+    stack of short lines rather than two long ones. Thai readers read it that
+    way and have for as long as manga has been translated into Thai.
+
+    So height is what is maximised, not size alone and not width. The column is
+    narrowed a tenth at a time and every layout that fits is kept; the one
+    chosen is the one that stands tallest — the most lines the bubble will hold.
+
+    The narrowing and the collision test are MangaTranslator's. What differs is
+    where it stops: upstream squeezes only until nothing collides, which leaves
+    the first, widest, shortest block that happens to be legal. Taking the
+    tallest instead is what fills a bubble that is taller than it is wide.
     """
+    _, _, width, height = box
     for clusters in (False, True):
         best = None
         low, high = smallest, largest
@@ -314,9 +367,23 @@ def lay_out(
                 break
             font = ImageFont.truetype(font_path, size)
             line_height = int(size * LINE_SPACING)
-            lines = wrap(text, font, width, clusters, custom)
-            if lines is not None and line_height * len(lines) <= height:
-                best = (font, lines, line_height)
+
+            fitted = None
+            column = float(width)
+            for _ in range(SQUEEZES):
+                lines = wrap(text, font, column, clusters, custom)
+                if lines is None:
+                    # Narrowing only makes it taller; it will not start fitting.
+                    break
+                if line_height * len(lines) > height:
+                    break
+                if not collides(lines, font, line_height, box, mask):
+                    if fitted is None or len(lines) > len(fitted):
+                        fitted = lines
+                column *= 0.90
+
+            if fitted is not None:
+                best = (font, fitted, line_height)
                 low = size + 1
             else:
                 high = size - 1
@@ -376,8 +443,8 @@ def render(
         face = weights.get(region.get("weight") or "regular", font_path)
         laid = lay_out(
             target,
-            bw,
-            bh,
+            box,
+            mask,
             face,
             smallest,
             max(smallest, round(largest * emphasis)),
@@ -386,7 +453,7 @@ def render(
         if laid is None:
             warn(f"{data['page']} {region['id']}: {target!r} does not fit")
             continue
-        placements.append((region, box, face, custom, laid))
+        placements.append((region, box, mask, face, custom, laid))
 
     # One sentence lettered at two sizes reads as two sentences. Where regions
     # share an utterance they were one line in the original and are lettered
@@ -397,11 +464,12 @@ def render(
         if group:
             shared[group] = min(shared.get(group, 10**6), laid[0].size)
 
-    for region, (bx, by, bw, bh), face, custom, laid in placements:
+    for region, box, mask, face, custom, laid in placements:
+        bx, by, bw, bh = box
         group = region.get("utterance")
         if group and shared[group] != laid[0].size:
             again = lay_out(
-                region["target"], bw, bh, face, shared[group], shared[group], custom
+                region["target"], box, mask, face, shared[group], shared[group], custom
             )
             if again is not None:
                 laid = again
