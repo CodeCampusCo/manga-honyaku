@@ -31,9 +31,16 @@ DETECTOR = os.environ.get(
 # error. The model is small and runs once per page, so it is pinned to CPU.
 DEVICE = torch.device("cpu")
 
-# Region ids carry a per-class prefix. Deriving the prefix from the class name
-# would give text_bubble and text_free the same letter and collide.
-PREFIX = {"text_bubble": "B", "text_free": "F"}
+# The detector's two text labels, and what each one is recorded as. `placement`
+# answers where the text sits, which is the only question the model is in a
+# position to answer about it; what the text is for is the agent's `role`.
+#
+# The id prefix is spelled out rather than taken from the label's first letter,
+# which would give text_bubble and text_free the same one and collide.
+TEXT = {
+    "text_bubble": {"prefix": "B", "placement": "bubble"},
+    "text_free": {"prefix": "F", "placement": "free"},
+}
 
 
 def warn(message: str) -> None:
@@ -75,7 +82,7 @@ def load_detector():
 
 
 def detect(image: Image.Image, model, processor, conf: float = 0.35, imgsz: int = 640):
-    """Return [(class_name, [x1, y1, x2, y2], score)] for every class, unsorted."""
+    """Return [(label, [x1, y1, x2, y2], score)] for every detection, unsorted."""
     inputs = processor(
         images=image,
         return_tensors="pt",
@@ -136,8 +143,8 @@ def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) ->
     quietly left in place.
     """
     bubbles = [f[1] for f in found if f[0] == "bubble"]
-    text = [f for f in found if f[0] in PREFIX]
-    text.sort(key=lambda f: (f[0], f[1][1]))  # class, then down the page
+    text = [f for f in found if f[0] in TEXT]
+    text.sort(key=lambda f: (f[0], f[1][1]))  # placement, then down the page
 
     counters: dict[str, int] = {}
     regions = []
@@ -145,9 +152,9 @@ def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) ->
     for name, box, score in text:
         counters[name] = counters.get(name, 0) + 1
         region = {
-            "id": f"{PREFIX[name]}{counters[name]}",
+            "id": f"{TEXT[name]['prefix']}{counters[name]}",
             "box": box,
-            "detector_class": name,
+            "placement": TEXT[name]["placement"],
             "score": score,
         }
         if name == "text_bubble":

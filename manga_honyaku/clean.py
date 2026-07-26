@@ -19,7 +19,7 @@ invisible; over drawn artwork it is a white patch, and that is the trade.
 
 Which free-floating regions get erased is the agent's call, not this stage's: a
 sound effect is artwork and must survive, and only a reader can tell one from a
-line of unbubbled speech. Regions the agent has not classified are left alone.
+line of unbubbled speech. A region with no role yet is left alone.
 
 Derived from meangrinch/MangaTranslator (Apache-2.0); see NOTICE.
 """
@@ -41,11 +41,11 @@ from manga_honyaku.page import agent_path
 # adaptive one, which chases the screentone in the artwork behind the bubble.
 PAPER = 200
 
-# Classes that are recorded but never painted over. An effect drawn as lettering
-# is artwork, and so is a sign or a phone screen — what it says reaches the
-# reader through the translation, not by overwriting the drawing. A declined
-# region is left for a different reason: erasing it would leave a hole with
-# nothing to put in it.
+# Roles that are recorded but never painted over. An effect drawn as lettering is
+# artwork, and so is a sign or a phone screen — what it says reaches the reader
+# through the translation, not by overwriting the drawing. A declined region is
+# left for a different reason: erasing it would leave a hole with nothing to put
+# in it.
 KEEP = {"sfx", "image_text"}
 
 
@@ -133,17 +133,17 @@ def clean(page: Image.Image, data: dict) -> tuple[Image.Image, Image.Image]:
     masks = np.zeros(gray.shape, np.uint8)
 
     for index, region in enumerate(data["regions"], start=1):
-        # An unclassified region is left alone. It may be a sound effect, which
-        # is artwork, and telling one from unbubbled speech takes a reader.
-        if not region.get("class") or region.get("class") in KEEP:
+        # A region with no role yet is left alone. It may be a sound effect,
+        # which is artwork, and telling one from unbubbled speech takes a reader.
+        if not region.get("role") or region.get("role") in KEEP:
             continue
         if region.get("status") == "declined":
             continue
 
         # Whether there is an outline to follow is the only question here, and
-        # `bubble` answers it directly. `detector_class` is not consulted: it
-        # records what the model said so that its disagreement with the agent
-        # stays visible, not so that anything branches on it.
+        # `bubble` answers it directly. `placement` is not consulted: it records
+        # what the model saw, so that its disagreement with the agent stays
+        # visible, not so that anything branches on it.
         mask = None
         if region.get("bubble"):
             mask = interior(gray, region["bubble"], region["box"])

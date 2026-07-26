@@ -47,7 +47,7 @@ from raw.
 
 `clean` erases in-bubble text by repainting the bubble's own paper, and paints
 free-floating text out as a plain white rectangle. It only touches regions the
-agent has classified, and never those classed `sfx` or `image_text` — both are
+agent has given a role, and never those roled `sfx` or `image_text` — both are
 artwork. On a page margin the white is invisible; over drawn artwork it is a
 visible patch.
 

@@ -16,7 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from manga_honyaku.page import detector_path
 
-COLOURS = {"text_bubble": (60, 120, 255), "text_free": (255, 40, 40)}
+COLOURS = {"bubble": (60, 120, 255), "free": (255, 40, 40)}
 
 
 def annotate(image: Image.Image, regions: list[dict]) -> Image.Image:
@@ -26,7 +26,7 @@ def annotate(image: Image.Image, regions: list[dict]) -> Image.Image:
 
     for region in regions:
         x1, y1, x2, y2 = (int(v) for v in region["box"])
-        colour = COLOURS.get(region["detector_class"], (128, 128, 128))
+        colour = COLOURS.get(region.get("placement"), (128, 128, 128))
         draw.rectangle([x1, y1, x2, y2], outline=colour, width=3)
 
         # The label sits outside the box. Drawn inside it covers the first

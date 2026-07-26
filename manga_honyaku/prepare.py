@@ -22,8 +22,9 @@ from pathlib import Path
 from manga_honyaku.page import agent_path, detector_path
 
 # Left present and empty rather than absent, so that a fresh working file shows
-# what it is waiting for. `clean` and `render` read absent and null alike.
-SLOTS = {"source": None, "class": None}
+# what it is waiting for: what the text says, and what it is for. `clean` and
+# `render` read absent and null alike.
+SLOTS = {"source": None, "role": None}
 
 
 def reading(detected: dict) -> dict:
@@ -46,7 +47,7 @@ def main() -> None:
     ap.add_argument(
         "--force",
         action="store_true",
-        help="rewrite working files that already exist, discarding the classes, "
+        help="rewrite working files that already exist, discarding the roles, "
         "reading order, speakers and translations in them",
     )
     args = ap.parse_args()
