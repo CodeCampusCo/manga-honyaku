@@ -54,6 +54,17 @@ THAI_MIN, THAI_MAX = 0x0E00, 0x0E7F
 ORPHAN_CLUSTERS = 3
 ORPHAN_PENALTY = 5000.0
 
+# Thai set beside the Japanese it replaces reads right at about this fraction of
+# it. The number is the whole of the correspondence: wherever the original was
+# lettered at 40, the Thai is lettered at 26, on every page and in every bubble.
+# It is the one value a series would retune, and retuning it moves the entire
+# work together rather than one bubble at a time.
+#
+# Thai needs more room than Japanese for the same sentence, so a target this size
+# does not always fit. Where it does not, that region alone comes down; the rest
+# of the page is unaffected.
+RATIO = 0.65
+
 # The floor, for a one-megapixel page and scaled by the square root of the actual
 # area so it holds across scan resolutions. Below this the lettering stops being
 # readable at print size, and a region that cannot hold its line here is reported
@@ -233,7 +244,7 @@ def wrap(
 
 
 def safe_area(
-    mask: np.ndarray, box: list[float], inset: int
+    mask: np.ndarray, box: list[float], inset: int, confine: bool = True
 ) -> tuple[np.ndarray, int, int, tuple[float, float]]:
     """Where the Thai may go: inside the outline, and inside the original box.
 
@@ -246,10 +257,13 @@ def safe_area(
     """
     import cv2
 
-    limit = np.zeros(mask.shape, bool)
-    x1, y1, x2, y2 = (int(v) for v in box)
-    limit[y1:y2, x1:x2] = True
-    within = mask & limit
+    if confine:
+        limit = np.zeros(mask.shape, bool)
+        x1, y1, x2, y2 = (int(v) for v in box)
+        limit[y1:y2, x1:x2] = True
+        within = mask & limit
+    else:
+        within = mask
 
     ys, xs = np.nonzero(within)
     if len(ys) == 0:
@@ -357,27 +371,43 @@ def render(
 
         x1, y1, x2, y2 = region["box"]
         inset = max(2, round(INSET * min(x2 - x1, y2 - y1)))
-        safe, top, left, centre = safe_area(mask, region["box"], inset)
-        if not safe.any():
-            warn(f"{data['page']} {region['id']}: no room inside the outline")
-            continue
 
-        # The Thai starts from the size the Japanese was and comes down only as
-        # far as it must. Where the text is short the ceiling holds and the
-        # emphasis survives; where it is long the fit decides, and that too
-        # tracks the original, since it is the same box divided among more
-        # characters.
+        # The size is decided before anything is wrapped, from the size the
+        # Japanese was. The line breaking then has to make that size work.
+        # Doing it the other way — take the largest that happens to fit —
+        # lets the shape of each box set the size, and text the artist
+        # lettered identically comes out anywhere across a range of two.
         original = original_size(region)
-        # `scale` is the agent's, for the lines the estimate cannot reach: a
-        # shout the artist drew no larger, a whisper drawn no smaller. Absent
-        # means the original's own size stands.
+        # `scale` is the agent's, for the lines the ratio cannot reach: a shout
+        # the artist drew no larger, a whisper drawn no smaller.
         emphasis = float(region.get("scale") or 1.0)
         smallest = max(4, round(FLOOR * scale))
-        largest = max(
-            smallest, round(original * emphasis) if original else smallest * 4
+        wanted = max(
+            smallest,
+            round(original * RATIO * emphasis) if original else smallest * 3,
         )
         face = weights.get(region.get("weight") or "regular", font_path)
-        laid = lay_out(target, safe, face, largest, smallest, centre, custom)
+
+        # At that size, the box first and the whole bubble second. The box is
+        # where the Japanese sat, but it was a column set vertically, and
+        # holding horizontal Thai inside a column that narrow buys a faithful
+        # position at the cost of the size. Coming down in size is the last
+        # resort, once neither area could hold it.
+        laid = None
+        for confine in (True, False):
+            area = safe_area(mask, region["box"], inset, confine)
+            if not area[0].any():
+                continue
+            safe, top, left, centre = area
+            laid = lay_out(target, safe, face, wanted, wanted, centre, custom)
+            if laid is not None:
+                break
+        if laid is None:
+            safe, top, left, centre = safe_area(mask, region["box"], inset, False)
+            if not safe.any():
+                warn(f"{data['page']} {region['id']}: no room inside the outline")
+                continue
+            laid = lay_out(target, safe, face, wanted, smallest, centre, custom)
         if laid is None:
             warn(f"{data['page']} {region['id']}: {target!r} does not fit")
             continue

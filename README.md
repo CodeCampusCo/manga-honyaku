@@ -62,8 +62,11 @@ missing glyph comes out as an empty box that still looks like lettering.
 
 Thai is laid out inside each region's own box, so the translation sits where the
 Japanese sat, and centred on the bubble within it. Lettering is sized as a
-proportion of the size the original was lettered at, which `render` recovers from
-each region's box and the length of its Japanese. A region may override that with
+fixed fraction of the size the original was lettered at, which `render` recovers
+from each region's box and the length of its Japanese. The size is chosen before
+the text is wrapped, so the same original size gives the same Thai size
+everywhere; a region that cannot hold its line at that size is the only one that
+comes down. A region may override that with
 `scale`, and ask for a bolder cut with `weight` if `--font-bold` is given.
 `series/glossary.md`
 is read as a word list: without it a transliterated name is broken across lines
