@@ -4,7 +4,9 @@ A manga translation workflow. Code handles geometry — detection, OCR, text
 removal, rendering. An LLM agent handles comprehension — reading order, speaker
 attribution, and the translation itself.
 
-Design: [`docs/specs/2026-07-26-design.md`](docs/specs/2026-07-26-design.md).
+The original design, and why the work is split this way:
+[`docs/specs/2026-07-26-design.md`](docs/specs/2026-07-26-design.md). It predates
+the implementation; where it and the code disagree, the code is right.
 
 ## Setup
 
@@ -46,6 +48,82 @@ case anything handles.
 
 `pages/` is kept apart from `build/` because everything in `build/` rebuilds from
 the scans in seconds and nothing in `pages/` rebuilds at all.
+
+## Starting a new work
+
+This is run through Claude Code, so the way in is a prompt rather than a command.
+Paste this, with your own path:
+
+> Start a new work in this repository. The scans are at `/path/to/the/scans`.
+> Follow the `new-manga-work` skill: set up the directory, run detect and
+> annotate over the first chapter, and show me the boxes so I can check what the
+> detector missed before we go any further. Do not translate anything yet.
+
+It will stop and ask you twice, because two of the steps are judgements about a
+page and cannot be settled by a number:
+
+> The boxes look right. Prepare the chapter, work out the size bands, and render
+> me a few pages beside the originals so I can see whether the lettering is the
+> right size.
+
+Then, once the sizes look right:
+
+> Translate chapter 1. Read each page whole before translating any of it, keep
+> `characters.md` and `glossary.md` current as you go, and check the recorded
+> sources against a fresh OCR read before you render.
+
+And afterwards, whenever a size looks off:
+
+> `loud` is too big. Try 45.
+
+That last one is the loop the whole design exists to make cheap: one number in
+`lettering.json`, one re-render, one look.
+
+### The commands underneath
+
+If you would rather drive it yourself, this is what those prompts do.
+
+```sh
+mkdir -p series/<work>
+echo /path/to/the/scans > series/<work>/raw.txt
+```
+
+Then, in this order — two of the steps are yours to judge, not the tool's:
+
+```sh
+uv run python -m manga_honyaku.detect   series/<work>
+uv run python -m manga_honyaku.annotate series/<work>
+```
+
+**Look at `build/*.boxes.png` before going on.** The detector was trained on
+comics in general and a new art style is where it fails; if dialogue bubbles are
+being missed, stop here, because everything after this assumes the regions exist.
+Missed sound effects do not matter — those stay as artwork.
+
+```sh
+uv run python -m manga_honyaku.prepare series/<work>
+```
+
+OCR runs here, and each region gets a size tag from what the Japanese in its box
+was lettered at. The tags are provisional until the work has its own
+`lettering.json`: the measurement divides a box by its character count, so the
+pages have to be read before the bands can be worked out.
+
+Write `series/<work>/lettering.json` — the shape is in the
+`thai-manga-lettering` skill, which also has how to arrive at the numbers — then
+
+```sh
+uv run python -m manga_honyaku.prepare series/<work> --retag
+```
+
+which re-applies the tags and touches nothing else. It is safe at any point,
+including after pages have been translated, which is when you will want it: the
+first `sizes` are a guess, and adjusting them is a matter of rendering a chapter
+and looking at it beside the original.
+
+`characters.md`, `glossary.md`, `words.txt` and `summary.md` are written as the
+pages are read, not before. `style.md` only if this work departs from the
+conventions in the skills.
 
 ## Commands
 

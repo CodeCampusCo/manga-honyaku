@@ -1,4 +1,4 @@
-"""Stage `detect`: find text regions on a page and write work/<page>.detector.json.
+"""Stage `detect`: find text regions on a page and write build/<id>.detector.json.
 
 Geometry only. What each region says, who says it and in what order are the
 agent's job, and the fields for them are left absent rather than guessed at.

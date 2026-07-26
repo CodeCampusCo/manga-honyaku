@@ -1,6 +1,6 @@
 """Stage `prepare`: open the working file for a page.
 
-Rewrites work/<page>.detector.json as work/<page>.agent.json — the same regions, with a
+Rewrites build/<id>.detector.json as pages/<id>.agent.json — the same regions, with a
 slot for everything the agent is about to work out. From here on the working
 file is the agent's: it drops the regions it will not touch, adds the ones the
 detector never saw, and accumulates the source and the translation.
@@ -123,6 +123,12 @@ def main() -> None:
         "reading order, speakers and translations in them",
     )
     ap.add_argument(
+        "--retag",
+        action="store_true",
+        help="only re-apply the size tags from the current lettering.json, "
+        "leaving everything else in the working files alone",
+    )
+    ap.add_argument(
         "--no-ocr",
         action="store_true",
         help="leave every source empty for the agent to fill by reading the page",
@@ -130,8 +136,30 @@ def main() -> None:
     args = ap.parse_args()
 
     work = Series(args.series)
-    reader = None if args.no_ocr else load_reader()
     values = settings(args.series)
+
+    # Adjusting the bands after pages have been read is ordinary — the first ones
+    # are guessed before there is anything to measure. Re-running prepare would
+    # answer it by discarding the translation, so retagging is its own switch:
+    # it reads what the working files already say and writes back one field.
+    if args.retag:
+        bands = values.get("bands") or BANDS
+        for page in work.ids(args.pages):
+            out = work.agent(page)
+            data = json.loads(out.read_text())
+            scale = data["img_height"] / values.get("page_height", PAGE_HEIGHT)
+            moved = 0
+            for region in data["regions"]:
+                was = region.get("size")
+                region["size"] = size_of(
+                    region["box"], region.get("source") or "", bands, scale
+                )
+                moved += region["size"] != was
+            out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+            print(f"{page}  {moved} of {len(data['regions'])} retagged")
+        return
+
+    reader = None if args.no_ocr else load_reader()
 
     for page in work.ids(args.pages, prepared=False):
         out = work.agent(page)

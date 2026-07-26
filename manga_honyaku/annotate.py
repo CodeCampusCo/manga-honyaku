@@ -1,4 +1,4 @@
-"""Stage `annotate`: draw the region ids from work/<page>.detector.json onto a copy.
+"""Stage `annotate`: draw the region ids from build/<id>.detector.json onto a copy.
 
 This is what the agent reads alongside the raw page, so it must not obscure the
 thing it is annotating.

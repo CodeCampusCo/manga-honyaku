@@ -1,9 +1,9 @@
 """Stage `clean`: erase the Japanese lettering and record each bubble's interior.
 
-Writes work/<page>.clean.png and work/<page>.masks.png. Both are derived and can
-be thrown away and rebuilt from raw/ at any time.
+Writes build/<id>.clean.png and build/<id>.masks.png. Both are derived and can
+be thrown away and rebuilt from the scans at any time.
 
-Reads work/<page>.agent.json, which by this point says which regions are speech
+Reads pages/<id>.agent.json, which by this point says which regions are speech
 and which are artwork. The detector's own file is not consulted.
 
 The upstream cleaner takes a segmentation mask per bubble, from either SAM or a

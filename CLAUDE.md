@@ -4,8 +4,12 @@ A manga translation workflow. Code handles geometry — detection, OCR, text rem
 rendering. You handle comprehension — reading order, speaker attribution, and the
 translation itself.
 
-Design: `docs/specs/2026-07-26-design.md`. Read it before changing the pipeline or
-the page-file schema.
+The skills under `.claude/skills/` hold the method: `new-manga-work` for bringing
+up a manga that has not been translated here before, then `japanese-to-thai-manga`,
+`manga-text-removal` and `thai-manga-lettering`.
+
+`docs/specs/2026-07-26-design.md` is the original design — read it for why the work
+is split this way, not for how anything currently works.
 
 ## Working here
 

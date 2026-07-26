@@ -1,7 +1,7 @@
 """Stage `render`: fit the Thai into each region and draw it.
 
-Reads work/<page>.agent.json together with the cleaned artwork and the masks, and
-writes out/<page>.png. Nothing here decides anything about meaning; it decides
+Reads pages/<id>.agent.json together with the cleaned artwork and the masks, and
+writes out/<id>.png. Nothing here decides anything about meaning; it decides
 where the letters go.
 
 A region is drawn only where `clean` erased something. The mask is the record of
