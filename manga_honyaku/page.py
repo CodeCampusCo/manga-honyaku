@@ -3,7 +3,7 @@
     series/<work>/
         raw.txt         one line: where the scans are
         lettering.json  words.txt                            read by code
-        characters.md   glossary.md  style.md  summary.md    read by the translator
+        characters.md   glossary.md  summary.md              read by the translator
 
         pages/          <id>.agent.json — the translation
         build/          <id>.detector.json .boxes.png .clean.png .masks.png

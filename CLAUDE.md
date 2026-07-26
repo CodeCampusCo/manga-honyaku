@@ -32,8 +32,8 @@ pages cost what one full-resolution page costs.
 ## Translating
 
 Read the whole page before translating any of it, and keep the work's own notes
-current as you go — `characters.md` and `style.md` are what make later chapters
-consistent.
+current as you go — `characters.md` and `glossary.md` are what make later
+chapters consistent.
 
 Record uncertainty in `questions` only when being wrong would change the output.
 

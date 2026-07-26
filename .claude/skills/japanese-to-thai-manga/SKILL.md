@@ -167,8 +167,9 @@ These need no deciding per work; a work's own file records only where it departs
   meaning anything when cut in half, which is names and transliterations. Not
   phrases — see the `thai-manga-lettering` skill for what a phrase in there
   costs. Per work, for the same reason as the glossary.
-- **`style.md`** — only if this work departs from the conventions above, which
-  is rare enough that most works never need the file.
+- **`style.md`** — only if this work departs from a convention above. Most works
+  never need the file; a general rule written down per work is a copy that will
+  drift from the one it was copied from.
 - **`summary.md`** — capped length, rewritten rather than appended.
 
 ## Read the page before you translate any of it
