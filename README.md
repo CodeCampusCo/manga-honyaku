@@ -61,8 +61,11 @@ Anything the font cannot draw is reported before the page is drawn, because a
 missing glyph comes out as an empty box that still looks like lettering.
 
 Thai is laid out inside each region's own box, so the translation sits where the
-Japanese sat. Lettering is sized against the page rather than the bubble, from a
-narrow band for speech and a wide one for free-floating text. `series/glossary.md`
+Japanese sat, and centred on the bubble within it. Lettering is sized as a
+proportion of the size the original was lettered at, which `render` recovers from
+each region's box and the length of its Japanese. A region may override that with
+`scale`, and ask for a bolder cut with `weight` if `--font-bold` is given.
+`series/glossary.md`
 is read as a word list: without it a transliterated name is broken across lines
 as though it were several words.
 

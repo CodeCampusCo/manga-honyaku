@@ -54,19 +54,11 @@ THAI_MIN, THAI_MAX = 0x0E00, 0x0E7F
 ORPHAN_CLUSTERS = 3
 ORPHAN_PENALTY = 5000.0
 
-# Lettering size is set against the page, not against the bubble it goes in.
-# Sizing each bubble to what it can hold makes a two-word bubble shout and a
-# crowded one whisper; a band fixes the range and lets the fit choose within it.
-#
-# The numbers are for a one-megapixel page and are scaled by the square root of
-# the actual area, so one setting holds across scan resolutions — the same
-# normalisation MangaTranslator uses.
-#
-# In-bubble text gets a narrow band, which is what keeps a page even. Free text
-# gets a wide one: a chapter heading and a muttered aside are both free, and the
-# original draws them at wildly different sizes.
-BUBBLE_BAND = (11, 22)
-FREE_BAND = (9, 64)
+# The floor, for a one-megapixel page and scaled by the square root of the actual
+# area so it holds across scan resolutions. Below this the lettering stops being
+# readable at print size, and a region that cannot hold its line here is reported
+# rather than filled with specks.
+FLOOR = 9
 
 # How far the letters stay clear of the bubble outline, as a fraction of the
 # region's shorter side.
@@ -96,6 +88,27 @@ def missing_glyphs(font: ImageFont.FreeTypeFont, text: str) -> set[str]:
     """
     absent = _signature(font, "\U000f0000")
     return {c for c in set(text) if not c.isspace() and _signature(font, c) == absent}
+
+
+def original_size(region: dict) -> float | None:
+    """How big the Japanese was, from the box it filled and how much filled it.
+
+    Japanese sets on a square grid, so a box of area A holding n characters was
+    lettered at about sqrt(A / n) — whichever way the text ran. Over the first
+    page translated this read every ordinary bubble at 41 to 46 px and picked
+    out the three the artist drew differently: the emphatic 撮影会？ at 80, and
+    the muttered aside at 30.
+
+    Sizing the Thai from this instead of from a fixed band is what keeps that
+    difference. A band flattens it, and a fit against the bubble alone can even
+    invert it, because the bubble with the fewest words is often the biggest.
+    """
+    source = region.get("source") or ""
+    characters = len([c for c in source if not c.isspace()])
+    if not characters:
+        return None
+    x1, y1, x2, y2 = region["box"]
+    return math.sqrt((x2 - x1) * (y2 - y1) / characters)
 
 
 def lexicon(series: Path):
@@ -221,7 +234,7 @@ def wrap(
 
 def safe_area(
     mask: np.ndarray, box: list[float], inset: int
-) -> tuple[np.ndarray, int, int]:
+) -> tuple[np.ndarray, int, int, tuple[float, float]]:
     """Where the Thai may go: inside the outline, and inside the original box.
 
     The mask alone would let a line spread across the whole bubble. The box is
@@ -240,17 +253,28 @@ def safe_area(
 
     ys, xs = np.nonzero(within)
     if len(ys) == 0:
-        return np.zeros((0, 0), bool), 0, 0
+        return np.zeros((0, 0), bool), 0, 0, (0.0, 0.0)
     top, bottom, left, right = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
     # Measured on the bubble, not on the intersection: the box edge is not an
     # edge to keep clear of, only the drawn outline is.
     distance = cv2.distanceTransform(mask.astype(np.uint8), cv2.DIST_L2, 5)
     safe = (distance >= inset) & within
-    return safe[top:bottom, left:right], int(top), int(left)
+
+    bys, bxs = np.nonzero(mask)
+    centre = (float(bys.mean()) - top, float(bxs.mean()) - left)
+    return safe[top:bottom, left:right], int(top), int(left), centre
 
 
-def place(safe: np.ndarray, h: int, w: int) -> tuple[int, int] | None:
-    """Top-left of a h x w block lying wholly inside `safe`, nearest its centre."""
+def place(
+    safe: np.ndarray, h: int, w: int, centre: tuple[float, float]
+) -> tuple[int, int] | None:
+    """Top-left of a h x w block wholly inside `safe`, as near `centre` as it goes.
+
+    `centre` is the middle of the bubble, not of the area the block may occupy.
+    Text sitting central in its bubble is what the eye expects; centring it in
+    the box instead inherits whatever offset the Japanese column happened to
+    have, and the box constraint still stops it drifting further than that.
+    """
     H, W = safe.shape
     if h > H or w > W:
         return None
@@ -263,13 +287,18 @@ def place(safe: np.ndarray, h: int, w: int) -> tuple[int, int] | None:
     valid = np.argwhere(covered == h * w)
     if len(valid) == 0:
         return None
-    ys, xs = np.nonzero(safe)
-    target = np.array([ys.mean() - h / 2, xs.mean() - w / 2])
+    target = np.array([centre[0] - h / 2, centre[1] - w / 2])
     return tuple(valid[np.argsort(((valid - target) ** 2).sum(axis=1))[0]])
 
 
 def lay_out(
-    text: str, safe: np.ndarray, font_path: str, largest: int, smallest: int, custom=None
+    text: str,
+    safe: np.ndarray,
+    font_path: str,
+    largest: int,
+    smallest: int,
+    centre: tuple[float, float],
+    custom=None,
 ):
     """The biggest size at which the text fits, with its lines and position.
 
@@ -288,14 +317,19 @@ def lay_out(
                     continue
                 block_w = int(max(font.getlength(line) for line in lines)) + 2
                 block_h = line_height * len(lines)
-                at = place(safe, block_h, block_w)
+                at = place(safe, block_h, block_w, centre)
                 if at is not None:
                     return font, lines, line_height, at, block_w
     return None
 
 
 def render(
-    page: Image.Image, masks: np.ndarray, data: dict, font_path: str, custom=None
+    page: Image.Image,
+    masks: np.ndarray,
+    data: dict,
+    font_path: str,
+    custom=None,
+    weights: dict[str, str] | None = None,
 ):
     image = page.copy()
     draw = ImageDraw.Draw(image)
@@ -308,7 +342,9 @@ def render(
     if absent:
         warn(f"{data['page']}: font has no glyph for {''.join(sorted(absent))}")
 
+    weights = {"regular": font_path, **(weights or {})}
     scale = math.sqrt(image.width * image.height / 1_000_000)
+    placements = []
 
     for index, region in enumerate(data["regions"], start=1):
         target = region.get("target")
@@ -321,17 +357,50 @@ def render(
 
         x1, y1, x2, y2 = region["box"]
         inset = max(2, round(INSET * min(x2 - x1, y2 - y1)))
-        safe, top, left = safe_area(mask, region["box"], inset)
+        safe, top, left, centre = safe_area(mask, region["box"], inset)
         if not safe.any():
             warn(f"{data['page']} {region['id']}: no room inside the outline")
             continue
 
-        band = BUBBLE_BAND if region.get("placement") == "bubble" else FREE_BAND
-        smallest, largest = (max(4, round(v * scale)) for v in band)
-        laid = lay_out(target, safe, font_path, largest, smallest, custom)
+        # The Thai starts from the size the Japanese was and comes down only as
+        # far as it must. Where the text is short the ceiling holds and the
+        # emphasis survives; where it is long the fit decides, and that too
+        # tracks the original, since it is the same box divided among more
+        # characters.
+        original = original_size(region)
+        # `scale` is the agent's, for the lines the estimate cannot reach: a
+        # shout the artist drew no larger, a whisper drawn no smaller. Absent
+        # means the original's own size stands.
+        emphasis = float(region.get("scale") or 1.0)
+        smallest = max(4, round(FLOOR * scale))
+        largest = max(
+            smallest, round(original * emphasis) if original else smallest * 4
+        )
+        face = weights.get(region.get("weight") or "regular", font_path)
+        laid = lay_out(target, safe, face, largest, smallest, centre, custom)
         if laid is None:
             warn(f"{data['page']} {region['id']}: {target!r} does not fit")
             continue
+        placements.append((region, safe, top, left, centre, custom, face, laid))
+
+    # One sentence lettered at two sizes reads as two sentences. Where regions
+    # share an utterance they were one line in the original and are lettered
+    # together here, at the size the tightest of them can hold.
+    shared: dict[str, int] = {}
+    for region, *_rest, laid in placements:
+        group = region.get("utterance")
+        if group:
+            shared[group] = min(shared.get(group, 10**6), laid[0].size)
+
+    for region, safe, top, left, centre, custom, face, laid in placements:
+        group = region.get("utterance")
+        if group and shared[group] != laid[0].size:
+            again = lay_out(
+                region["target"], safe, face,
+                shared[group], shared[group], centre, custom,
+            )
+            if again is not None:
+                laid = again
 
         font, lines, line_height, (by, bx), block_w = laid
         for i, line in enumerate(lines):
@@ -353,6 +422,9 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=Path("out"))
     ap.add_argument("--font", default=FONT, help="path to a Thai .ttf")
     ap.add_argument("--series", type=Path, default=Path("series"))
+    ap.add_argument(
+        "--font-bold", help="the same face in bold, for regions the agent marks"
+    )
     args = ap.parse_args()
 
     if not args.font:
@@ -362,13 +434,14 @@ def main() -> None:
         )
     args.out.mkdir(parents=True, exist_ok=True)
     custom = lexicon(args.series)
+    weights = {"bold": args.font_bold} if args.font_bold else {}
 
     for page in args.pages:
         data = json.loads(agent_path(args.work, page.stem).read_text())
         clean = Image.open(args.work / f"{page.stem}.clean.png").convert("RGB")
         masks = np.asarray(Image.open(args.work / f"{page.stem}.masks.png"))
         out = args.out / f"{page.stem}.png"
-        render(clean, masks, data, args.font, custom).save(out)
+        render(clean, masks, data, args.font, custom, weights).save(out)
         drawn = sum(1 for r in data["regions"] if r.get("target"))
         print(f"{page.name}  {out}  {drawn} regions")
 
