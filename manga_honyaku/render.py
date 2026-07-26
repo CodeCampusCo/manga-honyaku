@@ -38,6 +38,7 @@ import json
 import math
 import os
 import sys
+import unicodedata
 from pathlib import Path
 
 import numpy as np
@@ -69,24 +70,14 @@ THAI_MIN, THAI_MAX = 0x0E00, 0x0E7F
 ORPHAN_CLUSTERS = 3
 ORPHAN_PENALTY = 5000.0
 
-# The band lettering is chosen from, and the clearance kept from the outline.
-# These are MangaTranslator's defaults, quoted for a one-megapixel page and
-# scaled by the square root of the actual area so one setting holds across scan
-# resolutions.
-#
-# The band is what makes a page even. It is narrow — a factor of two — so most
-# bubbles reach the top of it and land on the same size; only a bubble that
-# genuinely cannot hold its line comes down, and it cannot come down far. Sizing
-# each bubble to whatever it happens to hold produces a page that shouts and
-# whispers by accident, which is what this replaced.
-#
-# Upstream's own defaults are 8 and 16. Those are a configured value there and
-# are one here too: against this artwork they letter at about half what the
-# Japanese did, and 11 to 22 puts the Thai at roughly two thirds of it, which is
-# where it sits in MangaTranslator's own render of this page. `--size` retunes
-# the pair for a series.
-BAND = (11, 22)
+# Fallbacks only. Every size a page is lettered at comes from series/lettering.md
+# — a base and a set of named steps — because a letterer works from a small set
+# of sizes and the translation should use the same set the same way. Nothing here
+# is a size to letter at; these exist so a series with no file still renders.
+BASE = 22
+STEPS = {"normal": 1.0}
 PADDING = 4.0
+FLOOR = 9
 
 # How many times a column is narrowed by a tenth in search of a taller
 # block. Upstream stops at the first that does not collide and needs three;
@@ -135,17 +126,67 @@ def settings(series: Path) -> dict:
     if not path.exists():
         return {}
     found = {}
+    section = ""
     for line in path.read_text().splitlines():
+        if line.startswith("#"):
+            section = line.strip("# ").lower()
+            continue
         cells = [c.strip() for c in line.split("|")]
         if len(cells) < 4 or set(cells[1]) <= set("-: ") or not cells[2]:
             continue
-        parts = cells[2].split()
         try:
-            numbers = [float(v) for v in parts]
+            numbers = [float(v) for v in cells[2].split()]
         except ValueError:
             continue
-        found[cells[1]] = numbers[0] if len(numbers) == 1 else tuple(numbers)
+        found.setdefault(section, {})[cells[1]] = (
+            numbers[0] if len(numbers) == 1 else tuple(numbers)
+        )
     return found
+
+
+def original_size(region: dict) -> float | None:
+    """What the Japanese in this region was lettered at.
+
+    Japanese sets on a square grid, so a box of area A holding n characters was
+    lettered at about sqrt(A / n) whichever way the text ran.
+
+    A bubble holding only a pause is excluded: one character in a box sized for
+    a beat of silence reads as enormous lettering, and the dots are drawn at
+    ordinary size.
+    """
+    source = region.get("source") or ""
+    if not any(unicodedata.category(c).startswith(("L", "N")) for c in source):
+        return None
+    characters = len([c for c in source if not c.isspace()])
+    if not characters:
+        return None
+    x1, y1, x2, y2 = region["box"]
+    return math.sqrt((x2 - x1) * (y2 - y1) / characters)
+
+
+def step_for(region: dict, steps: dict) -> tuple[str, float]:
+    """The series step this region's original size falls under.
+
+    A letterer works from a small set of sizes, so the translation uses the same
+    set and the original chooses which. Nothing about this is a judgement, which
+    is why it is measured here rather than written into the working file.
+    """
+    size = original_size(region)
+    ladder = sorted(
+        ((name, v) for name, v in steps.items() if isinstance(v, tuple)),
+        key=lambda item: item[1][1],
+    )
+    if not ladder:
+        return "normal", 1.0
+    if size is None:
+        for name, (multiple, _) in ladder:
+            if name == "normal":
+                return name, multiple
+        return ladder[0][0], ladder[0][1][0]
+    for name, (multiple, ceiling) in ladder:
+        if size <= ceiling:
+            return name, multiple
+    return ladder[-1][0], ladder[-1][1][0]
 
 
 def lexicon(series: Path):
@@ -446,9 +487,12 @@ def render(
     values: dict | None = None,
 ):
     values = values or {}
-    band = values.get("band", BAND)
-    line_spacing = values.get("line_spacing", LINE_SPACING)
-    squeezes = int(values.get("squeezes", SQUEEZES))
+    sizes = values.get("sizes", {})
+    other = values.get("other values", {})
+    base = sizes.get("base", BASE)
+    steps = {k: v for k, v in sizes.items() if k != "base"} or STEPS
+    line_spacing = other.get("line_spacing", LINE_SPACING)
+    squeezes = int(other.get("squeezes", SQUEEZES))
     image = page.copy()
     draw = ImageDraw.Draw(image)
 
@@ -462,8 +506,8 @@ def render(
 
     weights = {"regular": font_path, **(weights or {})}
     scale = math.sqrt(image.width * image.height / 1_000_000)
-    smallest, largest = (max(4, round(v * scale)) for v in band)
-    padding = max(1.0, values.get("padding", PADDING) * scale)
+    smallest = max(4, round(other.get("floor", FLOOR) * scale))
+    padding = max(1.0, other.get("padding", PADDING) * scale)
     placements = []
 
     for index, region in enumerate(data["regions"], start=1):
@@ -484,10 +528,16 @@ def render(
             continue
         bx, by, bw, bh = box
 
-        # `scale` and `weight` are the agent's, for the lines the band cannot
-        # reach on its own: a shout the artist drew no larger, a whisper drawn
-        # no smaller, a word that wants a heavier cut.
-        emphasis = float(region.get("scale") or 1.0)
+        if region.get("bubble"):
+            _, multiple = step_for(region, steps)
+            wanted = max(smallest, round(base * multiple * scale))
+        else:
+            # Free-floating text has no ladder because it needs none. A bubble's
+            # box is bigger than the lettering inside it, so something has to say
+            # how big that lettering should be; a free region's box is the
+            # lettering's own extent, drawn around it. Filling the box is the
+            # answer the original already gave. A heading is this case too.
+            wanted = max(smallest, bh)
         face = weights.get(region.get("weight") or "regular", font_path)
         laid = lay_out(
             target,
@@ -495,7 +545,7 @@ def render(
             mask,
             face,
             smallest,
-            max(smallest, round(largest * emphasis)),
+            wanted,
             custom,
             line_spacing,
             squeezes,

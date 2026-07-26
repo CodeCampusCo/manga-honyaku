@@ -17,17 +17,18 @@ file is wrong to have said it.
 | | Owns | Test |
 | --- | --- | --- |
 | **Code** | Measurement and execution: the mask, the safe box, the collision test, the line breaker, drawing, and reporting what it could not do. | Could a person disagree about the answer? If yes it does not belong here. |
-| **This skill** | Method and invariant. How to choose a band; how to tell a display face from body lettering; that a stack of short lines is how Thai is set in manga at all. | Would it still hold for a different work in a different genre? |
-| **`series/lettering.md`** | Every number and name for one work: the band, the clearance, the face, what that face cannot draw, and any place this work departs from the invariants. | Would another work need a different value here? |
-| **`work/<page>.agent.json`** | One region's exception: `scale`, `weight`, `lines`. | Is this about this bubble rather than this work? |
+| **This skill** | Method and invariant. How to find a work's size steps; how to tell a display face from body lettering; that a stack of short lines is how Thai is set in manga at all. | Would it still hold for a different work in a different genre? |
+| **`series/lettering.md`** | Every number and name for one work: the size steps, the clearance, what the face cannot draw, and any place this work departs from the invariants. | Would another work need a different value here? |
+| **`work/<page>.agent.json`** | One region's exception, and only where measurement cannot reach it: `weight`, `lines`. Never size. | Is this about this bubble rather than this work, and could no measurement have found it? |
 
 Two rules keep the boundary from eroding:
 
 - **No value in this file is a value to reuse.** Numbers appear here only as the
   evidence for a method. Copying one into a new work skips the measuring.
-- **The agent tunes the band, not the bubbles.** Setting each bubble's size by
-  eye is what a band exists to prevent, and a page lettered that way shouts and
-  whispers by accident.
+- **Anything measurable is measured.** A field in the working file that a
+  program could have derived is a field that will go stale, disagree with the
+  page, and be believed anyway. Size went through three versions in the working
+  file before it turned out the original had been saying it all along.
 
 ## Take the geometry from MangaTranslator
 
@@ -56,47 +57,45 @@ verbatim, and every attempt at writing them from scratch was worse:
 
 What is *not* worth porting: their shaping stack. See below.
 
-## Size is chosen before anything is wrapped
+## Size comes from the original, in steps
 
-Fitting the largest size that happens to go in lets the shape of each box decide
-the size. Measured on one page, ten bubbles the artist lettered identically came
-out anywhere from 25 px to 45 px.
+A letterer works from a small set of sizes, not a continuum. **The translation
+should have the same set, and the original chooses which one each line gets.**
 
-Instead: a **narrow band**, quoted for a one-megapixel page and scaled by
-`sqrt(area / 1e6)` so one setting holds at any scan resolution. Binary-search
-within it.
+Recover the original's size as `sqrt(box_area / japanese_character_count)` —
+Japanese sets on a square grid, so that holds whichever way the text ran. Measure
+it across a chapter and the steps appear: on one, 154 of 212 bubbles fell between
+39 and 57 px, a tail below, a tail above, and a handful of one-off panels far
+above.
 
-**Choosing the band is the work's own measurement, not a value to copy.** Take
-a page, measure what the original was lettered at, and set the band so most
-bubbles land near two thirds of that — Thai carries a sentence in more
-characters than Japanese, so parity is not reachable and two thirds is where
-translated pages sit. Then look at the page: if it reads small, the band is
-low. MangaTranslator's defaults of 8–16 are a starting point and were about half
-of right for the first work tried here. The value goes in
-`series/lettering.md`.
+Write the steps in `series/lettering.md`: for each, the multiple of the base size
+the translation is set at, and the ceiling in the original's own pixels that
+selects it. Then **nothing is written per region.** Choosing a step is
+measurement, not judgement, so the code does it and the working file says
+nothing about size at all.
 
-Then per region, from the working file:
+Three rules keep it honest:
 
-- **`scale`** — the original's own lettering size relative to that page's median.
-  Recover it as `sqrt(box_area / japanese_character_count)`, which works because
-  Japanese sets on a square grid. Write it into the working file; do not leave it
-  to the renderer to guess.
+- **A step that overflows brings that one region down, and the step does not
+  move.** Thai carries a sentence in more characters than Japanese, so this is
+  the common case, not a failure. On one chapter 190 of 202 regions landed
+  exactly on their step and twelve came down.
+- **Steps are for bubbles only.** A bubble's box is larger than the lettering
+  inside it, so something has to say how large that lettering should be. A
+  free-floating region's box is the lettering's own extent, drawn around it —
+  it fills its box, and needs no ladder. A chapter heading is this case.
+- **A bubble holding only a pause is excluded from the measurement.** Its box is
+  sized for a beat of silence, not for the dots; measured, one character in a
+  large box reads as enormous lettering.
 
-  It recovers real emphasis rather than noise: on one page it read every ordinary
-  bubble within 41–46 px of each other and singled out exactly the three the
-  artist drew differently.
+The ceilings are absolute, in the original's pixels. Normalising against a page's
+own median instead throws away exactly the thing worth keeping: a page the artist
+lettered loud throughout gets measured against itself and comes back ordinary.
 
-  **The estimate does not work on a single horizontal line** — it reads a
-  chapter heading spanning the page as ordinary lettering. Set those by hand
-  from the measured ink height.
-
-- **`weight`** — a heading is a display face and `scale` alone will not carry it.
-  **Ink density tells the two apart**: count dark pixels over the region's box and
-  compare against the speech bubbles on the same page. A display face measures
-  roughly twice a body face.
-
-Where the Thai is longer than the Japanese it replaces, coming down in size is
-correct and expected — the band is a ceiling, not a target.
+What is left in the working file is `weight`, and it is not about size. A heading
+is a display face, and **ink density tells it apart** — count dark pixels over
+the region's box against the speech bubbles on the same page; a display face
+measures roughly twice a body face.
 
 ## Thai in manga is set to the bubble, not to the line
 
@@ -187,6 +186,11 @@ merely legal.
   than the lettering.** A four-character shout cannot be lettered large under a
   fifteen-character translation of it.
 
+- **Lengthening a Thai syllable changes its vowel; it does not append a sign.**
+  `ちゃ〜ん` drawn out is `จางงง` — the `ั` in `จัง` opens to `า`. Keeping the
+  original vowel and adding a mark after it spells a different syllable, not a
+  longer one.
+
 ## Symptoms and causes
 
 | What it looks like | What it is |
@@ -197,4 +201,6 @@ merely legal.
 | Text off-centre in a conjoined bubble | Lobe masks cut on a box edge |
 | A name split across lines | Glossary not fed to the segmenter |
 | Empty boxes that look like letters | Font lacks the glyph; nothing checked |
-| Heading no bigger than speech | `weight`/`scale` never set for it |
+| Heading no bigger than speech | Sized from the step ladder instead of filling its own box |
+| A pause bubble lettered enormous | Its one character measured against its whole box |
+| A loud page comes back ordinary | Sizes normalised against that page's own median |
