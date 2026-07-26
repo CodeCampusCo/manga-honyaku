@@ -1,7 +1,4 @@
-# Working directories — source pages and everything derived from them
-raw/
-work/
-out/
+# One directory per work: the scans, the translation, everything derived
 series/
 
 # Local planning artifacts, not part of the project record

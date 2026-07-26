@@ -30,7 +30,7 @@ from pathlib import Path
 from PIL import Image
 
 from manga_honyaku.ocr import load_reader, read
-from manga_honyaku.page import agent_path, detector_path
+from manga_honyaku.page import Series
 from manga_honyaku.render import settings
 
 # Left present and empty rather than absent, so that a fresh working file shows
@@ -114,9 +114,8 @@ def reading(
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("pages", nargs="+", type=Path)
-    ap.add_argument("--work", type=Path, default=Path("work"))
-    ap.add_argument("--series", type=Path, default=Path("series"))
+    ap.add_argument("series", type=Path, help="a work's directory under series/")
+    ap.add_argument("pages", nargs="*", help="page ids; a directory; none for all")
     ap.add_argument(
         "--force",
         action="store_true",
@@ -130,20 +129,21 @@ def main() -> None:
     )
     args = ap.parse_args()
 
+    work = Series(args.series)
     reader = None if args.no_ocr else load_reader()
     values = settings(args.series)
 
-    for page in args.pages:
-        out = agent_path(args.work, page.stem)
+    for page in work.ids(args.pages, prepared=False):
+        out = work.agent(page)
         if out.exists() and not args.force:
-            print(f"{page.name}  {out.name} exists, skipping")
+            print(f"{page}  exists, skipping")
             continue
 
-        detected = json.loads(detector_path(args.work, page.stem).read_text())
-        image = None if reader is None else Image.open(page).convert("RGB")
-        data = reading(detected, image, reader, values)
+        detected = json.loads(work.derived(page, "detector.json").read_text())
+        scan = None if reader is None else Image.open(work.scan(page)).convert("RGB")
+        data = reading(detected, scan, reader, values)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
-        print(f"{page.name}  {out.name}  {len(data['regions'])} regions")
+        print(f"{page}  {out}  {len(data['regions'])} regions")
 
 
 if __name__ == "__main__":

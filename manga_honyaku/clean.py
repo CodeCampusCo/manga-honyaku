@@ -34,7 +34,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from manga_honyaku.page import agent_path
+from manga_honyaku.page import Series
 
 # Bubble interiors are paper and everything drawn on them is ink. Nothing about
 # that split is marginal, so a fixed threshold holds up better here than an
@@ -303,16 +303,17 @@ def clean(page: Image.Image, data: dict) -> tuple[Image.Image, Image.Image]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("pages", nargs="+", type=Path)
-    ap.add_argument("--work", type=Path, default=Path("work"))
+    ap.add_argument("series", type=Path, help="a work's directory under series/")
+    ap.add_argument("pages", nargs="*", help="page ids; a directory; none for all")
     args = ap.parse_args()
 
-    for page in args.pages:
-        data = json.loads(agent_path(args.work, page.stem).read_text())
-        cleaned, masks = clean(Image.open(page).convert("RGB"), data)
-        cleaned.save(args.work / f"{page.stem}.clean.png")
-        masks.save(args.work / f"{page.stem}.masks.png")
-        print(f"{page.name}  {len(set(np.asarray(masks).flat)) - 1} bubbles cleaned")
+    work = Series(args.series)
+    for page in work.ids(args.pages):
+        data = json.loads(work.agent(page).read_text())
+        cleaned, masks = clean(Image.open(work.scan(page)).convert("RGB"), data)
+        cleaned.save(work.derived(page, "clean.png"))
+        masks.save(work.derived(page, "masks.png"))
+        print(f"{page}  {len(set(np.asarray(masks).flat)) - 1} bubbles cleaned")
 
 
 if __name__ == "__main__":

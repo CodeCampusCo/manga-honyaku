@@ -18,7 +18,7 @@ import torch
 from PIL import Image
 from transformers import RTDetrImageProcessor, RTDetrV2ForObjectDetection
 
-from manga_honyaku.page import detector_path
+from manga_honyaku.page import Series
 
 # The weights are referenced, never vendored. Set this to a local directory to
 # reuse a copy you already have instead of filling the Hugging Face cache again.
@@ -185,27 +185,28 @@ def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) ->
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("pages", nargs="+", type=Path)
-    ap.add_argument("--work", type=Path, default=Path("work"))
+    ap.add_argument("series", type=Path, help="a work's directory under series/")
+    ap.add_argument("pages", nargs="*", help="page ids; a directory; none for all")
     ap.add_argument("--conf", type=float, default=0.35)
     ap.add_argument("--imgsz", type=int, default=640)
     args = ap.parse_args()
 
-    args.work.mkdir(parents=True, exist_ok=True)
+    work = Series(args.series)
     model, processor = load_detector()
 
-    for page in args.pages:
+    for page in work.ids(args.pages, prepared=False):
         # Overwriting is safe: this file holds nothing but detector output. What
-        # the agent works out lives in <page>.agent.json and is never written
+        # the agent works out lives in pages/<id>.agent.json and is never written
         # here — see page.py for why they are separate.
-        out = detector_path(args.work, page.stem)
-        image = Image.open(page).convert("RGB")
+        scan = work.scan(page)
+        out = work.derived(page, "detector.json")
+        image = Image.open(scan).convert("RGB")
         found = detect(image, model, processor, conf=args.conf, imgsz=args.imgsz)
-        data = page_file(page, image, found, args.conf, args.imgsz)
+        data = page_file(scan, image, found, args.conf, args.imgsz)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
         counts = {c: sum(1 for f in found if f[0] == c) for c in sorted({f[0] for f in found})}
-        print(f"{page.name}  {out}  {counts}")
+        print(f"{page}  {out}  {counts}")
 
 
 if __name__ == "__main__":

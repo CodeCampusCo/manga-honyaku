@@ -58,7 +58,7 @@ stalker says `ฉัน` while he is arguing and `กู` in the panel where he 
 knife, and that shift does work the vocabulary alone cannot. The grid is a
 starting position, not a lookup table.
 
-What belongs in `series/style.md` is only the exception: which character, on
+What belongs in `style.md` is only the exception: which character, on
 which page, is allowed past the default.
 
 ## Honorifics carry the same information — read them
@@ -116,25 +116,25 @@ longer one.
 The same instinct handles the symbols a Thai comic face does not carry — **♥ ♡
 ★ ☆ ♪ 「」 ○** are tone markers, so render them the way Thai marks tone: in the
 wording and a drawn-out vowel, not by substituting a symbol the face happens to
-have. What a particular work does about them belongs in `series/lettering.md`.
+have. What a particular work does about them belongs in `lettering.md`.
 
 ## Keep the series files current as you go
 
-- **`series/characters.md`** — identify by costume and props first; faces and
+- **`characters.md`** — identify by costume and props first; faces and
   proportions are deformed for effect and are not evidence. Record each
   character's speech habits, because those are what make chapter 8 sound like
   chapter 1. Name a voice group (`passerby`, `commenter`) rather than inventing
   a character, and give it its own entry the moment it is named.
-- **`series/glossary.md`** — every agreed transliteration and term, with the
+- **`glossary.md`** — every agreed transliteration and term, with the
   reason. Nothing reads it but you; it is what makes chapter 8 say what chapter
   1 said.
-- **`series/words.txt`** — one Thai word per line, and the line breaker's whole
+- **`words.txt`** — one Thai word per line, and the line breaker's whole
   dictionary. A different list for a different reason: it holds what stops
   meaning anything when cut in half, which is names and transliterations. Not
   phrases — see the `thai-manga-lettering` skill for what a phrase in there
   costs.
-- **`series/summary.md`** — capped length, rewritten rather than appended.
-- **`series/style.md`** — the conventions this work settled on.
+- **`summary.md`** — capped length, rewritten rather than appended.
+- **`style.md`** — the conventions this work settled on.
 
 ## Read the page before you translate any of it
 

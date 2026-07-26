@@ -45,7 +45,7 @@ from pythainlp.corpus.common import thai_words
 from pythainlp.tokenize import subword_tokenize, word_tokenize
 from pythainlp.util import Trie
 
-from manga_honyaku.page import agent_path
+from manga_honyaku.page import Series
 
 # The project letters in iannnnn's 2005_iannnnnJPG, a Thai comic face, and the
 # bold cut derived from it. Not in this repository: its own name table records
@@ -309,7 +309,7 @@ def render(
     values = values or {}
     sizes = values.get("sizes") or SIZES
     line_spacing = values.get("line_spacing", LINE_SPACING)
-    scale = image.height / values.get("page_height", PAGE_HEIGHT)
+    scale = page.height / values.get("page_height", PAGE_HEIGHT)
     image = page.copy()
     draw = ImageDraw.Draw(image)
 
@@ -395,11 +395,9 @@ def render(
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("pages", nargs="+", type=Path)
-    ap.add_argument("--work", type=Path, default=Path("work"))
-    ap.add_argument("--out", type=Path, default=Path("out"))
+    ap.add_argument("series", type=Path, help="a work's directory under series/")
+    ap.add_argument("pages", nargs="*", help="page ids; a directory; none for all")
     ap.add_argument("--font", default=FONT, help="path to a Thai .ttf")
-    ap.add_argument("--series", type=Path, default=Path("series"))
     ap.add_argument(
         "--font-bold",
         default=FONT_BOLD,
@@ -414,7 +412,7 @@ def main() -> None:
             "point --font / MANGA_HONYAKU_FONT at another Thai face whose marks "
             "have zero advance — see this module's docstring."
         )
-    args.out.mkdir(parents=True, exist_ok=True)
+    work = Series(args.series)
     custom = lexicon(args.series)
     values = settings(args.series)
     weights = (
@@ -423,14 +421,14 @@ def main() -> None:
         else {}
     )
 
-    for page in args.pages:
-        data = json.loads(agent_path(args.work, page.stem).read_text())
-        clean = Image.open(args.work / f"{page.stem}.clean.png").convert("RGB")
-        masks = np.asarray(Image.open(args.work / f"{page.stem}.masks.png"))
-        out = args.out / f"{page.stem}.png"
+    for page in work.ids(args.pages):
+        data = json.loads(work.agent(page).read_text())
+        clean = Image.open(work.derived(page, "clean.png")).convert("RGB")
+        masks = np.asarray(Image.open(work.derived(page, "masks.png")))
+        out = work.rendered(page)
         render(clean, masks, data, args.font, custom, weights, values).save(out)
         drawn = sum(1 for r in data["regions"] if r.get("target"))
-        print(f"{page.name}  {out}  {drawn} regions")
+        print(f"{page}  {out}  {drawn} regions")
 
 
 if __name__ == "__main__":

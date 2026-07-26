@@ -14,7 +14,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from manga_honyaku.page import detector_path
+from manga_honyaku.page import Series
 
 COLOURS = {"bubble": (60, 120, 255), "free": (255, 40, 40)}
 
@@ -46,15 +46,16 @@ def annotate(image: Image.Image, regions: list[dict]) -> Image.Image:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("pages", nargs="+", type=Path)
-    ap.add_argument("--work", type=Path, default=Path("work"))
+    ap.add_argument("series", type=Path, help="a work's directory under series/")
+    ap.add_argument("pages", nargs="*", help="page ids; a directory; none for all")
     args = ap.parse_args()
 
-    for page in args.pages:
-        data = json.loads(detector_path(args.work, page.stem).read_text())
-        out = args.work / f"{page.stem}.boxes.png"
-        annotate(Image.open(page).convert("RGB"), data["regions"]).save(out)
-        print(f"{page.name}  {out}  {len(data['regions'])} regions")
+    work = Series(args.series)
+    for page in work.ids(args.pages, prepared=False):
+        data = json.loads(work.derived(page, "detector.json").read_text())
+        out = work.derived(page, "boxes.png")
+        annotate(Image.open(work.scan(page)).convert("RGB"), data["regions"]).save(out)
+        print(f"{page}  {out}  {len(data['regions'])} regions")
 
 
 if __name__ == "__main__":
