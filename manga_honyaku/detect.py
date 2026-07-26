@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 import torch
@@ -33,6 +34,10 @@ DEVICE = torch.device("cpu")
 # Region ids carry a per-class prefix. Deriving the prefix from the class name
 # would give text_bubble and text_free the same letter and collide.
 PREFIX = {"text_bubble": "B", "text_free": "F"}
+
+
+def warn(message: str) -> None:
+    print(f"warning: {message}", file=sys.stderr)
 
 
 def _iou(a: list[float], b: list[float]) -> float:
@@ -105,30 +110,61 @@ def detect(image: Image.Image, model, processor, conf: float = 0.35, imgsz: int 
     return dedupe(found)
 
 
+def resolve_bubble(box: list[float], bubbles: list[list[float]]):
+    """The bubble box enclosing this text, or None if no bubble does.
+
+    Conjoined bubbles are detected one lobe at a time and the lobes overlap, so
+    where several enclose the text, the smallest is the lobe it sits in.
+    """
+    cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+    holding = [b for b in bubbles if b[0] <= cx <= b[2] and b[1] <= cy <= b[3]]
+    if not holding:
+        return None
+    return min(holding, key=lambda b: (b[2] - b[0]) * (b[3] - b[1]))
+
+
 def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) -> dict:
     """Build the page file.
 
     Only text-carrying detections become regions; a `bubble` detection carries
-    no words and numbering them alongside the text would double the ids the
-    agent has to read. They are still kept, unnumbered, because `clean` needs
-    the outline to find a bubble's interior and detect is the only stage that
-    is allowed to load the model.
+    no words, and numbering them alongside the text would double the ids the
+    agent has to read. Each in-bubble region absorbs its own outline instead, so
+    a region describes itself completely and no later stage repeats this match.
+
+    The three ways the match can come out wrong are all reported here. Every one
+    of them would otherwise surface two stages later as a bubble whose text was
+    quietly left in place.
     """
+    bubbles = [f[1] for f in found if f[0] == "bubble"]
     text = [f for f in found if f[0] in PREFIX]
     text.sort(key=lambda f: (f[0], f[1][1]))  # class, then down the page
 
     counters: dict[str, int] = {}
     regions = []
+    holders: dict[tuple, list[str]] = {}
     for name, box, score in text:
         counters[name] = counters.get(name, 0) + 1
-        regions.append(
-            {
-                "id": f"{PREFIX[name]}{counters[name]}",
-                "box": box,
-                "detector_class": name,
-                "score": score,
-            }
-        )
+        region = {
+            "id": f"{PREFIX[name]}{counters[name]}",
+            "box": box,
+            "detector_class": name,
+            "score": score,
+        }
+        if name == "text_bubble":
+            bubble = resolve_bubble(box, bubbles)
+            if bubble is None:
+                warn(f"{page.name} {region['id']}: in a bubble that was not detected")
+            else:
+                region["bubble"] = bubble
+                holders.setdefault(tuple(bubble), []).append(region["id"])
+        regions.append(region)
+
+    for bubble, ids in holders.items():
+        if len(ids) > 1:
+            warn(f"{page.name} {', '.join(ids)}: share one bubble; masks will collide")
+    for bubble in bubbles:
+        if tuple(bubble) not in holders:
+            warn(f"{page.name}: bubble at {[int(v) for v in bubble]} holds no text")
 
     return {
         "version": 1,
@@ -137,7 +173,6 @@ def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) ->
         "img_height": image.height,
         "detector": {"model": DETECTOR, "conf": conf, "imgsz": imgsz},
         "regions": regions,
-        "bubbles": [f[1] for f in found if f[0] == "bubble"],
     }
 
 

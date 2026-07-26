@@ -3,6 +3,9 @@
 Writes work/<page>.clean.png and work/<page>.masks.png. Both are derived and can
 be thrown away and rebuilt from raw/ at any time.
 
+Reads work/<page>.read.json, which by this point says which regions are speech
+and which are artwork. The detector's own file is not consulted.
+
 The upstream cleaner takes a segmentation mask per bubble, from either SAM or a
 YOLO model. Excluding `ultralytics` took the YOLO one with it, and RT-DETR
 returns boxes, not masks. Rather than add a segmentation model back, the
@@ -24,22 +27,26 @@ Derived from meangrinch/MangaTranslator (Apache-2.0); see NOTICE.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
 
-from manga_honyaku.page import load_page
+from manga_honyaku.page import reading_path
 
 # Bubble interiors are paper and everything drawn on them is ink. Nothing about
 # that split is marginal, so a fixed threshold holds up better here than an
 # adaptive one, which chases the screentone in the artwork behind the bubble.
 PAPER = 200
 
-# Regions the agent has ruled out. Erasing a declined region would leave a hole
-# with nothing to put in it, and an effect drawn as lettering is artwork.
-KEEP = {"sfx"}
+# Classes that are recorded but never painted over. An effect drawn as lettering
+# is artwork, and so is a sign or a phone screen — what it says reaches the
+# reader through the translation, not by overwriting the drawing. A declined
+# region is left for a different reason: erasing it would leave a hole with
+# nothing to put in it.
+KEEP = {"sfx", "image_text"}
 
 def _touches_edge(stats: np.ndarray, i: int, h: int, w: int) -> bool:
     return (
@@ -104,22 +111,6 @@ def interior(
     return mask
 
 
-def lobe_for(region: dict, bubbles: list[list[float]]) -> list[float] | None:
-    """The bubble box holding this region's text.
-
-    Conjoined bubbles are detected one lobe at a time and the lobes overlap, so
-    where several contain the text, the smallest is the lobe it belongs to.
-    """
-    x1, y1, x2, y2 = region["box"]
-    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
-    holding = [
-        b for b in bubbles if b[0] <= cx <= b[2] and b[1] <= cy <= b[3]
-    ]
-    if not holding:
-        return None
-    return min(holding, key=lambda b: (b[2] - b[0]) * (b[3] - b[1]))
-
-
 def free_mask(shape: tuple[int, int], box: list[float]) -> np.ndarray:
     """The box itself, not a pixel more.
 
@@ -144,8 +135,12 @@ def clean(page: Image.Image, data: dict) -> tuple[Image.Image, Image.Image]:
         if region.get("status") == "declined" or region.get("class") in KEEP:
             continue
 
-        if region["detector_class"] == "text_bubble":
-            box = lobe_for(region, data.get("bubbles", []))
+        # A region the agent added has no detector_class at all: nothing found
+        # it, so nothing classified it.
+        if region.get("detector_class") == "text_bubble":
+            # detect resolves and reports a missing outline; a region that
+            # reaches here without one is free-floating in all but name.
+            box = region.get("bubble")
             if box is None:
                 continue
             mask = interior(gray, box, region["box"])
@@ -175,7 +170,7 @@ def main() -> None:
     args = ap.parse_args()
 
     for page in args.pages:
-        data = load_page(args.work, page.stem)
+        data = json.loads(reading_path(args.work, page.stem).read_text())
         cleaned, masks = clean(Image.open(page).convert("RGB"), data)
         cleaned.save(args.work / f"{page.stem}.clean.png")
         masks.save(args.work / f"{page.stem}.masks.png")

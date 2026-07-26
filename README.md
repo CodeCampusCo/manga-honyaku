@@ -25,24 +25,31 @@ export MANGA_HONYAKU_DETECTOR=/path/to/comic-text-and-bubble-detector
 Each stage is a separate command over the same `work/` directory, so editing a
 translation and re-rendering never re-runs detection.
 
+The pipeline runs one way — each stage reads the artifact before it and writes
+the one after.
+
 ```sh
 uv run python -m manga_honyaku.detect   raw/*.jpg --work work   # -> work/<page>.json
 uv run python -m manga_honyaku.annotate raw/*.jpg --work work   # -> work/<page>.boxes.png
+uv run python -m manga_honyaku.prepare  raw/*.jpg --work work   # -> work/<page>.read.json
+#   the agent reads the page and edits work/<page>.read.json
 uv run python -m manga_honyaku.clean    raw/*.jpg --work work   # -> work/<page>.clean.png
                                                                 #    work/<page>.masks.png
 ```
 
-Every one of those files is derived and can be deleted. The agent's reading —
-classes, order, speakers, translations — is the exception, and lives apart from
-them in `work/<page>.read.json` so that re-running `detect` cannot overwrite it.
+`work/<page>.read.json` is the working file and the only one that cannot be
+rebuilt: everything the agent works out about a page is written into it. `detect`
+overwrites its own output freely; `prepare` will not overwrite a working file
+without `--force`. To change detection after a page has been read, start again
+from raw.
 
 `--conf` sets the detection threshold (default 0.35).
 
-`clean` erases in-bubble text by repainting the bubble's own paper. Free-floating
-text is painted out as a plain white rectangle, and only where the agent has
-classified the region — an unclassified one might be a sound effect, which is
-artwork and has to survive. On a page margin the white is invisible; over drawn
-artwork it is a visible patch.
+`clean` erases in-bubble text by repainting the bubble's own paper, and paints
+free-floating text out as a plain white rectangle. It only touches regions the
+agent has classified, and never those classed `sfx` or `image_text` — both are
+artwork. On a page margin the white is invisible; over drawn artwork it is a
+visible patch.
 
 `render` is not implemented yet.
 
