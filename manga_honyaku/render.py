@@ -8,19 +8,18 @@ A region is drawn only where `clean` erased something. The mask is the record of
 that: no mask, no space to draw into, and a sound effect or a phone screen that
 was deliberately left alone does not get Thai painted over it.
 
-The geometry, the sizing and the collision test are MangaTranslator's, ported
-rather than reinvented. A rectangle is grown from the bubble's own centre out to
-its outline — moving that centre to the deepest point when it lands in the waist
-between two conjoined lobes — the size is binary-searched within a narrow band
-quoted for a one-megapixel page, and a laid-out block is checked corner by
-corner against the mask rather than against that rectangle.
+There is no geometry here, and that is the point. The rectangle the Thai goes
+into is the region's own `box` — where the original lettering sat. The artist
+already chose it, and it is already the right shape: tall and narrow where the
+Japanese ran down a bubble. Set the Thai into it, let the line breaker fill it,
+and come down a size while it overflows.
 
-Thai is written horizontally, but a bubble is taller than it is wide, and Thai
-lettering in manga is set to the bubble: a stack of short lines rather than two
-long ones. So the column is narrowed a tenth at a time and the layout kept is
-the one that stands tallest — the most lines the bubble will hold. That last
-part is where this departs from upstream, which stops at the first width that
-does not collide and so keeps the widest, shortest block that is merely legal.
+Everything that used to stand between those two sentences is gone: the
+centroid-expansion rectangle, the corner collision test, the column narrowed a
+tenth at a time in search of a taller block, and the ladder of finer and finer
+break points. Each was a way of recovering a column the box already gave, and
+each needed patches of its own — protecting names from being split, rejoining
+lengthened vowels — that vanish with it.
 
 Thai needs no complex-text shaping here. Its marks stack above and below the base
 letter, and in a font that gives them zero advance — every Thai comic face does —
@@ -62,15 +61,6 @@ FONT_BOLD = os.environ.get(
 # word ends.
 ENGINE = os.environ.get("MANGA_HONYAKU_SEGMENTER", "newmm")
 
-# How finely a line may be broken, tried in this order at every size before the
-# size comes down. A bubble is a tall oval because Japanese ran down it, so a
-# phrase that will not wrap across is stacked down instead: `อะไรนะ` set as
-# `อะ / ไร / นะ` is how Thai manga has filled these bubbles for as long as there
-# has been Thai manga. `dict` breaks at syllables — `ติด|ต่อ|มา`, `ขอบ|คุณ` —
-# and clusters are below it, for the word no syllable will fit either, where
-# `ติ|ด|ต่|อ|มา` reads as a typo but is still better than nothing.
-GRAINS = (None, "dict", "tcc_p")
-
 THAI_MIN, THAI_MAX = 0x0E00, 0x0E7F
 
 # Marks that open rather than close, and so belong to the word after them.
@@ -88,13 +78,7 @@ ORPHAN_PENALTY = 5000.0
 # is a size to letter at; these exist so a series with no file still renders.
 BASE = 22
 STEPS = {"normal": 1.0}
-PADDING = 4.0
 FLOOR = 9
-
-# How many times a column is narrowed by a tenth in search of a taller
-# block. Upstream stops at the first that does not collide and needs three;
-# going on until the text will not wrap any narrower needs more.
-SQUEEZES = 9
 
 # Thai stacks marks above and below the base letter, so lines need more room
 # between them than the font's own metrics suggest.
@@ -321,152 +305,30 @@ def break_lines(
 
 
 def wrap(
-    text: str, font: ImageFont.FreeTypeFont, width: float, grain, custom=None
+    text: str, font: ImageFont.FreeTypeFont, width: float, custom=None
 ) -> list[str] | None:
-    """Lines at one column width, breaking no finer than `grain` asks for.
-
-    A token wider than the column is split; anything that fits is left whole, so
-    a finer grain only ever reaches the words that need it.
-    """
-    tokens = tokenise(text, custom)
-    if grain:
-        broken: list[tuple[str, bool]] = []
-        for token, space in tokens:
-            if font.getlength(token) <= width:
-                broken.append((token, space))
-            else:
-                parts = [p for p in subword_tokenize(token, engine=grain) if p]
-                broken.extend(
-                    (part, space if k == 0 else False) for k, part in enumerate(parts)
-                )
-        tokens = broken
-    return break_lines(tokens, font, width)
-
-
-def safe_box(mask: np.ndarray, padding: float):
-    """The rectangle a line may occupy inside a bubble.
-
-    Ported from MangaTranslator's calculate_centroid_expansion_box. The mask is
-    padded by a pixel first so that a bubble touching the page edge does not get
-    an inflated distance there; everything at least `padding` deep is the safe
-    area; its centroid is the anchor.
-
-    The step that matters for conjoined bubbles: where the centroid falls in a
-    constriction — less than seven tenths of the deepest point — it sits in the
-    waist between two lobes, and the anchor moves to the pole of inaccessibility
-    instead. Then four rays from the anchor give the nearest edge in each
-    direction, and the smaller of each opposing pair, doubled, is a rectangle
-    centred on the anchor and wholly inside the bubble.
-    """
-    import cv2
-
-    if mask is None or not mask.any():
-        return None
-    padded = np.zeros((mask.shape[0] + 2, mask.shape[1] + 2), np.uint8)
-    padded[1:-1, 1:-1] = mask.astype(np.uint8) * 255
-    distance = cv2.distanceTransform(padded, cv2.DIST_L2, cv2.DIST_MASK_PRECISE)[
-        1:-1, 1:-1
-    ]
-    safe = ((distance >= padding).astype(np.uint8)) * 255
-    if not safe.any():
-        return None
-
-    moments = cv2.moments(safe)
-    if moments["m00"] == 0:
-        return None
-    cx = moments["m10"] / moments["m00"]
-    cy = moments["m01"] / moments["m00"]
-
-    _, deepest, _, pole = cv2.minMaxLoc(distance)
-    h, w = safe.shape
-    xi = max(0, min(int(round(cx)), w - 1))
-    yi = max(0, min(int(round(cy)), h - 1))
-    if distance[yi, xi] < deepest * 0.70:
-        cx, cy = float(pole[0]), float(pole[1])
-        xi, yi = int(round(cx)), int(round(cy))
-
-    if safe[yi, xi] != 255:
-        pixels = np.argwhere(safe == 255)
-        nearest = np.argmin(((pixels - np.array([cy, cx])) ** 2).sum(axis=1))
-        yi, xi = (int(v) for v in pixels[nearest])
-        cx, cy = float(xi), float(yi)
-
-    left = np.where(safe[yi, 0:xi] == 0)[0]
-    right = np.where(safe[yi, xi:] == 0)[0]
-    up = np.where(safe[0:yi, xi] == 0)[0]
-    down = np.where(safe[yi:, xi] == 0)[0]
-    to_left = xi - (left.max() if left.size else 0)
-    to_right = right.min() if right.size else w - xi
-    to_top = yi - (up.max() if up.size else 0)
-    to_bottom = down.min() if down.size else h - yi
-
-    half_w = min(to_left, to_right)
-    half_h = min(to_top, to_bottom)
-    half_w = half_w - 1 if half_w > 1 else half_w
-    half_h = half_h - 1 if half_h > 1 else half_h
-    box_w, box_h = 2 * max(0, half_w), 2 * max(0, half_h)
-    if box_w <= 0 or box_h <= 0:
-        return None
-    return int(round(cx - box_w / 2)), int(round(cy - box_h / 2)), box_w, box_h
-
-
-def collides(lines, font, line_height: int, box, mask: np.ndarray) -> bool:
-    """Whether any line would cross the outline. Ported from _check_collision.
-
-    Each line is centred in the box and the block is centred in it vertically,
-    which is where it will be drawn; the four corners of every line are then
-    tested against the mask. Corners are what a rectangle has and an oval does
-    not, so they are where a block that fits the box but not the bubble sticks
-    out.
-    """
-    bx, by, bw, bh = box
-    mask_h, mask_w = mask.shape
-    y = by + (bh - line_height * len(lines)) / 2
-    for line in lines:
-        line_w = font.getlength(line)
-        x = bx + (bw - line_w) / 2
-        y1, y2 = int(y), int(y + line_height)
-        x1, x2 = int(x), int(x + line_w)
-        for px, py in ((x1, y1), (x2, y1), (x1, y2), (x2, y2)):
-            if not mask[
-                max(0, min(py, mask_h - 1)), max(0, min(px, mask_w - 1))
-            ]:
-                return True
-        y += line_height
-    return False
+    """Lines that fit the column, or None when a word is wider than it is."""
+    return break_lines(tokenise(text, custom), font, width)
 
 
 def lay_out(
     text: str,
     box,
-    mask: np.ndarray,
     font_path: str,
     smallest: int,
     largest: int,
     custom=None,
     line_spacing: float = LINE_SPACING,
-    squeezes: int = SQUEEZES,
-    lines_wanted: int | None = None,
 ):
-    """The largest size that fits inside the outline, not merely inside the box.
+    """The largest size at which the text fits the box.
 
-    Thai is written horizontally, but a bubble is taller than it is wide, and
-    Thai lettering in manga is set to the bubble rather than to the line: a
-    stack of short lines rather than two long ones. Thai readers read it that
-    way and have for as long as manga has been translated into Thai.
+    The box is where the original's lettering sat, so it is already the shape
+    the translation wants — tall and narrow where the Japanese ran down a
+    bubble. That makes the whole of layout two steps: break to the column the
+    box gives, and come down a size while the stack is taller than the box.
 
-    So height is what is maximised, not size alone and not width. The column is
-    narrowed a tenth at a time and every layout that fits is kept; the one
-    chosen is the one that stands tallest — the most lines the bubble will hold.
-
-    The narrowing and the collision test are MangaTranslator's. What differs is
-    where it stops: upstream squeezes only until nothing collides, which leaves
-    the first, widest, shortest block that happens to be legal. Taking the
-    tallest instead is what fills a bubble that is taller than it is wide.
-
-    Grain is tried inside the size search, not around it, so a phrase that will
-    not wrap at word boundaries is stacked more finely at the size the original
-    asked for rather than lettered smaller to make the words fit across.
+    Nothing searches for a better column, because there is no better column to
+    find. Anything that overflows is answered by size, and only by size.
     """
     _, _, width, height = box
     best = None
@@ -477,33 +339,9 @@ def lay_out(
             break
         font = ImageFont.truetype(font_path, size)
         line_height = int(size * line_spacing)
-
-        fitted = None
-        for grain in GRAINS:
-            column = float(width)
-            for _ in range(squeezes):
-                lines = wrap(text, font, column, grain, custom)
-                if lines is None:
-                    # Narrowing only makes it taller; it will not start fitting.
-                    break
-                if line_height * len(lines) > height:
-                    break
-                if not collides(lines, font, line_height, box, mask):
-                    # `lines` on a region is the agent overruling the default
-                    # rule for a bubble where standing tallest is wrong — a
-                    # short line in a wide bubble stacked into syllables.
-                    if lines_wanted and len(lines) != lines_wanted:
-                        pass
-                    elif fitted is None or len(lines) > len(fitted):
-                        fitted = lines
-                column *= 0.90
-            if fitted is not None:
-                # A coarser grain held at this size. Going finer would only buy
-                # breaks inside words that did not need breaking.
-                break
-
-        if fitted is not None:
-            best = (font, fitted, line_height)
+        lines = wrap(text, font, width, custom)
+        if lines is not None and line_height * len(lines) <= height:
+            best = (font, lines, line_height)
             low = size + 1
         else:
             high = size - 1
@@ -525,7 +363,6 @@ def render(
     base = sizes.get("base", BASE)
     steps = {k: v for k, v in sizes.items() if k != "base"} or STEPS
     line_spacing = other.get("line_spacing", LINE_SPACING)
-    squeezes = int(other.get("squeezes", SQUEEZES))
     image = page.copy()
     draw = ImageDraw.Draw(image)
 
@@ -540,7 +377,6 @@ def render(
     weights = {"regular": font_path, **(weights or {})}
     scale = math.sqrt(image.width * image.height / 1_000_000)
     smallest = max(4, round(other.get("floor", FLOOR) * scale))
-    padding = max(1.0, other.get("padding", PADDING) * scale)
     placements = []
 
     for index, region in enumerate(data["regions"], start=1):
@@ -552,38 +388,21 @@ def render(
             # clean left this one alone, so there is nowhere to put the Thai.
             continue
 
-        # Clearance is for the drawn outline. A free-floating region has none:
-        # its mask is the text's own extent, and holding letters off the edge of
-        # that costs size for nothing to gain.
-        box = safe_box(mask, padding if region.get("bubble") else 1.0)
-        if box is None:
-            warn(f"{data['page']} {region['id']}: no room inside the outline")
-            continue
+        # Where the original's lettering sat, and so where this goes.
+        x1, y1, x2, y2 = region["box"]
+        box = (x1, y1, x2 - x1, y2 - y1)
         bx, by, bw, bh = box
 
         if region.get("bubble"):
             _, multiple = step_for(region, steps)
             wanted = max(smallest, round(base * multiple * scale))
         else:
-            # Free-floating text has no ladder because it needs none. A bubble's
-            # box is bigger than the lettering inside it, so something has to say
-            # how big that lettering should be; a free region's box is the
-            # lettering's own extent, drawn around it. Filling the box is the
-            # answer the original already gave. A heading is this case too.
+            # Free-floating text takes no step. Its box is the lettering's own
+            # extent, drawn around it, so filling that box is the answer the
+            # original already gave. A chapter heading is this case.
             wanted = max(smallest, bh)
         face = weights.get(region.get("weight") or "regular", font_path)
-        laid = lay_out(
-            target,
-            box,
-            mask,
-            face,
-            smallest,
-            wanted,
-            custom,
-            line_spacing,
-            squeezes,
-            region.get("lines"),
-        )
+        laid = lay_out(target, box, face, smallest, wanted, custom, line_spacing)
         if laid is None:
             warn(f"{data['page']} {region['id']}: {target!r} does not fit")
             continue
@@ -603,8 +422,8 @@ def render(
         group = region.get("utterance")
         if group and shared[group] != laid[0].size:
             again = lay_out(
-                region["target"], box, mask, face, shared[group], shared[group],
-                custom, line_spacing, squeezes, region.get("lines"),
+                region["target"], box, face, shared[group], shared[group],
+                custom, line_spacing,
             )
             if again is not None:
                 laid = again
