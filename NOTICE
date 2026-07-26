@@ -10,5 +10,6 @@ Derived files carry a note in their module docstring. The detection stage
 follows that project's RT-DETR adapter and model manager; the YOLO paths, and
 with them the AGPL-3.0 `ultralytics` dependency, are not carried over.
 
-Model weights are not distributed with this repository. The detector is
-`ogkalu/comic-text-and-bubble-detector` (Apache-2.0), downloaded on first run.
+Model weights are not distributed with this repository. Both are Apache-2.0 and
+are downloaded on first run: `ogkalu/comic-text-and-bubble-detector` for
+detection, and `kha-white/manga-ocr-base` for reading the Japanese.

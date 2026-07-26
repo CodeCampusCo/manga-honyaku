@@ -32,7 +32,8 @@ the one after.
 uv run python -m manga_honyaku.detect   raw/*.jpg --work work   # -> work/<page>.detector.json
 uv run python -m manga_honyaku.annotate raw/*.jpg --work work   # -> work/<page>.boxes.png
 uv run python -m manga_honyaku.prepare  raw/*.jpg --work work   # -> work/<page>.agent.json
-#   the agent reads the page and edits work/<page>.agent.json
+#   prepare also OCRs the Japanese into it; --no-ocr leaves that to the agent
+#   the agent then reads the page and edits work/<page>.agent.json
 uv run python -m manga_honyaku.clean    raw/*.jpg --work work   # -> work/<page>.clean.png
                                                                 #    work/<page>.masks.png
 ```
@@ -43,7 +44,8 @@ overwrites its own output freely; `prepare` will not overwrite a working file
 without `--force`. To change detection after a page has been read, start again
 from raw.
 
-`--conf` sets the detection threshold (default 0.35).
+`--conf` sets the detection threshold (default 0.35). Detection and OCR both
+download their weights on first run; neither is vendored.
 
 `clean` erases in-bubble text by repainting the bubble's own paper, and paints
 free-floating text out as a plain white rectangle. It only touches regions the

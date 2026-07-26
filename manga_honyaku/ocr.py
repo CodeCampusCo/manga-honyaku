@@ -1,0 +1,60 @@
+"""Read the Japanese out of a region, for `prepare`.
+
+Weights from `kha-white/manga-ocr-base` (Apache-2.0), referenced and never
+vendored, like the detector. The `manga_ocr` package around them is not used:
+it is a thin wrapper, and its tokenizer needs mecab and a fast-tokenizer
+conversion that recent transformers will not do without extra dependencies.
+
+None of that is needed to *decode*. The vocabulary is one character per line
+with no word pieces, so turning generated ids back into text is a lookup and a
+join. mecab only ever mattered for splitting input text, which nothing here does.
+"""
+
+from __future__ import annotations
+
+import os
+
+import torch
+from huggingface_hub import hf_hub_download
+from PIL import Image
+from transformers import VisionEncoderDecoderModel, ViTImageProcessor
+
+READER = os.environ.get("MANGA_HONYAKU_OCR", "kha-white/manga-ocr-base")
+
+# Kept on CPU with the detector. Both models are small and run once per page,
+# and pinning the device once is what keeps the MPS float64 failure from
+# reappearing somewhere new.
+DEVICE = torch.device("cpu")
+
+SPECIAL = {"[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"}
+
+# The crop is grown a little before reading. Free-floating boxes are cropped
+# tight enough to clip the first glyph, which is the margin question the design
+# leaves open — and unlike erasing, where any margin at all cuts into artwork,
+# reading a clipped glyph costs nothing but a wider crop.
+MARGIN = 0.05
+
+
+def load_reader():
+    model = VisionEncoderDecoderModel.from_pretrained(READER).to(DEVICE).eval()
+    processor = ViTImageProcessor.from_pretrained(READER)
+    vocab = open(hf_hub_download(READER, "vocab.txt")).read().splitlines()
+    return model, processor, vocab
+
+
+def read(image: Image.Image, box: list[float], reader) -> str:
+    model, processor, vocab = reader
+    x1, y1, x2, y2 = box
+    pad = MARGIN * min(x2 - x1, y2 - y1)
+    crop = image.crop(
+        (
+            max(x1 - pad, 0),
+            max(y1 - pad, 0),
+            min(x2 + pad, image.width),
+            min(y2 + pad, image.height),
+        )
+    )
+    pixels = processor(crop, return_tensors="pt").pixel_values.to(DEVICE)
+    with torch.inference_mode():
+        ids = model.generate(pixels, max_length=64)[0].tolist()
+    return "".join(vocab[i] for i in ids if vocab[i] not in SPECIAL)
