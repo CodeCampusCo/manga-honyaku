@@ -29,9 +29,15 @@ detection or OCR.
 
 Artifacts and code are written in English.
 
-Look at pages through `python -m manga_honyaku.sheet` rather than opening them at
-full size. It scales a batch to the largest size a reader actually keeps, so four
-pages cost what one full-resolution page costs.
+**Read every image through `python -m manga_honyaku.sheet`** — pages, crops, all
+of it. It caps each image at the width past which reading stops getting easier
+and cost goes on rising, and `--crop X1,Y1,X2,Y2` takes a box out first, so
+there is never a reason to write a resize by hand.
+
+    sheet a.png b.png -o /tmp/look.png              # two pages, ~2300 tokens
+    sheet page.jpg --crop 640,280,1060,760 -o ...   # one bubble, ~1000
+
+One page and two pages cost the same, so read the spread.
 
 ## Translating
 

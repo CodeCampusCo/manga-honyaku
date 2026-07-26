@@ -93,6 +93,8 @@ round is one number and one re-render.
 - **`glossary.md`** — as terms are decided. Per work, even where another work
   needed the same word.
 - **`summary.md`** — after the first chapter.
+- **`questions.md`** — at the end of each chapter: what it answered, what it
+  raised. Easy to forget, because nothing in the pipeline asks for it.
 - **`style.md`** — only if this work departs from the skills. Most never do.
 
 ## 6. Then the ordinary loop

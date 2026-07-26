@@ -86,8 +86,10 @@ segmenter's dictionary takes about 200ms to build and is built once per run.
 uv run python -m manga_honyaku.sheet out/X0006.png out/X0007.png -o /tmp/look.png
 ```
 
-`sheet` scales pages down to the largest size a reader keeps, so a batch costs
-what one full-resolution page costs. It reports the width each page ended up at.
+`sheet` scales pages down to the size past which reading stops getting easier,
+lays them out together, and reports what the result costs to read.
+`--crop X1,Y1,X2,Y2` takes a box out of each image first, for reading one bubble
+at full detail.
 
 ## Stages
 
