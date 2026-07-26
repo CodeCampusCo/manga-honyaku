@@ -1,6 +1,6 @@
 """Stage `prepare`: open the working file for a page.
 
-Rewrites work/<page>.json as work/<page>.read.json — the same regions, with a
+Rewrites work/<page>.detector.json as work/<page>.agent.json — the same regions, with a
 slot for everything the agent is about to work out. From here on the working
 file is the agent's: it drops the regions it will not touch, adds the ones the
 detector never saw, and accumulates the source and the translation.
@@ -19,7 +19,7 @@ import argparse
 import json
 from pathlib import Path
 
-from manga_honyaku.page import detected_path, reading_path
+from manga_honyaku.page import agent_path, detector_path
 
 # Left present and empty rather than absent, so that a fresh working file shows
 # what it is waiting for. `clean` and `render` read absent and null alike.
@@ -52,12 +52,12 @@ def main() -> None:
     args = ap.parse_args()
 
     for page in args.pages:
-        out = reading_path(args.work, page.stem)
+        out = agent_path(args.work, page.stem)
         if out.exists() and not args.force:
             print(f"{page.name}  {out.name} exists, skipping")
             continue
 
-        detected = json.loads(detected_path(args.work, page.stem).read_text())
+        detected = json.loads(detector_path(args.work, page.stem).read_text())
         data = reading(detected)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
         print(f"{page.name}  {out.name}  {len(data['regions'])} regions")

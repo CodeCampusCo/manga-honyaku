@@ -3,7 +3,7 @@
 Writes work/<page>.clean.png and work/<page>.masks.png. Both are derived and can
 be thrown away and rebuilt from raw/ at any time.
 
-Reads work/<page>.read.json, which by this point says which regions are speech
+Reads work/<page>.agent.json, which by this point says which regions are speech
 and which are artwork. The detector's own file is not consulted.
 
 The upstream cleaner takes a segmentation mask per bubble, from either SAM or a
@@ -34,7 +34,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from manga_honyaku.page import reading_path
+from manga_honyaku.page import agent_path
 
 # Bubble interiors are paper and everything drawn on them is ink. Nothing about
 # that split is marginal, so a fixed threshold holds up better here than an
@@ -47,6 +47,7 @@ PAPER = 200
 # region is left for a different reason: erasing it would leave a hole with
 # nothing to put in it.
 KEEP = {"sfx", "image_text"}
+
 
 def _touches_edge(stats: np.ndarray, i: int, h: int, w: int) -> bool:
     return (
@@ -132,31 +133,31 @@ def clean(page: Image.Image, data: dict) -> tuple[Image.Image, Image.Image]:
     masks = np.zeros(gray.shape, np.uint8)
 
     for index, region in enumerate(data["regions"], start=1):
-        if region.get("status") == "declined" or region.get("class") in KEEP:
+        # An unclassified region is left alone. It may be a sound effect, which
+        # is artwork, and telling one from unbubbled speech takes a reader.
+        if not region.get("class") or region.get("class") in KEEP:
+            continue
+        if region.get("status") == "declined":
             continue
 
-        # A region the agent added has no detector_class at all: nothing found
-        # it, so nothing classified it.
-        if region.get("detector_class") == "text_bubble":
-            # detect resolves and reports a missing outline; a region that
-            # reaches here without one is free-floating in all but name.
-            box = region.get("bubble")
-            if box is None:
-                continue
-            mask = interior(gray, box, region["box"])
-            if mask is None:
-                continue
+        # Whether there is an outline to follow is the only question here, and
+        # `bubble` answers it directly. `detector_class` is not consulted: it
+        # records what the model said so that its disagreement with the agent
+        # stays visible, not so that anything branches on it.
+        mask = None
+        if region.get("bubble"):
+            mask = interior(gray, region["bubble"], region["box"])
+        if mask is not None:
             # Repaint with the bubble's own paper rather than white, so a bubble
             # that is toned or tinted does not come back as a white hole.
             paper = art[mask & (gray > PAPER)]
             art[mask] = np.median(paper, axis=0) if len(paper) else 255
-        elif region.get("class"):
-            # Unclassified free-floating text is left alone: a sound effect is
-            # artwork, and telling one from unbubbled speech takes a reader.
+        else:
+            # No outline, or none that could be traced. Painting the box out is
+            # cruder than following a curve, but a region the agent asked to
+            # have erased is never quietly left with the Japanese still in it.
             mask = free_mask(gray.shape, region["box"])
             art[mask] = 255
-        else:
-            continue
 
         masks[mask] = index
 
@@ -170,7 +171,7 @@ def main() -> None:
     args = ap.parse_args()
 
     for page in args.pages:
-        data = json.loads(reading_path(args.work, page.stem).read_text())
+        data = json.loads(agent_path(args.work, page.stem).read_text())
         cleaned, masks = clean(Image.open(page).convert("RGB"), data)
         cleaned.save(args.work / f"{page.stem}.clean.png")
         masks.save(args.work / f"{page.stem}.masks.png")

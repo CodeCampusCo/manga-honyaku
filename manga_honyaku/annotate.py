@@ -1,4 +1,4 @@
-"""Stage `annotate`: draw the region ids from work/<page>.json onto a copy.
+"""Stage `annotate`: draw the region ids from work/<page>.detector.json onto a copy.
 
 This is what the agent reads alongside the raw page, so it must not obscure the
 thing it is annotating.
@@ -13,6 +13,8 @@ import json
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+
+from manga_honyaku.page import detector_path
 
 COLOURS = {"text_bubble": (60, 120, 255), "text_free": (255, 40, 40)}
 
@@ -49,7 +51,7 @@ def main() -> None:
     args = ap.parse_args()
 
     for page in args.pages:
-        data = json.loads((args.work / f"{page.stem}.json").read_text())
+        data = json.loads(detector_path(args.work, page.stem).read_text())
         out = args.work / f"{page.stem}.boxes.png"
         annotate(Image.open(page).convert("RGB"), data["regions"]).save(out)
         print(f"{page.name}  {out}  {len(data['regions'])} regions")

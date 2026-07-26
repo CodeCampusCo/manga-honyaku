@@ -29,15 +29,15 @@ The pipeline runs one way — each stage reads the artifact before it and writes
 the one after.
 
 ```sh
-uv run python -m manga_honyaku.detect   raw/*.jpg --work work   # -> work/<page>.json
+uv run python -m manga_honyaku.detect   raw/*.jpg --work work   # -> work/<page>.detector.json
 uv run python -m manga_honyaku.annotate raw/*.jpg --work work   # -> work/<page>.boxes.png
-uv run python -m manga_honyaku.prepare  raw/*.jpg --work work   # -> work/<page>.read.json
-#   the agent reads the page and edits work/<page>.read.json
+uv run python -m manga_honyaku.prepare  raw/*.jpg --work work   # -> work/<page>.agent.json
+#   the agent reads the page and edits work/<page>.agent.json
 uv run python -m manga_honyaku.clean    raw/*.jpg --work work   # -> work/<page>.clean.png
                                                                 #    work/<page>.masks.png
 ```
 
-`work/<page>.read.json` is the working file and the only one that cannot be
+`work/<page>.agent.json` is the working file and the only one that cannot be
 rebuilt: everything the agent works out about a page is written into it. `detect`
 overwrites its own output freely; `prepare` will not overwrite a working file
 without `--force`. To change detection after a page has been read, start again

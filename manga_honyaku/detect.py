@@ -1,4 +1,4 @@
-"""Stage `detect`: find text regions on a page and write work/<page>.json.
+"""Stage `detect`: find text regions on a page and write work/<page>.detector.json.
 
 Geometry only. What each region says, who says it and in what order are the
 agent's job, and the fields for them are left absent rather than guessed at.
@@ -18,7 +18,7 @@ import torch
 from PIL import Image
 from transformers import RTDetrImageProcessor, RTDetrV2ForObjectDetection
 
-from manga_honyaku.page import detected_path
+from manga_honyaku.page import detector_path
 
 # The weights are referenced, never vendored. Set this to a local directory to
 # reuse a copy you already have instead of filling the Hugging Face cache again.
@@ -189,9 +189,9 @@ def main() -> None:
 
     for page in args.pages:
         # Overwriting is safe: this file holds nothing but detector output. What
-        # the agent works out lives in <page>.read.json and is never written
+        # the agent works out lives in <page>.agent.json and is never written
         # here — see page.py for why they are separate.
-        out = detected_path(args.work, page.stem)
+        out = detector_path(args.work, page.stem)
         image = Image.open(page).convert("RGB")
         found = detect(image, model, processor, conf=args.conf, imgsz=args.imgsz)
         data = page_file(page, image, found, args.conf, args.imgsz)
