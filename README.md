@@ -67,7 +67,9 @@ from each region's box and the length of its Japanese. The size is chosen before
 the text is wrapped, so the same original size gives the same Thai size
 everywhere; a region that cannot hold its line at that size is the only one that
 comes down. A region may override that with
-`scale`, and ask for a bolder cut with `weight` if `--font-bold` is given.
+`scale`, and ask for a bolder cut with `weight` if `--font-bold` is given — a
+chapter heading is set in a display face at twice the ink density of the bubbles
+and needs both.
 `series/glossary.md`
 is read as a word list: without it a transliterated name is broken across lines
 as though it were several words.

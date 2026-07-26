@@ -360,7 +360,10 @@ def render(
             # clean left this one alone, so there is nowhere to put the Thai.
             continue
 
-        box = safe_box(mask, padding)
+        # Clearance is for the drawn outline. A free-floating region has none:
+        # its mask is the text's own extent, and holding letters off the edge of
+        # that costs size for nothing to gain.
+        box = safe_box(mask, padding if region.get("bubble") else 1.0)
         if box is None:
             warn(f"{data['page']} {region['id']}: no room inside the outline")
             continue
