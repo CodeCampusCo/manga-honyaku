@@ -112,6 +112,116 @@ def interior(
     return mask
 
 
+def joined(regions: list[dict]) -> list[list[dict]]:
+    """Regions whose outlines overlap, gathered into groups.
+
+    Conjoined bubbles are detected one lobe at a time and their boxes overlap,
+    so the lobes have to be handled together to be separated at all.
+    """
+    groups: list[list[dict]] = []
+    for region in regions:
+        box = region["bubble"]
+        touching = [
+            g
+            for g in groups
+            if any(
+                box[0] < o["bubble"][2]
+                and o["bubble"][0] < box[2]
+                and box[1] < o["bubble"][3]
+                and o["bubble"][1] < box[3]
+                for o in g
+            )
+        ]
+        merged = [region] + [r for g in touching for r in g]
+        groups = [g for g in groups if g not in touching] + [merged]
+    return groups
+
+
+def interiors(gray: np.ndarray, group: list[dict]) -> dict[str, np.ndarray]:
+    """One interior mask per region, sharing out an interior the lobes hold jointly.
+
+    Cropping each lobe to its own bubble box cuts the shared interior along a box
+    edge — a straight line nowhere near the waist where the lobes actually meet.
+    One lobe takes a slice of the other, and text centred in what is left of it
+    sits off-centre in the bubble a reader sees.
+
+    So the interior is found once for the whole group, then shared out by
+    proximity: every pixel goes to the region whose text sits nearest it. For a
+    lone bubble the group is one region and this is the interior entire.
+    """
+    x1 = int(min(r["bubble"][0] for r in group))
+    y1 = int(min(r["bubble"][1] for r in group))
+    x2 = int(max(r["bubble"][2] for r in group))
+    y2 = int(max(r["bubble"][3] for r in group))
+    crop = gray[y1:y2, x1:x2]
+    if crop.size == 0:
+        return {}
+
+    paper = (crop > PAPER).astype(np.uint8)
+    count, labels, _, _ = cv2.connectedComponentsWithStats(paper, connectivity=4)
+    if count < 2:
+        return {}
+
+    # Each region names the component its own text sits on; together they are
+    # the interior the group occupies, whether that is one lobe or three.
+    chosen = set()
+    for region in group:
+        tx1, ty1, tx2, ty2 = (int(v) for v in region["box"])
+        window = labels[
+            max(ty1 - y1, 0) : max(ty2 - y1, 0), max(tx1 - x1, 0) : max(tx2 - x1, 0)
+        ]
+        if window.size == 0:
+            continue
+        overlap = np.bincount(window.ravel(), minlength=count)
+        overlap[0] = 0
+        if overlap.any():
+            chosen.add(int(np.argmax(overlap)))
+    if not chosen:
+        return {}
+
+    combined = np.isin(labels, list(chosen))
+
+    # The lettering sits in the holes of that shape. Filling them is what turns
+    # "the paper you can see" into "the whole inside of the bubble". A hole is
+    # any part of the complement that does not reach the edge of the crop.
+    h, w = paper.shape
+    ocount, olabels, ostats, _ = cv2.connectedComponentsWithStats(
+        (~combined).astype(np.uint8), connectivity=4
+    )
+    holes = np.isin(
+        olabels, [i for i in range(1, ocount) if not _touches_edge(ostats, i, h, w)]
+    )
+    combined = combined | holes
+
+    # Each lobe keeps what its own outline encloses. The detector drew a box per
+    # lobe and those boxes overlap only in the waist, so the only pixels in
+    # dispute are the ones in that overlap, and they go to the nearer lobe.
+    #
+    # Two other ways were tried and both were worse. Sharing the whole interior
+    # out by which text centre is nearer draws a straight bisector clean across
+    # both lobes. A watershed on the interior's depth follows its medial axis
+    # and hands the lobes back interleaved.
+    rows, cols = np.mgrid[y1:y2, x1:x2]
+    owned = []
+    for region in group:
+        bx1, by1, bx2, by2 = region["bubble"]
+        inside = (cols >= bx1) & (cols < bx2) & (rows >= by1) & (rows < by2)
+        cy, cx = (by1 + by2) / 2, (bx1 + bx2) / 2
+        owned.append((inside & combined, (rows - cy) ** 2 + (cols - cx) ** 2))
+
+    claims = np.stack([o for o, _ in owned])
+    farness = np.stack([np.where(o, d, np.inf) for o, d in owned])
+    winner = np.argmin(farness, axis=0)
+
+    out = {}
+    for i, region in enumerate(group):
+        mask = np.zeros(gray.shape, bool)
+        mask[y1:y2, x1:x2] = claims[i] & (winner == i)
+        if mask.any():
+            out[region["id"]] = mask
+    return out
+
+
 def free_mask(shape: tuple[int, int], box: list[float]) -> np.ndarray:
     """The box itself, not a pixel more.
 
@@ -132,21 +242,26 @@ def clean(page: Image.Image, data: dict) -> tuple[Image.Image, Image.Image]:
     gray = np.asarray(page.convert("L"))
     masks = np.zeros(gray.shape, np.uint8)
 
+    # Whether there is an outline to follow is the only question here, and
+    # `bubble` answers it directly. `placement` is not consulted: it records what
+    # the model saw, so that its disagreement with the agent stays visible, not
+    # so that anything branches on it.
+    wanted = [
+        r
+        for r in data["regions"]
+        if r.get("role")
+        and r.get("role") not in KEEP
+        and r.get("status") != "declined"
+    ]
+    found: dict[str, np.ndarray] = {}
+    for group in joined([r for r in wanted if r.get("bubble")]):
+        found.update(interiors(gray, group))
+
     for index, region in enumerate(data["regions"], start=1):
-        # A region with no role yet is left alone. It may be a sound effect,
-        # which is artwork, and telling one from unbubbled speech takes a reader.
-        if not region.get("role") or region.get("role") in KEEP:
-            continue
-        if region.get("status") == "declined":
+        if region not in wanted:
             continue
 
-        # Whether there is an outline to follow is the only question here, and
-        # `bubble` answers it directly. `placement` is not consulted: it records
-        # what the model saw, so that its disagreement with the agent stays
-        # visible, not so that anything branches on it.
-        mask = None
-        if region.get("bubble"):
-            mask = interior(gray, region["bubble"], region["box"])
+        mask = found.get(region["id"])
         if mask is not None:
             # Repaint with the bubble's own paper rather than white, so a bubble
             # that is toned or tinted does not come back as a white hole.
