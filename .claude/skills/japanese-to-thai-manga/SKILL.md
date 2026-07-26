@@ -14,51 +14,68 @@ character would have in a Thai edition of a Japanese comic** — not the one tha
 matches the Japanese word, and not the one the situation would call for if the
 scene were Thai.
 
-| Japanese | Thai | Why |
-| --- | --- | --- |
-| 私 / あたし, a young woman | **ฉัน** | `หนู` is what the situation looks like it wants, and it is what a Thai girl really would say — which is the problem. In manga it reads as a Thai schoolgirl and pulls the scene out of Japan. |
-| 僕 / 俺, an ordinary man | **ผม** — `ฉัน` where he is rough or talking to himself | `ผม` is unmarked in Thai and carries neither the politeness of 僕 nor the swagger of 俺; let the sentence carry those. |
-| 俺 / 俺様 from a thug or a villain | **ฉัน** | `กู` is coarser in Thai than 俺 ever is in Japanese. Hold it back for someone past the point of choosing words — screaming, swinging — and it lands when it finally comes. |
-| お前 / てめえ / あんた | **แก**, **พวกแก** | Same reason: `มึง` overshoots. `แก` is already dismissive, and it leaves somewhere to go. |
+### The pair, by speaker and by distance
+
+Read each cell as *first person → second person*. The axis is **distance and
+power, not affection** — a character can be fond of someone they stay formal
+with, and that gap is often the scene.
+
+| Speaker | Stranger | Knows by sight | Friend, familiar | Very close | Someone above them |
+| --- | --- | --- | --- | --- | --- |
+| Young woman, girl | หนู → คุณ | หนู → เธอ | ฉัน → เธอ, name | ฉัน → เธอ, name | หนู → คุณ (+ค่ะ) |
+| Young man, boy | ผม → คุณ | ผม → คุณ, name | ฉัน → นาย, name | ฉัน → แก, นาย | ผม → คุณ (+ครับ) |
+| Adult woman | ฉัน → คุณ | ฉัน → คุณ, name | ฉัน → เธอ | ฉัน → เธอ or แก | ฉัน, ดิฉัน → คุณ (+ค่ะ) |
+| Adult man | ผม → คุณ | ผม → คุณ, name | ฉัน → นาย | ฉัน → แก | ผม → คุณ, ท่าน |
+| An elder, speaking down | ฉัน → เธอ | ฉัน → เธอ, name | ฉัน → name, เธอ | ฉัน → แก | ผม, ดิฉัน → ท่าน |
+| Thug, villain | ฉัน → แก | ฉัน → แก | ฉัน → แก, พวกแก | **กู → มึง**, only past control | ผม → คุณ, ท่าน |
+
+What the grid is actually saying:
+
+- **`หนู` is a *first*-person word, and it tracks distance rather than age.** A
+  young woman says `หนู` to a stranger and to anyone above her, and `ฉัน` once
+  the relationship is familiar. So her pronoun moves as a story moves, and that
+  move is worth timing deliberately.
+- **It is not a second-person word here.** Japanese already has ちゃん and くん
+  for calling a child, and Thai manga transliterates those rather than reaching
+  for `หนู` — see the honorifics below. An elder addresses a junior as `เธอ` or
+  by name.
+- **`เรา` is not used as first person.** Closeness is carried by the second
+  person — `เธอ`, `นาย`, `แก` — while the first person stays `ฉัน`.
+- **`ค่ะ` / `ครับ` carries deference but does not replace the pronoun.** A young
+  woman speaking to someone above her is `หนู` *with* `ค่ะ`, not `ฉัน` with `ค่ะ`.
+- **A name works as either person**, which is what the Japanese is already doing
+  with `さくらちゃんは…`. It is the safest choice while a relationship is still
+  being established.
+- **The `very close` cell of the adult rows is character, not rule.** `เธอ` or
+  `แก` depending on who the person is.
 
 A register that escalates reads better than one that starts at the ceiling. One
 stalker says `ฉัน` while he is arguing and `กู` in the panel where he pulls a
-knife, and that shift does work the vocabulary alone cannot.
+knife, and that shift does work the vocabulary alone cannot. The grid is a
+starting position, not a lookup table.
 
 What belongs in `series/style.md` is only the exception: which character, on
 which page, is allowed past the default.
 
-### The pair by speaker and distance
+## Honorifics carry the same information — read them
 
-Read as *first person → second person*. Distance, not affection: a character can
-be fond of someone they are formal with.
+Japanese name suffixes do work Thai has its own forms for, so the original is
+telling you which Thai word to reach for. **Whatever you choose, hold it across
+the whole work** — a reader notices a character who is `คุณ` in one chapter and
+`ซัง` in the next.
 
-| Speaker | Stranger | Knows by sight | Friend | Very close | Someone above them |
-| --- | --- | --- | --- | --- | --- |
-| Young woman, girl | ฉัน → คุณ | ฉัน → เธอ | ฉัน → เธอ, name | เรา → แก | ฉัน → คุณ (+ค่ะ) |
-| Young man, boy | ผม → คุณ | ผม → นาย, name | ฉัน → นาย, name | ฉัน → แก | ผม → คุณ (+ครับ) |
-| Adult woman | ฉัน → คุณ | ฉัน → คุณ | ฉัน → เธอ | เรา → แก | ฉัน → คุณ (+ค่ะ) |
-| Adult man | ผม → คุณ | ผม → คุณ, name | ฉัน → นาย | ฉัน → แก | ผม → คุณ, ท่าน |
-| An elder, speaking down | ฉัน → หนู, เธอ | ฉัน → หนู, name | ฉัน → name, เธอ | ฉัน → แก | ผม, ดิฉัน → ท่าน |
-| Thug, villain | ฉัน → แก | ฉัน → แก | ฉัน → แก, พวกแก | **กู → มึง**, only past control | ผม → คุณ, ท่าน |
+| Japanese | Thai | How |
+| --- | --- | --- |
+| さん | **คุณ**, or transliterate **ซัง** | Fits nearly everywhere. Thai readers know `ซัง` and neither reads as foreign; pick one. |
+| ちゃん | **จัง** — transliterate | Adult to a girl, and to boys too. The role Thai fills with `หนู`, but manga Thai does not use `หนู` here. |
+| くん | **คุง** — transliterate | Adult to a child; a senior to a junior they are close to — a student, a junior at work. |
+| 様 | **ท่าน** | Never transliterate. |
+| 先生 | **อาจารย์**, **หมอ**, **ทนาย** — from context | Closer to *master* than to *teacher*: any credentialed expert, including a mangaka. Thai defaults to "อาจารย์ = schoolteacher" but does accept `อาจารย์` for a mangaka. Read the panel before choosing. |
+| 先輩 / 後輩 | **พี่** / **น้อง** | Kinship words work as pronouns in Thai and land this better than a literal translation. |
 
-Four things the grid is really saying:
-
-- **`หนู` is asymmetric.** As second person, from an adult down to a child, it is
-  warm and correct. As *first* person for a young woman it is what a Thai girl
-  would really say — and that is the problem: it relocates the scene to Thailand.
-- **`เรา → แก` is the ordinary close-friend pair**, especially among women and
-  the young. It carries the intimacy `กู → มึง` is usually reached for, at none
-  of the cost.
-- **A name works as either person**, which is exactly what Japanese is already
-  doing with `さくらちゃんは…`. It is the safest choice when the relationship is
-  still being established.
-- **`ค่ะ` / `ครับ` carries the deference**, so the pronoun does not have to climb
-  to meet it. `ฉัน` with `ค่ะ` is polite; `หนู` on top of it is a costume.
-
-The grid is a starting position, not a lookup table — a single scene moves along
-it as the temperature changes, and that movement is usually the translation's
-best tool.
+Watch for a suffix attached to a **role rather than a name** — `バイト君`,
+`店長さん`. Transliterating there produces nonsense; use the Thai kinship or
+title form and record the exception.
 
 ## Politeness lands once per utterance
 
