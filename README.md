@@ -54,11 +54,16 @@ agent has given a role, and never those roled `sfx` or `image_text` — both are
 artwork. On a page margin the white is invisible; over drawn artwork it is a
 visible patch.
 
-`render` needs a Thai font: pass `--font` or set `MANGA_HONYAKU_FONT`. None is
-bundled. The font's vowel and tone marks must have zero advance width — Thai
-comic faces do, and it is what lets the marks stack without a shaping engine.
-Anything the font cannot draw is reported before the page is drawn, because a
-missing glyph comes out as an empty box that still looks like lettering.
+`render` letters in **2005_iannnnnJPG**, a Thai comic face by iannnnn released
+free for commercial use through [f0nt.com](https://www.f0nt.com/release/iannnnnjpg/).
+It is in `fonts/`; see `NOTICE`. `--font` and `--font-bold`, or
+`MANGA_HONYAKU_FONT` and `MANGA_HONYAKU_FONT_BOLD`, point elsewhere.
+
+The face carries no `♥ ♡ ★ ☆ ♪ 「」 ○` and no CJK brackets. `render` reports any
+character it cannot draw before drawing the page.
+
+Another face works if its vowel and tone marks have zero advance width — Thai comic faces do,
+and that is what lets the marks stack without a shaping engine.
 
 Thai is laid out inside each region's own box, so the translation sits where the
 Japanese sat, and centred on the bubble within it. Lettering is sized as a

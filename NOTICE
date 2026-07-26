@@ -13,3 +13,18 @@ with them the AGPL-3.0 `ultralytics` dependency, are not carried over.
 Model weights are not distributed with this repository. Both are Apache-2.0 and
 are downloaded on first run: `ogkalu/comic-text-and-bubble-detector` for
 detection, and `kha-white/manga-ocr-base` for reading the Japanese.
+
+The Thai lettering face, `fonts/iannnnnJPG/2005_iannnnnJPG.ttf`, is
+2005_iannnnnJPG by iannnnn (Prachya Singhto), released 20 January 2005 through
+f0nt.com and distributed here with it:
+
+  https://www.f0nt.com/release/iannnnnjpg/
+
+The designer's release page lists it under "ใช้งานเชิงพาณิชย์ได้ฟรี" — free for
+commercial use — and states "ฟอนต์จาก iannnnn แจกฟรีตลอดไป เอาไปใช้ทำมาหากินได้เลยครับ".
+The font's own name table still carries "For educations used only" from the 2005
+build; the release page is the current word and is why the file is here.
+
+`fonts/iannnnnJPG-selfbold/2005_iannnnnJPG-Bold.ttf` is a bold cut derived from
+that face rather than an official release, and its name table still identifies
+itself as the regular. Only headings use it.

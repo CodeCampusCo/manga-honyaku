@@ -8,6 +8,27 @@ description: Use when rendering Thai (or any alphabetic script) into manga speec
 Everything here was arrived at by getting it wrong first. The order of the
 sections is the order the mistakes were made in.
 
+## Where each decision lives
+
+Four places, and a decision belongs in exactly one of them. When this file and a
+series file appear to disagree, the series file is right about that work and this
+file is wrong to have said it.
+
+| | Owns | Test |
+| --- | --- | --- |
+| **Code** | Measurement and execution: the mask, the safe box, the collision test, the line breaker, drawing, and reporting what it could not do. | Could a person disagree about the answer? If yes it does not belong here. |
+| **This skill** | Method and invariant. How to choose a band; how to tell a display face from body lettering; that a stack of short lines is how Thai is set in manga at all. | Would it still hold for a different work in a different genre? |
+| **`series/lettering.md`** | Every number and name for one work: the band, the clearance, the face, what that face cannot draw, and any place this work departs from the invariants. | Would another work need a different value here? |
+| **`work/<page>.agent.json`** | One region's exception: `scale`, `weight`, `lines`. | Is this about this bubble rather than this work? |
+
+Two rules keep the boundary from eroding:
+
+- **No value in this file is a value to reuse.** Numbers appear here only as the
+  evidence for a method. Copying one into a new work skips the measuring.
+- **The agent tunes the band, not the bubbles.** Setting each bubble's size by
+  eye is what a band exists to prevent, and a page lettered that way shouts and
+  whispers by accident.
+
 ## Take the geometry from MangaTranslator
 
 `/Users/tama/app/MangaTranslator` (Apache-2.0). Three pieces are worth porting
@@ -42,34 +63,46 @@ the size. Measured on one page, ten bubbles the artist lettered identically came
 out anywhere from 25 px to 45 px.
 
 Instead: a **narrow band**, quoted for a one-megapixel page and scaled by
-`sqrt(area / 1e6)` so one setting holds at any scan resolution. Upstream's
-defaults are 8–16; against a comic face those letter at about half what the
-Japanese did, and **11–22 puts Thai near two thirds of the original**, which is
-where upstream's own renders sit. Binary-search within the band.
+`sqrt(area / 1e6)` so one setting holds at any scan resolution. Binary-search
+within it.
+
+**Choosing the band is the work's own measurement, not a value to copy.** Take
+a page, measure what the original was lettered at, and set the band so most
+bubbles land near two thirds of that — Thai carries a sentence in more
+characters than Japanese, so parity is not reachable and two thirds is where
+translated pages sit. Then look at the page: if it reads small, the band is
+low. MangaTranslator's defaults of 8–16 are a starting point and were about half
+of right for the first work tried here. The value goes in
+`series/lettering.md`.
 
 Then per region, from the working file:
 
 - **`scale`** — the original's own lettering size relative to that page's median.
-  Recover it as `sqrt(box_area / japanese_character_count)`: on a real page that
-  read every ordinary bubble at 41–46 px and picked out the emphatic ones at
-  1.8×, a shout at 1.96×, and inner monologue at 0.58×. Write it into the
-  working file; do not leave it to the renderer to guess.
+  Recover it as `sqrt(box_area / japanese_character_count)`, which works because
+  Japanese sets on a square grid. Write it into the working file; do not leave it
+  to the renderer to guess.
+
+  It recovers real emphasis rather than noise: on one page it read every ordinary
+  bubble within 41–46 px of each other and singled out exactly the three the
+  artist drew differently.
 
   **The estimate does not work on a single horizontal line** — it reads a
   chapter heading spanning the page as ordinary lettering. Set those by hand
   from the measured ink height.
 
-- **`weight`** — a heading is a display face. Ink density measures it: 0.23 for
-  the heading against 0.11 for the bubbles on the same page.
+- **`weight`** — a heading is a display face and `scale` alone will not carry it.
+  **Ink density tells the two apart**: count dark pixels over the region's box and
+  compare against the speech bubbles on the same page. A display face measures
+  roughly twice a body face.
 
 Where the Thai is longer than the Japanese it replaces, coming down in size is
-correct and expected. Where it is *much* longer, shorten the line instead — a
-four-character Japanese shout cannot be lettered large under a fifteen-character
-Thai one.
+correct and expected — the band is a ceiling, not a target.
 
 ## Thai in manga is set to the bubble, not to the line
 
 This is the rule that differs from upstream and it is the one that matters most.
+It is an invariant of Thai manga rather than a house style, so a series file
+should only mention it to record a departure.
 
 Thai is written horizontally, so the obvious thing is to hand the line breaker
 the full box width. Its objective is to leave as little of that width unused as
@@ -112,11 +145,15 @@ merely legal.
   as `.notdef`, so compare its bitmap against a codepoint no font can have
   (`\U000F0000`). This caught `【】◯` drawing as empty boxes that still looked
   like lettering.
-- A Thai comic face typically has **no ♥ ♡ ★ ☆ ♪ 「」 ○** at all. A flirtatious
-  `♥` is a tone marker: render it in the wording and a drawn-out vowel, which is
-  how Thai marks tone anyway.
-- `iannnnnJPG` regular is right for dialogue; its bold sits heavier than the
-  lettering it replaces. Keep the bold for headings.
+- A Thai comic face typically carries **no ♥ ♡ ★ ☆ ♪ 「」 ○** at all, and the
+  original will use them. They are tone markers, so render them the way Thai
+  marks tone — in the wording and a drawn-out vowel — rather than substituting a
+  symbol the face happens to have. Which characters a face lacks belongs wherever
+  the face is chosen — with the code if one face is standard across works, in
+  `series/lettering.md` if it varies. What a particular work does about them is
+  always per-work.
+- **A comic face's regular cut is right for dialogue.** Its bold sits heavier
+  than the lettering it replaces and reads as shouting; keep it for headings.
 
 ## Masks
 
@@ -138,12 +175,17 @@ merely legal.
 ## Translation feeds the rendering
 
 - **Match the original's length, not only its sense.** The bubble was drawn to
-  hold what the Japanese said. Measured as Thai width per Japanese character,
-  one page ran from 0.36 to 1.45 — the low end was rendering only the bare
-  sense. `〜があって` is "it so happens that", `らしい` is "I hear that",
-  `けっこう` is "quite, as these things go", `なんか` hedges the report it
-  introduces. Saying those in full is more faithful *and* fills the bubble.
-  A line the artist drew short stays short.
+  hold what the Japanese said, and a version carrying the meaning in half the
+  words leaves it looking empty. Measure it: Thai width per Japanese character,
+  compared across the page. Where a line sits far below the rest it is usually
+  rendering only the bare sense — `〜があって` is "it so happens that", `らしい`
+  is "I hear that", `けっこう` is "quite, as these things go", `なんか` hedges the
+  report it introduces. Saying those in full is more faithful *and* fills the
+  bubble. A line the artist drew short stays short.
+
+- **Where the Thai runs much longer than the Japanese, shorten the line rather
+  than the lettering.** A four-character shout cannot be lettered large under a
+  fifteen-character translation of it.
 
 ## Symptoms and causes
 

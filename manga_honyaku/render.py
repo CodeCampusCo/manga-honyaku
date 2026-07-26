@@ -48,7 +48,14 @@ from pythainlp.util import Trie
 
 from manga_honyaku.page import agent_path
 
-FONT = os.environ.get("MANGA_HONYAKU_FONT")
+# The project letters in iannnnn's 2005_iannnnnJPG, a Thai comic face, and the
+# bold cut derived from it. Not in this repository: its own name table records
+# "For educations used only" and "All rights reserved", so it is referenced the
+# way the model weights are. Put it under fonts/ or point these at it.
+FONT = os.environ.get("MANGA_HONYAKU_FONT", "fonts/iannnnnJPG/2005_iannnnnJPG.ttf")
+FONT_BOLD = os.environ.get(
+    "MANGA_HONYAKU_FONT_BOLD", "fonts/iannnnnJPG-selfbold/2005_iannnnnJPG-Bold.ttf"
+)
 
 # Thai writes without spaces between words, so a line may only break where one
 # word ends.
@@ -110,6 +117,35 @@ def missing_glyphs(font: ImageFont.FreeTypeFont, text: str) -> set[str]:
     """
     absent = _signature(font, "\U000f0000")
     return {c for c in set(text) if not c.isspace() and _signature(font, c) == absent}
+
+
+def settings(series: Path) -> dict:
+    """This work's lettering values, from series/lettering.md.
+
+    Typography is not one rule that fits every work. The code measures the mask
+    and executes a layout; what a band should be, how much clearance an outline
+    of this weight wants, how much room a face needs between lines — those vary
+    by work and by font, and they are recorded where the rest of the series'
+    conventions are rather than compiled in.
+
+    Absent values fall back to the defaults above, so a series with no file
+    letters the way this one started out.
+    """
+    path = series / "lettering.md"
+    if not path.exists():
+        return {}
+    found = {}
+    for line in path.read_text().splitlines():
+        cells = [c.strip() for c in line.split("|")]
+        if len(cells) < 4 or set(cells[1]) <= set("-: ") or not cells[2]:
+            continue
+        parts = cells[2].split()
+        try:
+            numbers = [float(v) for v in parts]
+        except ValueError:
+            continue
+        found[cells[1]] = numbers[0] if len(numbers) == 1 else tuple(numbers)
+    return found
 
 
 def lexicon(series: Path):
@@ -340,6 +376,9 @@ def lay_out(
     smallest: int,
     largest: int,
     custom=None,
+    line_spacing: float = LINE_SPACING,
+    squeezes: int = SQUEEZES,
+    lines_wanted: int | None = None,
 ):
     """The largest size that fits inside the outline, not merely inside the box.
 
@@ -366,11 +405,11 @@ def lay_out(
             if size <= 0:
                 break
             font = ImageFont.truetype(font_path, size)
-            line_height = int(size * LINE_SPACING)
+            line_height = int(size * line_spacing)
 
             fitted = None
             column = float(width)
-            for _ in range(SQUEEZES):
+            for _ in range(squeezes):
                 lines = wrap(text, font, column, clusters, custom)
                 if lines is None:
                     # Narrowing only makes it taller; it will not start fitting.
@@ -378,7 +417,12 @@ def lay_out(
                 if line_height * len(lines) > height:
                     break
                 if not collides(lines, font, line_height, box, mask):
-                    if fitted is None or len(lines) > len(fitted):
+                    # `lines` on a region is the agent overruling the default
+                    # rule for a bubble where standing tallest is wrong — a
+                    # short line in a wide bubble stacked into syllables.
+                    if lines_wanted and len(lines) != lines_wanted:
+                        pass
+                    elif fitted is None or len(lines) > len(fitted):
                         fitted = lines
                 column *= 0.90
 
@@ -399,8 +443,12 @@ def render(
     font_path: str,
     custom=None,
     weights: dict[str, str] | None = None,
-    band: tuple[int, int] = BAND,
+    values: dict | None = None,
 ):
+    values = values or {}
+    band = values.get("band", BAND)
+    line_spacing = values.get("line_spacing", LINE_SPACING)
+    squeezes = int(values.get("squeezes", SQUEEZES))
     image = page.copy()
     draw = ImageDraw.Draw(image)
 
@@ -415,7 +463,7 @@ def render(
     weights = {"regular": font_path, **(weights or {})}
     scale = math.sqrt(image.width * image.height / 1_000_000)
     smallest, largest = (max(4, round(v * scale)) for v in band)
-    padding = max(1.0, PADDING * scale)
+    padding = max(1.0, values.get("padding", PADDING) * scale)
     placements = []
 
     for index, region in enumerate(data["regions"], start=1):
@@ -449,6 +497,9 @@ def render(
             smallest,
             max(smallest, round(largest * emphasis)),
             custom,
+            line_spacing,
+            squeezes,
+            region.get("lines"),
         )
         if laid is None:
             warn(f"{data['page']} {region['id']}: {target!r} does not fit")
@@ -469,7 +520,8 @@ def render(
         group = region.get("utterance")
         if group and shared[group] != laid[0].size:
             again = lay_out(
-                region["target"], box, mask, face, shared[group], shared[group], custom
+                region["target"], box, mask, face, shared[group], shared[group],
+                custom, line_spacing, squeezes, region.get("lines"),
             )
             if again is not None:
                 laid = again
@@ -497,33 +549,34 @@ def main() -> None:
     ap.add_argument("--font", default=FONT, help="path to a Thai .ttf")
     ap.add_argument("--series", type=Path, default=Path("series"))
     ap.add_argument(
-        "--font-bold", help="the same face in bold, for regions the agent marks"
+        "--font-bold",
+        default=FONT_BOLD,
+        help="the same face in bold, for regions the agent marks",
     )
-    ap.add_argument(
-        "--size",
-        type=int,
-        nargs=2,
-        metavar=("MIN", "MAX"),
-        default=BAND,
-        help="lettering band for a one-megapixel page (default %(default)s)",
-    )
+
     args = ap.parse_args()
 
-    if not args.font:
+    if not args.font or not Path(args.font).exists():
         raise SystemExit(
-            "no font: pass --font or set MANGA_HONYAKU_FONT to a Thai .ttf. "
-            "The marks must have zero advance; see this module's docstring."
+            f"no font at {args.font!r}. Put 2005_iannnnnJPG under fonts/, or "
+            "point --font / MANGA_HONYAKU_FONT at another Thai face whose marks "
+            "have zero advance — see this module's docstring."
         )
     args.out.mkdir(parents=True, exist_ok=True)
     custom = lexicon(args.series)
-    weights = {"bold": args.font_bold} if args.font_bold else {}
+    values = settings(args.series)
+    weights = (
+        {"bold": args.font_bold}
+        if args.font_bold and Path(args.font_bold).exists()
+        else {}
+    )
 
     for page in args.pages:
         data = json.loads(agent_path(args.work, page.stem).read_text())
         clean = Image.open(args.work / f"{page.stem}.clean.png").convert("RGB")
         masks = np.asarray(Image.open(args.work / f"{page.stem}.masks.png"))
         out = args.out / f"{page.stem}.png"
-        render(clean, masks, data, args.font, custom, weights, tuple(args.size)).save(out)
+        render(clean, masks, data, args.font, custom, weights, values).save(out)
         drawn = sum(1 for r in data["regions"] if r.get("target"))
         print(f"{page.name}  {out}  {drawn} regions")
 
