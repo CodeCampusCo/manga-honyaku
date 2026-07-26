@@ -23,5 +23,10 @@ go — the character and style files are what make later chapters consistent.
 
 Record uncertainty in `questions` only when being wrong would change the output.
 
+Before rendering a batch, diff every recorded `source` against a fresh OCR read of
+its own box. It is cheap and it catches the one failure a re-read of the page will
+not: lines written onto the wrong region ids. Three bubbles on X0048 held each
+other's lines, and nothing else showed it.
+
 When you decline a region, mark it `declined` with a reason. Never silently skip or
 soften.

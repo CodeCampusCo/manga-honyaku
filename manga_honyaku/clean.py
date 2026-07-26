@@ -157,41 +157,63 @@ def interiors(gray: np.ndarray, group: list[dict]) -> dict[str, np.ndarray]:
     if crop.size == 0:
         return {}
 
+    def enclosed(paper: np.ndarray) -> np.ndarray | None:
+        count, labels, _, _ = cv2.connectedComponentsWithStats(paper, connectivity=4)
+        if count < 2:
+            return None
+
+        # Each region names the component its own text sits on; together they
+        # are the interior the group occupies, whether that is one lobe or three.
+        chosen = set()
+        for region in group:
+            tx1, ty1, tx2, ty2 = (int(v) for v in region["box"])
+            window = labels[
+                max(ty1 - y1, 0) : max(ty2 - y1, 0), max(tx1 - x1, 0) : max(tx2 - x1, 0)
+            ]
+            if window.size == 0:
+                continue
+            overlap = np.bincount(window.ravel(), minlength=count)
+            overlap[0] = 0
+            if overlap.any():
+                chosen.add(int(np.argmax(overlap)))
+        if not chosen:
+            return None
+
+        # The lettering sits in the holes of that shape. Filling them is what
+        # turns "the paper you can see" into "the whole inside of the bubble". A
+        # hole is any part of the complement that does not reach the crop edge.
+        shape = np.isin(labels, list(chosen))
+        h, w = paper.shape
+        ocount, olabels, ostats, _ = cv2.connectedComponentsWithStats(
+            (~shape).astype(np.uint8), connectivity=4
+        )
+        holes = np.isin(
+            olabels, [i for i in range(1, ocount) if not _touches_edge(ostats, i, h, w)]
+        )
+        return shape | holes
+
     paper = (crop > PAPER).astype(np.uint8)
-    count, labels, _, _ = cv2.connectedComponentsWithStats(paper, connectivity=4)
-    if count < 2:
+    combined = enclosed(paper)
+    if combined is None:
         return {}
 
-    # Each region names the component its own text sits on; together they are
-    # the interior the group occupies, whether that is one lobe or three.
-    chosen = set()
-    for region in group:
-        tx1, ty1, tx2, ty2 = (int(v) for v in region["box"])
-        window = labels[
-            max(ty1 - y1, 0) : max(ty2 - y1, 0), max(tx1 - x1, 0) : max(tx2 - x1, 0)
-        ]
-        if window.size == 0:
-            continue
-        overlap = np.bincount(window.ravel(), minlength=count)
-        overlap[0] = 0
-        if overlap.any():
-            chosen.add(int(np.argmax(overlap)))
-    if not chosen:
-        return {}
-
-    combined = np.isin(labels, list(chosen))
-
-    # The lettering sits in the holes of that shape. Filling them is what turns
-    # "the paper you can see" into "the whole inside of the bubble". A hole is
-    # any part of the complement that does not reach the edge of the crop.
-    h, w = paper.shape
-    ocount, olabels, ostats, _ = cv2.connectedComponentsWithStats(
-        (~combined).astype(np.uint8), connectivity=4
-    )
-    holes = np.isin(
-        olabels, [i for i in range(1, ocount) if not _touches_edge(ostats, i, h, w)]
-    )
-    combined = combined | holes
+    # A bubble drawn over a screentone is paper with ink ruled through it, so the
+    # threshold hands back the tone's gaps as separate stripes, one stripe wins
+    # the overlap, and the text is set into a sliver of the bubble. Closing joins
+    # the stripes; eroding by the same amount gives back the outline the close
+    # ate. It is a fallback rather than the rule because the close also bridges a
+    # thin outline elsewhere and floods the artwork around the bubble.
+    #
+    # A lone bubble's outline box is drawn around the bubble, so its interior
+    # fills most of it; anything near half is not an interior. A group's box has
+    # corners no lobe occupies and is legitimately this empty, so it is left out.
+    if len(group) == 1 and combined.sum() < 0.5 * combined.size:
+        kernel = np.ones((3, 3), np.uint8)
+        wider = enclosed(cv2.morphologyEx(paper, cv2.MORPH_CLOSE, kernel))
+        if wider is not None:
+            wider = cv2.erode(wider.astype(np.uint8), kernel).astype(bool)
+            if wider.sum() > combined.sum():
+                combined = wider
 
     # Each lobe keeps what its own outline encloses. The detector drew a box per
     # lobe and those boxes overlap only in the waist, so the only pixels in

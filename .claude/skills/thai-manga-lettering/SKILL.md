@@ -171,6 +171,18 @@ merely legal.
   text's own extent; holding letters off the edge of that cost a chapter heading
   a third of its size for nothing.
 
+- **A bubble over a screentone is paper with ink ruled through it.** A plain
+  threshold returns the tone's gaps as separate stripes, one stripe wins, and
+  the text is set into a sliver. Close the mask to join them, then erode by the
+  same amount to give back the outline the close ate.
+
+  Do this as a fallback and not as the rule: applied to every bubble the same
+  close bridges thin outlines and floods the artwork around them — on one
+  chapter it moved 334 of 500 masks to fix two. Trigger it on the symptom, and
+  make the symptom one only the fault produces: a *lone* bubble whose interior
+  fills under half its outline box. A conjoined group's box has corners no lobe
+  occupies and is legitimately that empty.
+
 ## Translation feeds the rendering
 
 - **Match the original's length, not only its sense.** The bubble was drawn to
@@ -203,4 +215,5 @@ merely legal.
 | Empty boxes that look like letters | Font lacks the glyph; nothing checked |
 | Heading no bigger than speech | Sized from the step ladder instead of filling its own box |
 | A pause bubble lettered enormous | Its one character measured against its whole box |
+| A toned bubble comes back a sliver | Tone stripes labelled apart; no close fallback |
 | A loud page comes back ordinary | Sizes normalised against that page's own median |
