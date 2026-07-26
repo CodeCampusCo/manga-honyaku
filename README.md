@@ -4,9 +4,16 @@ A manga translation workflow. Code handles geometry — detection, OCR, text
 removal, rendering. An LLM agent handles comprehension — reading order, speaker
 attribution, and the translation itself.
 
-The original design, and why the work is split this way:
-[`docs/specs/2026-07-26-design.md`](docs/specs/2026-07-26-design.md). It predates
-the implementation; where it and the code disagree, the code is right.
+## Starting a new work
+
+Run `uv sync` once (below), then point Claude Code at the scans and ask:
+
+> Start a new work. The scans are at `/path/to/the/scans`.
+
+It follows the `new-manga-work` skill from there — makes the directory, runs
+detection, and stops to show you what the detector found. It stops twice more,
+for the lettering size and before the first chapter is translated, because those
+are looks at a page rather than numbers. You need no other command to begin.
 
 ## Setup
 
@@ -49,21 +56,10 @@ case anything handles.
 `pages/` is kept apart from `build/` because everything in `build/` rebuilds from
 the scans in seconds and nothing in `pages/` rebuilds at all.
 
-## Starting a new work
-
-Point Claude Code at the scans and ask:
-
-> Start a new work. The scans are at `/path/to/the/scans`.
-
-It follows the `new-manga-work` skill from there — makes the directory, runs
-detection, and stops to show you what the detector found. It stops twice more,
-for the lettering size and before the first chapter is translated, because those
-are looks at a page rather than numbers. You need no other command to begin.
-
 ## Commands
 
-Every stage takes the work's directory, then the pages. Naming no page means the
-whole work; naming a directory means everything under it.
+For driving it yourself. Every stage takes the work's directory, then the pages.
+Naming no page means the whole work; naming a directory means everything under it.
 
 ```sh
 uv run python -m manga_honyaku.detect   series/<work>     # -> build/<id>.detector.json
@@ -147,3 +143,10 @@ comic faces do, and that is what lets the marks stack without a shaping engine.
 
 RT-DETR is pinned to CPU. On the MPS backend it fails inside a float64
 operation, and the failure surfaces as an empty result rather than an error.
+
+## Design
+
+[`docs/specs/2026-07-26-design.md`](docs/specs/2026-07-26-design.md) is the
+original design — why the work is split this way, and what was tried before what
+is here now. It predates the implementation; where it and the code disagree, the
+code is right, and it says so where it knows it is wrong.
