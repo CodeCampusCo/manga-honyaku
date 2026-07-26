@@ -22,7 +22,8 @@ with, and that gap is often the scene.
 
 | Speaker | Stranger | Knows by sight | Friend, familiar | Very close | Someone above them |
 | --- | --- | --- | --- | --- | --- |
-| Young woman, girl | หนู → คุณ | หนู → เธอ | ฉัน → เธอ, name | ฉัน → เธอ, name | หนู → คุณ (+ค่ะ) |
+| Young woman | ฉัน → คุณ | ฉัน → คุณ | ฉัน → เธอ, name | ฉัน → เธอ, name | ฉัน → คุณ (+ค่ะ) |
+| Girl, a child | **หนู** → คุณ | **หนู** → คุณ | ฉัน → เธอ, name | ฉัน → เธอ, name | **หนู** → คุณ (+ค่ะ) |
 | Young man, boy | ผม → คุณ | ผม → คุณ, name | ฉัน → นาย, name | ฉัน → แก, นาย | ผม → คุณ (+ครับ) |
 | Adult woman | ฉัน → คุณ | ฉัน → คุณ, name | ฉัน → เธอ | ฉัน → เธอ or แก | ฉัน, ดิฉัน → คุณ (+ค่ะ) |
 | Adult man | ผม → คุณ | ผม → คุณ, name | ฉัน → นาย | ฉัน → แก | ผม → คุณ, ท่าน |
@@ -31,18 +32,21 @@ with, and that gap is often the scene.
 
 What the grid is actually saying:
 
-- **`หนู` is a *first*-person word, and it tracks distance rather than age.** A
-  young woman says `หนู` to a stranger and to anyone above her, and `ฉัน` once
-  the relationship is familiar. So her pronoun moves as a story moves, and that
-  move is worth timing deliberately.
-- **It is not a second-person word here.** Japanese already has ちゃん and くん
-  for calling a child, and Thai manga transliterates those rather than reaching
-  for `หนู` — see the honorifics below. An elder addresses a junior as `เธอ` or
-  by name.
+- **`หนู` is a child's word.** It marks the speaker as a child talking to an
+  adult, and that is the whole of its range. A teenager or a young woman is
+  `ฉัน` in every column, including to someone above her — the deference is on
+  the particle, not on the pronoun. Reaching for `หนู` because a woman is young
+  or junior or being polite is the single most common way to make a translated
+  page read as Thai television rather than as manga.
+- **Even a child drops it among friends.** `หนู` is for the gap in rank, so it
+  disappears the moment there is not one.
+- **It is never a second person.** Japanese already has ちゃん and くん for
+  addressing a child, and Thai manga transliterates those — see the honorifics
+  below. An elder addresses a junior as `เธอ` or by name.
+- **The male side has no counterpart.** Boys and men are both `ผม`, moving to
+  `ฉัน` when close. There is no child form to reach for and none is needed.
 - **`เรา` is not used as first person.** Closeness is carried by the second
   person — `เธอ`, `นาย`, `แก` — while the first person stays `ฉัน`.
-- **`ค่ะ` / `ครับ` carries deference but does not replace the pronoun.** A young
-  woman speaking to someone above her is `หนู` *with* `ค่ะ`, not `ฉัน` with `ค่ะ`.
 - **A name works as either person**, which is what the Japanese is already doing
   with `さくらちゃんは…`. It is the safest choice while a relationship is still
   being established.
