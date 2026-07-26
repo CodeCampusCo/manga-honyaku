@@ -4,17 +4,6 @@ A manga translation workflow. Code handles geometry — detection, OCR, text
 removal, rendering. An LLM agent handles comprehension — reading order, speaker
 attribution, and the translation itself.
 
-## Starting a new work
-
-Run `uv sync` once (below), then point Claude Code at the scans and ask:
-
-> Start a new work. The scans are at `/path/to/the/scans`.
-
-It follows the `new-manga-work` skill from there — makes the directory, runs
-detection, and stops to show you what the detector found. It stops twice more,
-for the lettering size and before the first chapter is translated, because those
-are looks at a page rather than numbers. You need no other command to begin.
-
 ## Setup
 
 ```sh
@@ -28,6 +17,17 @@ To reuse a copy you already have:
 ```sh
 export MANGA_HONYAKU_DETECTOR=/path/to/comic-text-and-bubble-detector
 ```
+
+## Starting a new work
+
+Point Claude Code at the scans and ask:
+
+> Start a new work. The scans are at `/path/to/the/scans`.
+
+It follows the `new-manga-work` skill from there — makes the directory, runs
+detection, and stops to show you what the detector found. It stops twice more,
+for the lettering size and before the first chapter is translated, because those
+are looks at a page rather than numbers. You need no other command to begin.
 
 ## A work on disk
 
