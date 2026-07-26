@@ -34,7 +34,7 @@ had already given:
 | Narrowing the column a tenth at a time, keeping the tallest layout | Getting a stack out of a too-wide column | A search for the column the box gives for free. It also needed a squeeze count, which needed tuning, which was wrong. |
 | A ladder of finer break points — word, syllable, cluster | Breaking a phrase the segmenter returns whole | Only fired because the column was too wide to force a break. |
 | Rejoining splits inside a run of repeated letters | `จางงง` coming back as `จาง / งง` | A patch on the ladder. |
-| Marking word-list terms unsplittable | `ซากุระ` coming back as `ซา / กุ / ระ` | A patch on the ladder, and it had to be threaded through four functions. |
+| Marking word-list terms unsplittable | a name coming back as three syllables | A patch on the ladder, and it had to be threaded through four functions. |
 
 The pattern is worth naming: **when a fix needs a fix, the thing being fixed is
 usually the wrong mechanism.** Three of the six above exist only to repair the
@@ -139,13 +139,14 @@ rather than anywhere near the code.
   program reads without interpreting anything — a table in a prose document
   needs parsing rules the document never states, and a later edit breaks them in
   silence. Put in it what means nothing cut in half: names, and transliterations
-  no Thai dictionary carries — `ชิโนบุ` otherwise segments as `ชิ|โน|บุ` and
+  no Thai dictionary carries — `ฮารุกะ` otherwise segments as `ฮา|รุ|กะ` and
   lands across two lines.
 - **Keep phrases out of that list.** In the dictionary a phrase is one token,
-  and a token that will not fit its box brings the whole bubble's size down.
-  `ไอดอลกราเวีย` measures 139px against a 96px box; as `ไอดอล` + `กราเวีย` it
-  breaks between the two and the caption keeps its size. If the parts are
-  ordinary words, let the breaker treat them as ordinary words.
+  and a token that will not fit its box brings the whole bubble's size down. One
+  twelve-character compound measured 139px against a 96px box, so its caption
+  lettered at 22px against a tag worth 34 — and dragged the caption sharing its
+  utterance down with it. Split into the two ordinary words it is made of, the
+  line breaks between them and both captions keep their size.
 - **Attach punctuation to the word it leans on** — a closing mark to the word
   before, an opening mark to the word after. The segmenter returns `?`, `…` and
   `“` as tokens of their own, and a line will otherwise open with one.

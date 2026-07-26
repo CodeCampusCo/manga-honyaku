@@ -136,12 +136,12 @@ def lexicon(series: Path):
     stated, and that a later edit could break in silence.
 
     What belongs in it: words that mean nothing once cut in half. Names, and
-    transliterations no Thai dictionary carries — `ชิโนบุ` otherwise segments as
-    `ชิ|โน|บุ` and lands across two lines. What does not: a phrase whose parts
+    transliterations no Thai dictionary carries — `ฮารุกะ` otherwise segments as
+    `ฮา|รุ|กะ` and lands across two lines. What does not: a phrase whose parts
     are ordinary words. In the dictionary a phrase is a single token, and a
-    token that will not fit its box brings the whole bubble's size down —
-    `ไอดอลกราเวีย` measures 139px against a 96px box and cost one caption a
-    third of its size, and the caption sharing its utterance the same.
+    token that will not fit its box brings the whole bubble's size down — one
+    twelve-character compound measured 139px against a 96px box and cost its
+    caption a third of its size, and the caption sharing its utterance the same.
 
     Called once per run: the Trie costs about 200ms to build, and every page
     after the first reuses it.

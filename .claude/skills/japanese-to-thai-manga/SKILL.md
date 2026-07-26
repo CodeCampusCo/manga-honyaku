@@ -48,7 +48,7 @@ What the grid is actually saying:
 - **`เรา` is not used as first person.** Closeness is carried by the second
   person — `เธอ`, `นาย`, `แก` — while the first person stays `ฉัน`.
 - **A name works as either person**, which is what the Japanese is already doing
-  with `さくらちゃんは…`. It is the safest choice while a relationship is still
+  with `ハルカちゃんは…`. It is the safest choice while a relationship is still
   being established.
 - **The `very close` cell of the adult rows is character, not rule.** `เธอ` or
   `แก` depending on who the person is.
@@ -87,8 +87,8 @@ title form and record the exception.
 three sentences. Put the particle on the utterance, not on the bubble — usually
 the last one — and let the rest carry the register through word choice.
 
-Give the same treatment to a pronoun split across bubbles: `私 / グラビア頑張ります!`
-is `ฉัน` then `จะตั้งใจทำกราเวียค่ะ!`, not `ฉัน` then `ฉันจะ…`.
+Give the same treatment to a pronoun split across bubbles: `私 / 頑張ります!`
+is `ฉัน` then `จะตั้งใจทำให้เต็มที่ค่ะ!`, not `ฉัน` then `ฉันจะ…`.
 
 ## Match the original's length, not only its sense
 
