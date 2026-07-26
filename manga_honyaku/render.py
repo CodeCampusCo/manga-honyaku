@@ -8,16 +8,17 @@ A region is drawn only where `clean` erased something. The mask is the record of
 that: no mask, no space to draw into, and a sound effect or a phone screen that
 was deliberately left alone does not get Thai painted over it.
 
-Text is placed inside the mask itself, not inside the bounding box. A bubble is
-round and its box is not, so a block sized to the box overflows the curve at the
-corners. The mask is shrunk by a margin first, so the letters never touch the
-outline they sit inside.
+Text goes inside the region's own box, and inside the bubble outline, and inside
+neither alone. The box is where the Japanese was, and that placement is a
+composition the letterer chose; the outline is a curve that a rectangle overflows
+at the corners. So the two are intersected, and the outline side of it is pulled
+in with a distance transform.
 
-Thai needs no complex-text shaping here. Its marks stack above and below the
-base letter, and in a font that gives them zero advance — Sarabun does — basic
-layout puts them in the right place. A font that positions marks through GPOS
-instead would need a shaping engine, so a new font is worth looking at before
-it is trusted.
+Thai needs no complex-text shaping here. Its marks stack above and below the base
+letter, and in a font that gives them zero advance — every Thai comic face does —
+basic layout puts them in the right place. A font that positions marks through
+GPOS instead would draw wrongly rather than fail, so a new one is worth looking
+at before it is trusted.
 
 Derived from meangrinch/MangaTranslator (Apache-2.0); see NOTICE.
 """
@@ -26,13 +27,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from pythainlp.corpus.common import thai_words
 from pythainlp.tokenize import subword_tokenize, word_tokenize
+from pythainlp.util import Trie
 
 from manga_honyaku.page import agent_path
 
@@ -50,9 +54,19 @@ THAI_MIN, THAI_MAX = 0x0E00, 0x0E7F
 ORPHAN_CLUSTERS = 3
 ORPHAN_PENALTY = 5000.0
 
-# Below this the lettering stops being readable at print size, and a bubble that
-# cannot hold its line at this size is reported rather than filled with specks.
-MIN_SIZE = 13
+# Lettering size is set against the page, not against the bubble it goes in.
+# Sizing each bubble to what it can hold makes a two-word bubble shout and a
+# crowded one whisper; a band fixes the range and lets the fit choose within it.
+#
+# The numbers are for a one-megapixel page and are scaled by the square root of
+# the actual area, so one setting holds across scan resolutions — the same
+# normalisation MangaTranslator uses.
+#
+# In-bubble text gets a narrow band, which is what keeps a page even. Free text
+# gets a wide one: a chapter heading and a muttered aside are both free, and the
+# original draws them at wildly different sizes.
+BUBBLE_BAND = (11, 22)
+FREE_BAND = (9, 64)
 
 # How far the letters stay clear of the bubble outline, as a fraction of the
 # region's shorter side.
@@ -84,7 +98,28 @@ def missing_glyphs(font: ImageFont.FreeTypeFont, text: str) -> set[str]:
     return {c for c in set(text) if not c.isspace() and _signature(font, c) == absent}
 
 
-def tokenise(text: str) -> list[tuple[str, bool]]:
+def lexicon(series: Path):
+    """The series glossary, as words the segmenter must not break apart.
+
+    A transliterated name is in no Thai dictionary: ชิโนบุ segments as ชิ|โน|บุ
+    and the line breaker duly breaks a character into ชิโน and บุ on separate
+    lines. The glossary already holds every agreed transliteration, so it is
+    the list to hand the segmenter.
+    """
+    path = series / "glossary.md"
+    if not path.exists():
+        return None
+    terms = set()
+    for line in path.read_text().splitlines():
+        cells = [c.strip() for c in line.split("|")]
+        if len(cells) >= 4 and cells[2] and not set(cells[2]) <= set("-: "):
+            terms.add(cells[2])
+    if not terms:
+        return None
+    return Trie(set(thai_words()) | terms)
+
+
+def tokenise(text: str, custom=None) -> list[tuple[str, bool]]:
     """Break points, each with whether a space belongs before it.
 
     Thai runs together without spaces, so the segmenter supplies the breaks. The
@@ -92,7 +127,7 @@ def tokenise(text: str) -> list[tuple[str, bool]]:
     """
     tokens: list[tuple[str, bool]] = []
     space = False
-    for token in word_tokenize(text, engine=ENGINE):
+    for token in word_tokenize(text, engine=ENGINE, custom_dict=custom):
         if not token:
             continue
         if token.isspace():
@@ -167,9 +202,9 @@ def break_lines(
 
 
 def wrap(
-    text: str, font: ImageFont.FreeTypeFont, width: float, clusters: bool
+    text: str, font: ImageFont.FreeTypeFont, width: float, clusters: bool, custom=None
 ) -> list[str] | None:
-    tokens = tokenise(text)
+    tokens = tokenise(text, custom)
     if clusters:
         broken: list[tuple[str, bool]] = []
         for token, space in tokens:
@@ -184,19 +219,34 @@ def wrap(
     return break_lines(tokens, font, width)
 
 
-def safe_area(mask: np.ndarray, inset: int) -> tuple[np.ndarray, int, int]:
-    """The mask pulled in by `inset` pixels, cropped to its own bounds."""
+def safe_area(
+    mask: np.ndarray, box: list[float], inset: int
+) -> tuple[np.ndarray, int, int]:
+    """Where the Thai may go: inside the outline, and inside the original box.
+
+    The mask alone would let a line spread across the whole bubble. The box is
+    where the Japanese was, and where it was is a composition the letterer
+    chose — text that drifts out of it lands somewhere the artist left empty on
+    purpose. The mask still does the work the box cannot: the distance transform
+    pulls the area in from the outline along the bubble's curve, so a line never
+    touches it even where the box corner would.
+    """
     import cv2
 
-    ys, xs = np.nonzero(mask)
+    limit = np.zeros(mask.shape, bool)
+    x1, y1, x2, y2 = (int(v) for v in box)
+    limit[y1:y2, x1:x2] = True
+    within = mask & limit
+
+    ys, xs = np.nonzero(within)
     if len(ys) == 0:
         return np.zeros((0, 0), bool), 0, 0
-    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
-    crop = mask[y0:y1, x0:x1].astype(np.uint8)
-    # Distance to the outside; keeping only what is `inset` deep is an erosion
-    # that follows the bubble's curve rather than a rectangle's corners.
-    distance = cv2.distanceTransform(crop, cv2.DIST_L2, 5)
-    return distance >= inset, int(y0), int(x0)
+    top, bottom, left, right = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    # Measured on the bubble, not on the intersection: the box edge is not an
+    # edge to keep clear of, only the drawn outline is.
+    distance = cv2.distanceTransform(mask.astype(np.uint8), cv2.DIST_L2, 5)
+    safe = (distance >= inset) & within
+    return safe[top:bottom, left:right], int(top), int(left)
 
 
 def place(safe: np.ndarray, h: int, w: int) -> tuple[int, int] | None:
@@ -218,7 +268,9 @@ def place(safe: np.ndarray, h: int, w: int) -> tuple[int, int] | None:
     return tuple(valid[np.argsort(((valid - target) ** 2).sum(axis=1))[0]])
 
 
-def lay_out(text: str, safe: np.ndarray, font_path: str, largest: int):
+def lay_out(
+    text: str, safe: np.ndarray, font_path: str, largest: int, smallest: int, custom=None
+):
     """The biggest size at which the text fits, with its lines and position.
 
     Word boundaries are tried at every size before any size is tried with
@@ -227,11 +279,11 @@ def lay_out(text: str, safe: np.ndarray, font_path: str, largest: int):
     ติดต่|อมา, which reads as a typo rather than as a line break.
     """
     for clusters in (False, True):
-        for size in range(largest, MIN_SIZE - 1, -1):
+        for size in range(largest, smallest - 1, -1):
             font = ImageFont.truetype(font_path, size)
             line_height = int(size * LINE_SPACING)
             for fraction in (1.0, 0.85, 0.7, 0.55):
-                lines = wrap(text, font, safe.shape[1] * fraction, clusters)
+                lines = wrap(text, font, safe.shape[1] * fraction, clusters, custom)
                 if lines is None:
                     continue
                 block_w = int(max(font.getlength(line) for line in lines)) + 2
@@ -242,7 +294,9 @@ def lay_out(text: str, safe: np.ndarray, font_path: str, largest: int):
     return None
 
 
-def render(page: Image.Image, masks: np.ndarray, data: dict, font_path: str):
+def render(
+    page: Image.Image, masks: np.ndarray, data: dict, font_path: str, custom=None
+):
     image = page.copy()
     draw = ImageDraw.Draw(image)
 
@@ -254,10 +308,7 @@ def render(page: Image.Image, masks: np.ndarray, data: dict, font_path: str):
     if absent:
         warn(f"{data['page']}: font has no glyph for {''.join(sorted(absent))}")
 
-    # Lettering on one page should not swing from tiny to enormous just because
-    # one bubble holds two words. The cap is what stops the short lines running
-    # away; a crowded bubble is still free to go smaller.
-    cap = round(image.height * 0.035)
+    scale = math.sqrt(image.width * image.height / 1_000_000)
 
     for index, region in enumerate(data["regions"], start=1):
         target = region.get("target")
@@ -270,14 +321,14 @@ def render(page: Image.Image, masks: np.ndarray, data: dict, font_path: str):
 
         x1, y1, x2, y2 = region["box"]
         inset = max(2, round(INSET * min(x2 - x1, y2 - y1)))
-        safe, top, left = safe_area(mask, inset)
+        safe, top, left = safe_area(mask, region["box"], inset)
         if not safe.any():
             warn(f"{data['page']} {region['id']}: no room inside the outline")
             continue
 
-        laid = lay_out(
-            target, safe, font_path, largest=min(cap, int(safe.shape[0] / 1.6))
-        )
+        band = BUBBLE_BAND if region.get("placement") == "bubble" else FREE_BAND
+        smallest, largest = (max(4, round(v * scale)) for v in band)
+        laid = lay_out(target, safe, font_path, largest, smallest, custom)
         if laid is None:
             warn(f"{data['page']} {region['id']}: {target!r} does not fit")
             continue
@@ -301,6 +352,7 @@ def main() -> None:
     ap.add_argument("--work", type=Path, default=Path("work"))
     ap.add_argument("--out", type=Path, default=Path("out"))
     ap.add_argument("--font", default=FONT, help="path to a Thai .ttf")
+    ap.add_argument("--series", type=Path, default=Path("series"))
     args = ap.parse_args()
 
     if not args.font:
@@ -309,13 +361,14 @@ def main() -> None:
             "The marks must have zero advance; see this module's docstring."
         )
     args.out.mkdir(parents=True, exist_ok=True)
+    custom = lexicon(args.series)
 
     for page in args.pages:
         data = json.loads(agent_path(args.work, page.stem).read_text())
         clean = Image.open(args.work / f"{page.stem}.clean.png").convert("RGB")
         masks = np.asarray(Image.open(args.work / f"{page.stem}.masks.png"))
         out = args.out / f"{page.stem}.png"
-        render(clean, masks, data, args.font).save(out)
+        render(clean, masks, data, args.font, custom).save(out)
         drawn = sum(1 for r in data["regions"] if r.get("target"))
         print(f"{page.name}  {out}  {drawn} regions")
 

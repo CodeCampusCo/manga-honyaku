@@ -60,6 +60,12 @@ comic faces do, and it is what lets the marks stack without a shaping engine.
 Anything the font cannot draw is reported before the page is drawn, because a
 missing glyph comes out as an empty box that still looks like lettering.
 
+Thai is laid out inside each region's own box, so the translation sits where the
+Japanese sat. Lettering is sized against the page rather than the bubble, from a
+narrow band for speech and a wide one for free-floating text. `series/glossary.md`
+is read as a word list: without it a transliterated name is broken across lines
+as though it were several words.
+
 ## Apple Silicon
 
 RT-DETR is pinned to CPU. On the MPS backend it fails inside a float64
