@@ -28,6 +28,38 @@ knife, and that shift does work the vocabulary alone cannot.
 What belongs in `series/style.md` is only the exception: which character, on
 which page, is allowed past the default.
 
+### The pair by speaker and distance
+
+Read as *first person → second person*. Distance, not affection: a character can
+be fond of someone they are formal with.
+
+| Speaker | Stranger | Knows by sight | Friend | Very close | Someone above them |
+| --- | --- | --- | --- | --- | --- |
+| Young woman, girl | ฉัน → คุณ | ฉัน → เธอ | ฉัน → เธอ, name | เรา → แก | ฉัน → คุณ (+ค่ะ) |
+| Young man, boy | ผม → คุณ | ผม → นาย, name | ฉัน → นาย, name | ฉัน → แก | ผม → คุณ (+ครับ) |
+| Adult woman | ฉัน → คุณ | ฉัน → คุณ | ฉัน → เธอ | เรา → แก | ฉัน → คุณ (+ค่ะ) |
+| Adult man | ผม → คุณ | ผม → คุณ, name | ฉัน → นาย | ฉัน → แก | ผม → คุณ, ท่าน |
+| An elder, speaking down | ฉัน → หนู, เธอ | ฉัน → หนู, name | ฉัน → name, เธอ | ฉัน → แก | ผม, ดิฉัน → ท่าน |
+| Thug, villain | ฉัน → แก | ฉัน → แก | ฉัน → แก, พวกแก | **กู → มึง**, only past control | ผม → คุณ, ท่าน |
+
+Four things the grid is really saying:
+
+- **`หนู` is asymmetric.** As second person, from an adult down to a child, it is
+  warm and correct. As *first* person for a young woman it is what a Thai girl
+  would really say — and that is the problem: it relocates the scene to Thailand.
+- **`เรา → แก` is the ordinary close-friend pair**, especially among women and
+  the young. It carries the intimacy `กู → มึง` is usually reached for, at none
+  of the cost.
+- **A name works as either person**, which is exactly what Japanese is already
+  doing with `さくらちゃんは…`. It is the safest choice when the relationship is
+  still being established.
+- **`ค่ะ` / `ครับ` carries the deference**, so the pronoun does not have to climb
+  to meet it. `ฉัน` with `ค่ะ` is polite; `หนู` on top of it is a costume.
+
+The grid is a starting position, not a lookup table — a single scene moves along
+it as the temperature changes, and that movement is usually the translation's
+best tool.
+
 ## Politeness lands once per utterance
 
 `ค่ะ` / `ครับ` at the end of every bubble in a three-bubble sentence reads as
