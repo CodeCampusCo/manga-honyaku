@@ -78,6 +78,10 @@ ORPHAN_PENALTY = 5000.0
 SIZES = {"quiet": 24, "normal": 34, "loud": 50, "shout": 67, "display": 101}
 FLOOR = 9
 
+# The height the sizes above are quoted for. A volume scanned larger needs its
+# lettering scaled with it, or the same numbers come out half as big on the page.
+PAGE_HEIGHT = 1600
+
 # Thai stacks marks above and below the base letter, so lines need more room
 # between them than the font's own metrics suggest.
 LINE_SPACING = 1.32
@@ -305,6 +309,7 @@ def render(
     values = values or {}
     sizes = values.get("sizes") or SIZES
     line_spacing = values.get("line_spacing", LINE_SPACING)
+    scale = image.height / values.get("page_height", PAGE_HEIGHT)
     image = page.copy()
     draw = ImageDraw.Draw(image)
 
@@ -317,7 +322,7 @@ def render(
         warn(f"{data['page']}: font has no glyph for {''.join(sorted(absent))}")
 
     weights = {"regular": font_path, **(weights or {})}
-    smallest = max(4, int(values.get("floor", FLOOR)))
+    smallest = max(4, round(values.get("floor", FLOOR) * scale))
     placements = []
 
     for index, region in enumerate(data["regions"], start=1):
@@ -338,7 +343,9 @@ def render(
             # The tag was written when the page was prepared, from what the
             # Japanese was lettered at. What it is worth in Thai is the
             # stylesheet's to say, and a person's to adjust by eye.
-            wanted = max(smallest, sizes.get(region.get("size"), sizes["normal"]))
+            wanted = max(
+                smallest, round(sizes.get(region.get("size"), sizes["normal"]) * scale)
+            )
         else:
             # Free-floating text takes no step. Its box is the lettering's own
             # extent, drawn around it, so filling that box is the answer the

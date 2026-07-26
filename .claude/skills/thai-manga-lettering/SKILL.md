@@ -89,6 +89,47 @@ density tells a display face from a body face** — dark pixels over the region'
 box against the speech bubbles on the same page; a display face measures about
 twice.
 
+## Starting a new work
+
+The method transfers; none of the numbers do. Every work has its own hand, and
+every scan its own resolution. The whole calibration is one file:
+
+```json
+{
+  "page_height": 1600,
+  "line_spacing": 1.32,
+  "floor": 9,
+  "bands": { "quiet": 35, "normal": 47, "loud": 60, "shout": 88 },
+  "sizes": { "quiet": 24, "normal": 34, "loud": 50, "shout": 67, "display": 101 }
+}
+```
+
+`bands` is the ceiling in the **original's** pixels that gives a region its tag,
+read once when the page is prepared. `sizes` is what each tag is worth in **the
+translation's** pixels, read at every render. `page_height` is the page both are
+quoted for, so the same file survives a rescan at another resolution — without
+it, a larger scan measures larger throughout and puts every bubble in the
+loudest band there is.
+
+Five steps, once per work:
+
+1. **Detect and prepare a chapter.** Nothing here needs the translation.
+2. **Measure every region**: `sqrt(box_area / japanese_character_count)`.
+3. **Cluster the measurements and look at where they clump.** One work came out
+   at 41, 52, 69 and 109px with gaps between; the boundaries go in the gaps, not
+   at even intervals. Four or five clumps is what to expect — a letterer works
+   from a small set, which is the whole premise.
+4. **Take a first `sizes` from the clump centres and render.** Do not average, do
+   not tune the numbers on paper. The clump centres are in the original's script
+   at the original's proportions; the translation's script has its own, and only
+   a person looking at a page can say by how much.
+5. **Adjust one number, render, look again.** That loop is the calibration. It
+   converges in a few passes and nothing is ever measured again.
+
+Steps 1–3 are measurement and belong to the machine. Steps 4–5 are judgement and
+belong to a person — which is exactly why the sizes live in a file of their own
+rather than anywhere near the code.
+
 ## Line breaking
 
 - Segment with `pythainlp` — `newmm` is fine. With the DP and the orphan penalty

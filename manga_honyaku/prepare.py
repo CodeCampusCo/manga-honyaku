@@ -31,25 +31,19 @@ from PIL import Image
 
 from manga_honyaku.ocr import load_reader, read
 from manga_honyaku.page import agent_path, detector_path
+from manga_honyaku.render import settings
 
 # Left present and empty rather than absent, so that a fresh working file shows
 # what it is waiting for: what the text says, and what it is for. `clean` and
 # `render` read absent and null alike.
 SLOTS = {"source": None, "role": None}
 
-# What the Japanese in a region was lettered at, in the original's own pixels,
-# and the name that carries. Measured once here rather than at every render: the
-# number is a property of the artwork and it never changes again.
-#
-# The bands are where this artist's own sizes fall. Clustering 656 bubbles across
-# three chapters put them at 41, 52, 69 and 109px with nothing much between, and
-# the boundaries below sit in those gaps. A small tail under 35 is the muttering.
-#
-# The name is a tag, not a size. What each one is set at in Thai is the
-# stylesheet's business — series/lettering.json — so that a size can be changed
-# by eye without anything being measured again.
-BANDS = ((35, "quiet"), (47, "normal"), (60, "loud"), (88, "shout"))
+# Fallback bands, for a series with no stylesheet. The real ones are in
+# series/lettering.json, because where one size ends and the next begins is a
+# fact about the artist's hand and not about this program.
+BANDS = {"quiet": 35, "normal": 47, "loud": 60, "shout": 88}
 LARGEST = "display"
+PAGE_HEIGHT = 1600
 
 
 def lettered_at(box: list[float], source: str) -> float | None:
@@ -71,23 +65,40 @@ def lettered_at(box: list[float], source: str) -> float | None:
     return math.sqrt((x2 - x1) * (y2 - y1) / characters)
 
 
-def size_of(box: list[float], source: str) -> str:
+def size_of(box: list[float], source: str, bands: dict, scale: float) -> str:
+    """Which of the series' sizes this region's Japanese was lettered at.
+
+    Measured once, here, and written into the working file: the number is a
+    property of the artwork and it never changes again, so deriving it at every
+    render is the same work for the same answer. What the name is worth in Thai
+    is the stylesheet's business, so a size can be changed by eye afterwards
+    without anything being measured a second time.
+    """
     measured = lettered_at(box, source)
     if measured is None:
         return "normal"
-    for ceiling, name in BANDS:
-        if measured < ceiling:
+    for name, ceiling in sorted(bands.items(), key=lambda item: item[1]):
+        if measured < ceiling * scale:
             return name
     return LARGEST
 
 
-def reading(detected: dict, image: Image.Image | None, reader) -> dict:
+def reading(
+    detected: dict, image: Image.Image | None, reader, values: dict | None = None
+) -> dict:
+    values = values or {}
+    bands = values.get("bands") or BANDS
+    # The bands are quoted for a page of a stated height. A volume scanned larger
+    # measures larger throughout, and would otherwise land every bubble in the
+    # loudest band it has.
+    scale = detected["img_height"] / values.get("page_height", PAGE_HEIGHT)
+
     regions = []
     for region in detected["regions"]:
         entry = {**region, **SLOTS}
         if reader is not None:
             entry["source"] = read(image, region["box"], reader)
-        entry["size"] = size_of(region["box"], entry["source"] or "")
+        entry["size"] = size_of(region["box"], entry["source"] or "", bands, scale)
         regions.append(entry)
 
     return {
@@ -105,6 +116,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("pages", nargs="+", type=Path)
     ap.add_argument("--work", type=Path, default=Path("work"))
+    ap.add_argument("--series", type=Path, default=Path("series"))
     ap.add_argument(
         "--force",
         action="store_true",
@@ -119,6 +131,7 @@ def main() -> None:
     args = ap.parse_args()
 
     reader = None if args.no_ocr else load_reader()
+    values = settings(args.series)
 
     for page in args.pages:
         out = agent_path(args.work, page.stem)
@@ -128,7 +141,7 @@ def main() -> None:
 
         detected = json.loads(detector_path(args.work, page.stem).read_text())
         image = None if reader is None else Image.open(page).convert("RGB")
-        data = reading(detected, image, reader)
+        data = reading(detected, image, reader, values)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
         print(f"{page.name}  {out.name}  {len(data['regions'])} regions")
 
