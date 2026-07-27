@@ -150,6 +150,23 @@ These need no deciding per work; a work's own file records only where it departs
 - **Text drawn on a slant is lettered level.** Nothing rotates text, and level
   Thai beside a skewed phone screen reads fine at print size.
 
+## What goes here, and what goes in the work's own files
+
+This file holds **method, and facts about the language pair** — that Thai marks
+politeness where Japanese marks self-image, that `หนู` is a child's word, that
+`さん` is `คุณ`. Those are true of the next manga too, and re-deriving them per
+work would mean deciding the same thing again and having the two decisions drift.
+
+A work's own directory holds **what reading that work produced**: who its
+characters are and how each one speaks, its terms, its unbreakable words, what it
+has not answered yet. The grid above says what a register becomes in Thai;
+`characters.md` says which register a given character has. Neither can do the
+other's job.
+
+The test when something new is learned: *would this still be true of a different
+manga?* If yes it belongs here. If it is something a page told you, it belongs to
+the work that told you.
+
 ## Keep the series files current as you go
 
 - **`characters.md`** — identify by costume and props first; faces and

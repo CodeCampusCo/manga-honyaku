@@ -60,10 +60,15 @@ reason.
   artwork and never changes, so measuring it at every render is work done
   repeatedly to reach the same answer.
 - **Cluster the measurements to find the bands, once.** The artist's own sizes
-  come out in a handful of clumps with gaps between them; put the boundaries in
-  the gaps. 656 bubbles across three chapters clustered at 41, 52, 69 and 109px.
-  Do this per work — but check it, because it may not move: those three chapters
-  had medians of 46.2, 45.4 and 45.9.
+  come out in a handful of clumps with clear gaps between them; put the
+  boundaries in the gaps, not at even intervals. Four or five clumps is what to
+  expect, and the largest holds about half the bubbles on its own.
+
+  **Do the clustering — do not carry a remembered answer into it.** On one work
+  the three chapters measured separately agreed to within a pixel, which says
+  the calibration is stable *within* a work and nothing at all about the next
+  one. The numbers below are that work's, and are in this file to show the shape
+  of an answer, not to be one.
 - **Store the tag, not the size.** `"size": "loud"` in the working file. What
   `loud` is worth in Thai belongs in the stylesheet, because it is the one thing
   here a person has to judge with their eyes rather than measure.
@@ -133,10 +138,9 @@ Five steps, once per work:
 
 1. **Detect and prepare a chapter.** Nothing here needs the translation.
 2. **Measure every region**: `sqrt(box_area / japanese_character_count)`.
-3. **Cluster the measurements and look at where they clump.** One work came out
-   at 41, 52, 69 and 109px with gaps between; the boundaries go in the gaps, not
-   at even intervals. Four or five clumps is what to expect — a letterer works
-   from a small set, which is the whole premise.
+3. **Cluster the measurements and look at where they clump.** The boundaries go
+   in the gaps, not at even intervals. Four or five clumps is what to expect — a
+   letterer works from a small set, which is the whole premise.
 4. **Take a first `sizes` from the clump centres and render.** Do not average, do
    not tune the numbers on paper. The clump centres are in the original's script
    at the original's proportions; the translation's script has its own, and only
@@ -184,6 +188,21 @@ rather than anywhere near the code.
   like lettering.
 - **Letter dialogue in the regular cut.** A comic face's bold sits heavier than
   the lettering it replaces and reads as shouting; keep it for headings.
+
+## What goes here, and what goes in the work's own files
+
+This file holds **method, and facts about the two scripts** — that Thai marks
+stack with zero advance, that a name means nothing cut in half, that a letterer
+works from a small set of sizes. Those hold for the next manga too.
+
+A work's own directory holds **what measuring that work produced**: its bands,
+its sizes, its page height, its word list, and how its characters speak. Every
+one of those is re-derived for the next work by running the same method, which
+is why none of them is written down here.
+
+The test when something new is learned: *would this still be true of a different
+manga by a different artist?* If yes it belongs here. If it is an answer, it
+belongs to the work that answered it.
 
 ## Symptoms and causes
 
