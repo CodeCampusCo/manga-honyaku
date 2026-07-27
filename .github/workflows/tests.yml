@@ -1,0 +1,28 @@
+name: tests
+
+# A pull request from a fork runs here too. That is the point of having this:
+# a contributor cannot run the pipeline, because `series/` is not in the
+# repository and they have no manga, so the arithmetic is the only thing either
+# side can check. It should check itself.
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# The workflow token reads and nothing else. Anything here that needs more has
+# to say so on a line somebody reviews.
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      # --frozen so a lockfile that no longer matches pyproject.toml fails here
+      # rather than being quietly resolved into something nobody committed.
+      - run: uv sync --frozen
+      - run: uv run pytest -q
