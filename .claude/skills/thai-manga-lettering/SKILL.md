@@ -172,6 +172,12 @@ rather than anywhere near the code.
 - **Attach punctuation to the word it leans on** — a closing mark to the word
   before, an opening mark to the word after. The segmenter returns `?`, `…` and
   `“` as tokens of their own, and a line will otherwise open with one.
+- **`ๆ` is one of those marks and does not look like one.** It is Unicode
+  category `Lm`, so `isalnum()` calls it a letter and a rule written as "a token
+  with no alphanumerics is punctuation" lets it through. It then breaks off the
+  word it repeats and sits alone at the head of a line, meaning nothing —
+  `สาวๆ` comes back as `สาว / ๆ`. Name it alongside the closing marks, because
+  the test that finds them will not.
 - **Letter regions that share an utterance at one size.** One sentence at two
   sizes reads as two sentences.
 
@@ -213,6 +219,7 @@ belongs to the work that answered it.
 | One sentence at two sizes | Utterance grouping not applied to the size |
 | A name split across lines | Not in `words.txt` |
 | A line opening with `?` or a stray `“` | Punctuation attached to the wrong side |
+| A line opening with a lone `ๆ` | The same, for a mark `isalnum()` calls a letter |
 | Empty boxes that look like letters | Font lacks the glyph; nothing checked |
 | Heading no bigger than speech | Given a tag instead of filling its own box |
 | A pause bubble lettered enormous | Its one character measured against its whole box |

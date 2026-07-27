@@ -65,6 +65,12 @@ THAI_MIN, THAI_MAX = 0x0E00, 0x0E7F
 # Marks that open rather than close, and so belong to the word after them.
 OPENING = set("“‘([{<«")
 
+# `ๆ` repeats the word before it and means nothing apart from it, so it leans
+# backwards exactly as a closing mark does. It has to be named: Unicode files it
+# as a modifier letter, so the "no alphanumerics" test that finds the other
+# marks reads it as a word in its own right and lets a line open with it.
+REPEATING = "ๆ"
+
 # A continuation line starting with a Thai token this short or shorter is a stub
 # left by a break inside a compound. The penalty has to outweigh the raggedness
 # a more even split would cost, which is why it is this large.
@@ -174,7 +180,7 @@ def tokenise(text: str, custom=None) -> list[tuple[str, bool]]:
         # and a line breaker told to stand as tall as it can will start a line
         # with one. Punctuation belongs to the word it leans on — which for an
         # opening mark is the word after it, not the word before.
-        if not any(c.isalnum() for c in token):
+        if token == REPEATING or not any(c.isalnum() for c in token):
             if token in OPENING:
                 pending += token
             elif tokens and not space and not pending:
