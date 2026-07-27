@@ -18,6 +18,11 @@ To reuse a copy you already have:
 export MANGA_HONYAKU_DETECTOR=/path/to/comic-text-and-bubble-detector
 ```
 
+Detection and reading run on your machine. Once the weights are cached nothing
+about the pages leaves it, and `HF_HUB_OFFLINE=1` stops the hub being contacted
+at all — every stage still runs. `NOTICE` says what the library asks for and why
+the unauthenticated-request warning is not about that.
+
 ## Starting a new work
 
 Point Claude Code at the scans and ask:

@@ -17,6 +17,16 @@ Model weights are not distributed with this repository. Both are Apache-2.0 and
 are downloaded on first run: `ogkalu/comic-text-and-bubble-detector` for
 detection, and `kha-white/manga-ocr-base` for reading the Japanese.
 
+Detection and reading then run on your machine. Once the weights are cached,
+nothing about the pages leaves it: no image, no text, no filename. What the
+Hugging Face library does contact the hub for is a check that the cached files
+are still current, and it sends the model's own name to ask. Setting
+`HF_HUB_OFFLINE=1` stops even that, and every stage still runs — which is how
+this paragraph was checked rather than assumed.
+
+The warning about unauthenticated requests that prints on first load is about
+download rate limits, not about anything being sent.
+
 The Thai lettering face, `fonts/iannnnnJPG/2005_iannnnnJPG.ttf`, is
 2005_iannnnnJPG by iannnnn (Prachya Singhto), released 20 January 2005 through
 f0nt.com and distributed here with it:
