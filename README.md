@@ -160,6 +160,12 @@ comic faces do, and that is what lets the marks stack without a shaping engine.
 RT-DETR is pinned to CPU. On the MPS backend it fails inside a float64
 operation, and the failure surfaces as an empty result rather than an error.
 
+## Contributing
+
+[`CONTRIBUTING.md`](CONTRIBUTING.md). The short of it: you cannot run the
+pipeline without your own scans, but `uv run pytest` runs without any, and
+`master` takes pull requests only.
+
 ## Licence
 
 Apache-2.0; see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). The detection stage
