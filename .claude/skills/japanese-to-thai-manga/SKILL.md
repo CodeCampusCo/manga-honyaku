@@ -241,6 +241,14 @@ Read as a reader does. Where you already know something the page has not said
 yet, write that the page does not say it and where it arrives — not the answer
 folded in, which makes the record look more certain than the page is.
 
+**When you open a scan because the file did not say, write what you found into
+that page's entry.** A file that says nothing about something and a page that
+does not have it look identical, and that is the one gap the header rule sends
+you back to the scan for. Sending every session back for the same gap is the
+waste: pay it once and the entry stops being silent. This is what makes an entry
+worth trusting later — not that it was written carefully the first time, but
+that every session that had to go past it left what it found behind.
+
 Where a page is content you will not describe, still record its panels, who is
 in it, and what it does to the story. Those are the parts a later chapter needs,
 and they are not the part being declined.
