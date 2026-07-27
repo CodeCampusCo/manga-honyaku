@@ -25,4 +25,5 @@ jobs:
       # --frozen so a lockfile that no longer matches pyproject.toml fails here
       # rather than being quietly resolved into something nobody committed.
       - run: uv sync --frozen
+      - run: uv run python diag_ci.py
       - run: uv run pytest -q
