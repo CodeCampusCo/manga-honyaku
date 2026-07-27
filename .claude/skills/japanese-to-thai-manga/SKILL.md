@@ -171,12 +171,13 @@ These need no deciding per work; a work's own file records only where it departs
   never need the file; a general rule written down per work is a copy that will
   drift from the one it was copied from.
 - **`summary.md`** — capped length, rewritten rather than appended.
-- **`questions.md`** — what the work has not answered yet, carried forward.
-  **Update it at the end of a chapter, not while translating.** A chapter both
-  answers old questions and raises new ones, and the answers are what belong in
-  `characters.md`; leaving them in this file is how a work ends up with a list of
-  things it has known for three chapters. A per-page `questions` field is a
-  different thing — it is about one page's output, and stays there.
+- **`questions.md`** — what the work has not answered yet, and nothing else.
+  **Update it at the end of a chapter, not while translating.** An item leaves
+  the moment the work answers it, and the answer goes to `characters.md`. Keeping
+  a list of answers here instead is how a work ends up carrying, for three
+  chapters, a question it settled in the first — which happened. A per-page
+  `questions` field is a different thing: it is about one page's output, and
+  stays there.
 
 ## Read the page before you translate any of it
 

@@ -58,60 +58,6 @@ def _touches_edge(stats: np.ndarray, i: int, h: int, w: int) -> bool:
     )
 
 
-def interior(
-    gray: np.ndarray, box: list[float], text_box: list[float]
-) -> np.ndarray | None:
-    """Boolean mask of the paper enclosed by one bubble outline, holes filled.
-
-    Cropped to the bubble box, so a lobe of a conjoined bubble yields that lobe
-    and not the whole joined interior.
-    """
-    x1, y1, x2, y2 = (int(v) for v in box)
-    crop = gray[y1:y2, x1:x2]
-    if crop.size == 0:
-        return None
-
-    paper = (crop > PAPER).astype(np.uint8)
-    count, labels, stats, _ = cv2.connectedComponentsWithStats(paper, connectivity=4)
-    if count < 2:
-        return None
-
-    # Neither position nor size identifies the interior on its own. A seed
-    # walked out from the centre lands inside a letter, because the centre of a
-    # bubble is where the lettering is and the counter of あ or ロ is paper too.
-    # Size picks the paper outside the bubble whenever the box is loose. What
-    # does hold is that the interior is the paper the text sits on, so take the
-    # component overlapping the text box most.
-    tx1, ty1, tx2, ty2 = (int(v) for v in text_box)
-    window = labels[
-        max(ty1 - y1, 0) : max(ty2 - y1, 0), max(tx1 - x1, 0) : max(tx2 - x1, 0)
-    ]
-    if window.size == 0:
-        return None
-    overlap = np.bincount(window.ravel(), minlength=count)
-    overlap[0] = 0  # background is not a candidate
-    if not overlap.any():
-        return None
-    region = labels == int(np.argmax(overlap))
-
-    # The lettering sits in the holes of that component. Filling them is what
-    # turns "the paper you can see" into "the whole inside of the bubble". A
-    # hole is any part of the complement that does not reach the edge of the
-    # box; flooding inward from a corner would fail on a bubble that reaches it.
-    h, w = paper.shape
-    ocount, olabels, ostats, _ = cv2.connectedComponentsWithStats(
-        (~region).astype(np.uint8), connectivity=4
-    )
-    holes = np.isin(
-        olabels,
-        [i for i in range(1, ocount) if not _touches_edge(ostats, i, h, w)],
-    )
-
-    mask = np.zeros(gray.shape, bool)
-    mask[y1:y2, x1:x2] = region | holes
-    return mask
-
-
 def joined(regions: list[dict]) -> list[list[dict]]:
     """Regions whose outlines overlap, gathered into groups.
 
