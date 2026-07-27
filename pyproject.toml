@@ -21,3 +21,13 @@ dependencies = [
 # Stages are run as `uv run python -m manga_honyaku.<stage>` from the repo root;
 # nothing imports this tree as an installed distribution yet.
 package = false
+
+[tool.pytest.ini_options]
+# The same contract the stages run under: the repo root is the import root.
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
