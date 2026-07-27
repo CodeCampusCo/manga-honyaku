@@ -100,17 +100,18 @@ round is one number and one re-render.
 
 ## 6. Then the ordinary loop
 
-Translate a chapter, then
+Read a chapter and write down what you saw, translate it, then
 
 ```sh
+uv run python -m manga_honyaku.check  series/<work>
 uv run python -m manga_honyaku.clean  series/<work>
 uv run python -m manga_honyaku.render series/<work>
 ```
 
 Re-rendering never re-runs detection or OCR, so adjusting a line and looking
-again costs seconds. Read the whole page before translating any of it, and diff
-every recorded `source` against a fresh OCR read before rendering a batch — both
-are in the `japanese-to-thai-manga` skill.
+again costs seconds. Reading the whole chapter before translating any of it,
+what to write down while reading, and why `check` runs before rendering are all
+in the `japanese-to-thai-manga` skill.
 
 ## The two orderings that bite quietly
 

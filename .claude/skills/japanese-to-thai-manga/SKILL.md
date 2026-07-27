@@ -208,14 +208,14 @@ the raw scan and not from the rendered output. Four things per page:
 
 ```markdown
 ## <page id>
-ภาพ — the panels: how many, how they read, which are cuts to somewhere else.
+Art — the panels: how many, how they read, which are cuts to somewhere else.
   Then what is in them: place, who is present and what makes each recognisable
   here, props the page gives room to. Detail in proportion to the space the
   artist gave it — a full-page panel earns a paragraph, a row of talking heads
   earns a line. Say what changed from the last page; unchanged needs no words.
-เกิดอะไร — the action.
-ผู้พูด — who says each line, and what settled it: tail direction, where a tail
-  crosses a panel border, who is off-panel.
+What happens — the action.
+Who speaks — who says each line, and what settled it: tail direction, where a
+  tail crosses a panel border, who is off-panel.
 ? — what you could not read, and why you could not. Resolved later, in place,
   saying where the answer came from.
 ```
@@ -259,10 +259,12 @@ do not.
 
 ## Verify the record before rendering
 
-**Diff every recorded `source` against a fresh OCR read of its own box.** It
-catches the one failure that re-reading the page will not: lines written onto
-the wrong region ids. Three bubbles on one page held each other's lines and read
-perfectly as a conversation; only the diff showed it.
+**Run `python -m manga_honyaku.check <work> <pages>`.** It reads every region
+again and reports any holding a line that belongs to another region on the same
+page — the one failure that re-reading the page will not show. Three bubbles on
+one page held each other's lines and read perfectly as a conversation; only this
+found them. Readings you corrected by hand are counted and not listed, because
+that list is the same every run.
 
 Then check the targets for characters the face cannot draw, before a page is
 rendered rather than after.

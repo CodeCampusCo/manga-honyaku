@@ -47,10 +47,15 @@ chapters consistent.
 
 Record uncertainty in `questions` only when being wrong would change the output.
 
-Before rendering a batch, diff every recorded `source` against a fresh OCR read of
-its own box. It is cheap and it catches the one failure a re-read of the page will
-not: lines written onto the wrong region ids. Three bubbles on X0048 held each
-other's lines, and nothing else showed it.
+Before rendering a batch, run `python -m manga_honyaku.check <work> <pages>`. It
+reads every region again and reports any holding a line that belongs to another
+region on the same page. That is the one failure a re-read of the page will not
+show — the Thai is plausible where it sits, and only the boxes disagree. Three
+bubbles on X0048 held each other's lines, and nothing else found them.
+
+`python -m manga_honyaku.chapters <work> X0006-X0008` prints what the reading
+found on particular pages, so asking about three of them does not mean loading
+the chapter they are in.
 
 When you decline a region, mark it `declined` with a reason. Never silently skip or
 soften.

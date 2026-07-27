@@ -68,10 +68,17 @@ uv run python -m manga_honyaku.prepare  series/<work>     # -> pages/<id>.agent.
 #   prepare also OCRs the Japanese into it, and tags each region with the size
 #   the original was lettered at; --no-ocr leaves the reading to the agent
 #   the agent then reads the page and edits pages/<id>.agent.json
+uv run python -m manga_honyaku.check    series/<work>     # before rendering
 uv run python -m manga_honyaku.clean    series/<work>     # -> build/<id>.clean.png
                                                            #    build/<id>.masks.png
 uv run python -m manga_honyaku.render   series/<work>     # -> out/<id>.png
 ```
+
+`check` reads every region again and reports any whose text belongs to a
+different region on the same page — two lines written onto each other's ids.
+Nothing else finds that: the Thai reads plausibly in both places, so re-reading
+the page does not show it. It exits non-zero when it finds one. Readings the
+agent corrected are counted, not listed, unless you ask with `--differences`.
 
 ```sh
 uv run python -m manga_honyaku.render series/<work> X0006          # one page
@@ -84,7 +91,11 @@ segmenter's dictionary takes about 200ms to build and is built once per run.
 
 ```sh
 uv run python -m manga_honyaku.sheet out/X0006.png out/X0007.png -o /tmp/look.png
+uv run python -m manga_honyaku.chapters series/<work> X0006-X0008
 ```
+
+`chapters` prints what the reading found on the pages you name, from whichever
+chapter file holds them, with the rule at the top of those files attached.
 
 `sheet` scales pages down to the size past which reading stops getting easier,
 lays them out together, and reports what the result costs to read.
