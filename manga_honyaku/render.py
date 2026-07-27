@@ -163,10 +163,14 @@ def widths(font_path: str) -> tuple[float, set[str]]:
     face = ImageFont.truetype(font_path, 100)
     base = THAI_CONSONANTS[0]
     alone = face.getlength(base)
+    # Under a twentieth of a character is nothing. Shaping through HarfBuzz
+    # returns fractional advances, and four of these marks come back a tenth of
+    # a pixel wider than the base they sit on; asking for exactly zero calls
+    # them ordinary characters and overstates every line that has one.
     free = {
         chr(c)
         for c in range(0x0E00, 0x0E60)
-        if _named(chr(c)) and face.getlength(base + chr(c)) == alone
+        if _named(chr(c)) and face.getlength(base + chr(c)) - alone < alone / 20
     }
     one = statistics.median(face.getlength(c) for c in THAI_CONSONANTS) / 100
     return one, free
