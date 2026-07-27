@@ -160,6 +160,18 @@ comic faces do, and that is what lets the marks stack without a shaping engine.
 RT-DETR is pinned to CPU. On the MPS backend it fails inside a float64
 operation, and the failure surfaces as an empty result rather than an error.
 
+## Licence
+
+Apache-2.0; see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). The detection stage
+is derived from an Apache-2.0 project, model weights are downloaded rather than
+distributed, and the Thai face is included under its designer's release terms —
+`NOTICE` says which is which.
+
+**What is not in here is any manga.** `series/` is ignored, and stays ignored: a
+work's scans, its translation, and everything derived from them are yours and are
+not this repository's to carry. Point `raw.txt` at scans you have the right to
+use.
+
 ## Design
 
 [`docs/specs/2026-07-26-design.md`](docs/specs/2026-07-26-design.md) is the
