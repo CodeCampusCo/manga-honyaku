@@ -197,6 +197,54 @@ the work that told you.
   `questions` field is a different thing: it is about one page's output, and
   stays there.
 
+## Write down what you saw, page by page
+
+You have no memory of an image. It is in front of you while you look and gone
+when the session ends, and **what you wrote down is all that survives** — so a
+page you read and did not record is a page nobody read.
+
+Keep `chapters/<n>.md` in the work's directory, one entry per page, written from
+the raw scan and not from the rendered output. Four things per page:
+
+```markdown
+## <page id>
+ภาพ — the panels: how many, how they read, which are cuts to somewhere else.
+  Then what is in them: place, who is present and what makes each recognisable
+  here, props the page gives room to. Detail in proportion to the space the
+  artist gave it — a full-page panel earns a paragraph, a row of talking heads
+  earns a line. Say what changed from the last page; unchanged needs no words.
+เกิดอะไร — the action.
+ผู้พูด — who says each line, and what settled it: tail direction, where a tail
+  crosses a panel border, who is off-panel.
+? — what you could not read, and why you could not. Resolved later, in place,
+  saying where the answer came from.
+```
+
+Quote a line to refer to it — the Japanese, no region id and no translation. An
+id means opening another file; **a translation written here becomes the answer
+your translation pass was supposed to reach on its own.**
+
+Head every one of these files with the rule that makes them safe:
+
+> This is what was seen while reading, not a substitute for the page. If you need
+> something that is not written here, open the scan. Never guess from an
+> incomplete note.
+
+Because that is the failure this exists to stop. A page with two bubbles and no
+entry got both speakers wrong — assigned from the Japanese alone, `わたし` being
+feminine, without looking at the tails, which were round and both pointed at a
+third character. The Thai was identical either way, so nothing downstream caught
+it. **Structure is what gets misread, not content**: a cut between two places
+read as two people in one place.
+
+Read as a reader does. Where you already know something the page has not said
+yet, write that the page does not say it and where it arrives — not the answer
+folded in, which makes the record look more certain than the page is.
+
+Where a page is content you will not describe, still record its panels, who is
+in it, and what it does to the story. Those are the parts a later chapter needs,
+and they are not the part being declined.
+
 ## Read the page before you translate any of it
 
 Build a contact sheet of the annotated pages, two to four at a time, and settle
