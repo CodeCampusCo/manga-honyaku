@@ -94,8 +94,13 @@ twice.
 
 ## Starting a new work
 
-The method transfers; none of the numbers do. Every work has its own hand, and
-every scan its own resolution. The whole calibration is one file:
+The method transfers; none of the numbers do. Every work has its own hand and
+every scan its own resolution, so **every number below is an output of the five
+steps, not an input to them.** Copying the file into a new work gives lettering
+that is wrong by however much that artist differs from another — which is
+usually visible on the first page and always visible on the tenth.
+
+The shape, filled in from one work as a worked example:
 
 ```json
 {
@@ -107,12 +112,22 @@ every scan its own resolution. The whole calibration is one file:
 }
 ```
 
-`bands` is the ceiling in the **original's** pixels that gives a region its tag,
-read once when the page is prepared. `sizes` is what each tag is worth in **the
-translation's** pixels, read at every render. `page_height` is the page both are
-quoted for, so the same file survives a rescan at another resolution — without
-it, a larger scan measures larger throughout and puts every bubble in the
-loudest band there is.
+| | is | measured how |
+| --- | --- | --- |
+| `page_height` | the page both sets of numbers are quoted for | read off a scan |
+| `bands` | the ceiling in the **original's** pixels that gives a region its tag | step 3 |
+| `sizes` | what each tag is worth in **the translation's** pixels | steps 4–5 |
+| `line_spacing` | a property of the face, not the work | changes only with the face |
+| `floor` | below this the lettering stops being readable at print size | one look at a printed page |
+
+`bands` is read once, when a page is prepared; `sizes` at every render. Quoting
+both against `page_height` is what lets the same file survive a rescan at another
+resolution — without it a larger scan measures larger throughout and puts every
+bubble in the loudest band there is.
+
+The names are not fixed either. Four bands plus a display size is what one work
+needed; another may want three, or five, or different names. What has to hold is
+that a letterer's set is small and the translation uses the same one.
 
 Five steps, once per work:
 

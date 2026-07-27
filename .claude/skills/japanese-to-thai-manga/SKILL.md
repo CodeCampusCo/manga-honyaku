@@ -53,9 +53,9 @@ What the grid is actually saying:
 - **The `very close` cell of the adult rows is character, not rule.** `เธอ` or
   `แก` depending on who the person is.
 
-A register that escalates reads better than one that starts at the ceiling. One
-stalker says `ฉัน` while he is arguing and `กู` in the panel where he pulls a
-knife, and that shift does work the vocabulary alone cannot. The grid is a
+A register that escalates reads better than one that starts at the ceiling. Give
+a character `ฉัน` while he is still arguing and `กู` only in the panel where he
+stops arguing, and the shift does work the vocabulary alone cannot. The grid is a
 starting position, not a lookup table.
 
 The grid covers the cases a work would otherwise write down for itself: a
@@ -124,9 +124,9 @@ A syllable held is a syllable whose vowel opens: `ちゃ〜ん` is `จางง
 
 The same move carries the symbols a Thai comic face has no glyph for — **♥ ♡ ★
 ☆ ♪ 「」 ○**. They are tone markers, so render them the way Thai marks tone: in
-the wording and the drawn-out vowel. A character who ends most of her lines with
-`♥` reads as herself in Thai through the vowels and the word choice, never
-through a particle she would not otherwise use.
+the wording and the drawn-out vowel. Where a character ends most of her lines
+with `♥`, she reads as herself in Thai through the vowels and the word choice,
+never through a particle she would not otherwise use.
 
 Where the original uses a CJK bracket or a censoring circle, take the shape:
 `【】` becomes `[]` and `◯◯◯` becomes `OOO`. What `◯◯◯` says is that a word has
@@ -158,10 +158,11 @@ These need no deciding per work; a work's own file records only where it departs
   chapter 1. Name a voice group (`passerby`, `commenter`) rather than inventing
   a character, and give it its own entry the moment it is named.
 - **`glossary.md`** — every agreed transliteration and term, with the reason.
-  Nothing reads it but you; it is what makes chapter 8 say what chapter 1 said.
-  Per work, always — two works that both need `事務所` write it down twice, and
-  that is cheaper than a shared list that grows with every work and serves none
-  of them well.
+  Nothing reads it but you; it is what makes a later chapter say what the first
+  one said. Per work, always: two works that both need the same term write it
+  down twice, and that is cheaper than a shared list that grows with every work,
+  serves none of them particularly, and puts each work's vocabulary somewhere
+  anyone with the repository can read it.
 - **`words.txt`** — one Thai word per line, and the line breaker's whole
   dictionary. A different list for a different reason: it holds what stops
   meaning anything when cut in half, which is names and transliterations. Not
