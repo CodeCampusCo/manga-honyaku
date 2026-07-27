@@ -42,6 +42,37 @@ def test_a_consonant_costs_about_half_its_size():
     assert "ก" not in free
 
 
+@pytest.mark.parametrize(
+    "word", ["สวัสดีครับ", "ที่", "เนี่ย", "ขอบคุณมากค่ะ", "ไอดอลกราเวีย"]
+)
+def test_taking_the_free_marks_out_does_not_change_the_width(word):
+    """The invariant, and it has to hold on any Pillow build.
+
+    Pillow answers for a *lone* mark differently depending on whether libraqm is
+    in the build — zero without it, a full width with it, and one of those is
+    this machine while the other is the runner. Asked the way text is actually
+    set, they agree, which is why `widths` measures a mark on a base and why
+    this asks about a line rather than a character.
+    """
+    from PIL import ImageFont
+
+    _, free = widths(FONT)
+    face = ImageFont.truetype(FONT, 100)
+    bare = "".join(c for c in word if c not in free)
+    assert face.getlength(bare) == pytest.approx(face.getlength(word), abs=1)
+
+
+def test_room_is_an_estimate_and_says_so():
+    """`one` is a median, so counting by it converges over a line and is loose
+    over a word. `room` is a guide and not a bar, which is the same fact."""
+    from PIL import ImageFont
+
+    one, free = widths(FONT)
+    line = "ขอบคุณมากค่ะ ไม่หรอกครับ ช่วยผมได้เยอะเลย"
+    counted = sum(1 for c in line if c not in free) * one * 100
+    assert counted == pytest.approx(ImageFont.truetype(FONT, 100).getlength(line), rel=0.2)
+
+
 # --- how much fits ----------------------------------------------------------
 
 def test_room_is_zero_when_not_one_line_fits():

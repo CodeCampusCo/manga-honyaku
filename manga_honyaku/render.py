@@ -152,11 +152,33 @@ def widths(font_path: str) -> tuple[float, set[str]]:
     overstates a line by about a tenth. The face is the only authority on what
     it draws, and asking it means a face whose marks do advance would measure
     correctly here without anyone remembering to come back.
+
+    A mark is measured **on a base and not alone.** Pillow answers for a lone
+    mark differently depending on whether libraqm is in the build — zero without
+    it, a full width with it — and one of those machines is this one and the
+    other is the CI runner. Asked the way the text is actually set, the two
+    agree to under a pixel across a line, which is the same question `wrap` puts
+    to the font.
     """
     face = ImageFont.truetype(font_path, 100)
-    free = {chr(c) for c in range(0x0E00, 0x0E60) if face.getlength(chr(c)) == 0}
+    base = THAI_CONSONANTS[0]
+    alone = face.getlength(base)
+    free = {
+        chr(c)
+        for c in range(0x0E00, 0x0E60)
+        if _named(chr(c)) and face.getlength(base + chr(c)) == alone
+    }
     one = statistics.median(face.getlength(c) for c in THAI_CONSONANTS) / 100
     return one, free
+
+
+def _named(character: str) -> bool:
+    """Whether Unicode assigns this code point at all."""
+    try:
+        unicodedata.name(character)
+    except ValueError:
+        return False
+    return True
 
 
 def room_for(box: list[float], size: int, spacing: float, one: float) -> int:
