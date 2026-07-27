@@ -31,7 +31,14 @@ from PIL import Image
 
 from manga_honyaku.ocr import load_reader, read
 from manga_honyaku.page import Series
-from manga_honyaku.render import settings
+from manga_honyaku.render import (
+    FONT,
+    LINE_SPACING,
+    SIZES,
+    room_for,
+    settings,
+    widths,
+)
 
 # Left present and empty rather than absent, so that a fresh working file shows
 # what it is waiting for: what the text says, and what it is for. `clean` and
@@ -83,11 +90,42 @@ def size_of(box: list[float], source: str, bands: dict, scale: float) -> str:
     return LARGEST
 
 
+def tag(region: dict, entry: dict, bands: dict, style: dict, scale: float) -> None:
+    """The two fields the geometry decides: what size, and how much of it.
+
+    Where the Japanese cannot be measured — a region holding only punctuation —
+    a size already on the region is kept. The measurement has nothing to say
+    about `!?` in a burst bubble, so `normal` there is a fallback and not an
+    answer, and overwriting a size someone set by eye with a fallback loses the
+    only judgement that region ever had.
+    """
+    measured = lettered_at(region["box"], entry.get("source") or "")
+    if measured is not None or not entry.get("size"):
+        entry["size"] = size_of(region["box"], entry.get("source") or "", bands, scale)
+    if not region.get("bubble"):
+        # Free-floating text is lettered to its own extent rather than to a
+        # step, so there is no budget to state.
+        entry.pop("room", None)
+        return
+    sizes = style.get("sizes") or SIZES
+    at = max(1, round(sizes.get(entry["size"], sizes["normal"]) * scale))
+    room = room_for(
+        region["box"], at, style.get("line_spacing", LINE_SPACING), style["one"]
+    )
+    # A box too small to hold one line at its own size has no budget to state,
+    # and a stated zero reads as "write nothing".
+    if room:
+        entry["room"] = room
+    else:
+        entry.pop("room", None)
+
+
 def reading(
     detected: dict, image: Image.Image | None, reader, values: dict | None = None
 ) -> dict:
     values = values or {}
     bands = values.get("bands") or BANDS
+    style = {**values, "one": widths(values.get("font") or FONT)[0]}
     # The bands are quoted for a page of a stated height. A volume scanned larger
     # measures larger throughout, and would otherwise land every bubble in the
     # loudest band it has.
@@ -98,7 +136,7 @@ def reading(
         entry = {**region, **SLOTS}
         if reader is not None:
             entry["source"] = read(image, region["box"], reader)
-        entry["size"] = size_of(region["box"], entry["source"] or "", bands, scale)
+        tag(region, entry, bands, style, scale)
         regions.append(entry)
 
     return {
@@ -144,17 +182,16 @@ def main() -> None:
     # it reads what the working files already say and writes back one field.
     if args.retag:
         bands = values.get("bands") or BANDS
+        style = {**values, "one": widths(values.get("font") or FONT)[0]}
         for page in work.ids(args.pages):
             out = work.agent(page)
             data = json.loads(out.read_text())
             scale = data["img_height"] / values.get("page_height", PAGE_HEIGHT)
             moved = 0
             for region in data["regions"]:
-                was = region.get("size")
-                region["size"] = size_of(
-                    region["box"], region.get("source") or "", bands, scale
-                )
-                moved += region["size"] != was
+                before = (region.get("size"), region.get("room"))
+                tag(region, region, bands, style, scale)
+                moved += (region.get("size"), region.get("room")) != before
             out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
             print(f"{page}  {moved} of {len(data['regions'])} retagged")
         return

@@ -106,10 +106,16 @@ The bubble was drawn to hold what the Japanese said. A version carrying the
 meaning in half the words leaves it looking empty, and the reader sees the gap
 before they read the line.
 
-Measure it: Thai width per Japanese character, compared across the page. Where a
-line sits far below the rest it is usually rendering only the bare sense —
-`〜があって` is "it so happens that", `らしい` is "I hear that", `けっこう` is
-"quite, as these things go", `なんか` hedges the report it introduces. Saying
+`room` on the region is how many characters the box holds at the size its tag
+asks for — counted as widths, so a mark above or below costs nothing and `ที่` is
+one. Compose against it. A line coming in at half of `room` leaves the bubble
+looking empty; one well past it gets lettered smaller to fit. Neither is a
+failure, and neither is worth a second pass at the wording: the better sentence
+wins, and where it has to miss, long misses better than short.
+
+Where a line does come in short, the words to add are the ones a bare gloss
+drops — `〜があって` is "it so happens that", `らしい` is "I hear that", `けっこう`
+is "quite, as these things go", `なんか` hedges the report it introduces. Saying
 those in full is both more faithful *and* better lettering.
 
 A line the artist drew short stays short. And where the Thai runs much longer

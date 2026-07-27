@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import statistics
 import sys
 import unicodedata
 from pathlib import Path
@@ -84,6 +85,15 @@ ORPHAN_PENALTY = 5000.0
 SIZES = {"quiet": 24, "normal": 34, "loud": 50, "shout": 67, "display": 101}
 FLOOR = 9
 
+# Enough of the alphabet to take a median from. Thai consonants are drawn to one
+# width give or take, so the middle of these is what one character costs.
+THAI_CONSONANTS = "กขคงจฉชซดตถทนบปผพฟมยรลวสหอ"
+
+# How far a line may miss its `room` before saying so is worth the noise. Under
+# the first the bubble reads empty; over the second the lettering is visibly
+# smaller than its neighbours. Between them nothing is wrong enough to mention.
+EMPTY, CRAMPED = 0.45, 1.8
+
 # The height the sizes above are quoted for. A volume scanned larger needs its
 # lettering scaled with it, or the same numbers come out half as big on the page.
 PAGE_HEIGHT = 1600
@@ -131,6 +141,36 @@ def settings(series: Path) -> dict:
     """
     path = series / "lettering.json"
     return json.loads(path.read_text()) if path.exists() else {}
+
+
+def widths(font_path: str) -> tuple[float, set[str]]:
+    """What a character of this face costs: one width, and which cost nothing.
+
+    Asked of the font rather than of Unicode. Thai's above-vowels carry a
+    combining class of zero — a fact about collation, not about typesetting — so
+    `unicodedata.combining` calls ั ิ ี ึ ื ็ ์ ํ ๎ ordinary characters and
+    overstates a line by about a tenth. The face is the only authority on what
+    it draws, and asking it means a face whose marks do advance would measure
+    correctly here without anyone remembering to come back.
+    """
+    face = ImageFont.truetype(font_path, 100)
+    free = {chr(c) for c in range(0x0E00, 0x0E60) if face.getlength(chr(c)) == 0}
+    one = statistics.median(face.getlength(c) for c in THAI_CONSONANTS) / 100
+    return one, free
+
+
+def room_for(box: list[float], size: int, spacing: float, one: float) -> int:
+    """How many characters the box holds at that size.
+
+    The translator's budget, written into the working file so that the length of
+    a line is something to compose against rather than something to discover at
+    render. It is a guide and not a bar: a line landing well over it is lettered
+    smaller, which the reader forgives, and one landing under half of it leaves
+    the bubble looking empty, which the reader sees before reading it.
+    """
+    x1, y1, x2, y2 = box
+    lines = int((y2 - y1) // (size * spacing))
+    return max(0, round(lines * (x2 - x1) / (size * one)))
 
 
 def lexicon(series: Path):
@@ -403,7 +443,10 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("series", type=Path, help="a work's directory under series/")
     ap.add_argument("pages", nargs="*", help="page ids; a directory; none for all")
-    ap.add_argument("--font", default=FONT, help="path to a Thai .ttf")
+    ap.add_argument(
+        "--font",
+        help="path to a Thai .ttf, overriding the one in lettering.json",
+    )
     ap.add_argument(
         "--font-bold",
         default=FONT_BOLD,
@@ -412,15 +455,22 @@ def main() -> None:
 
     args = ap.parse_args()
 
-    if not args.font or not Path(args.font).exists():
-        raise SystemExit(
-            f"no font at {args.font!r}. Put 2005_iannnnnJPG under fonts/, or "
-            "point --font / MANGA_HONYAKU_FONT at another Thai face whose marks "
-            "have zero advance — see this module's docstring."
-        )
     work = Series(args.series)
     custom = lexicon(args.series)
     values = settings(args.series)
+
+    # The face belongs with the rest of the stylesheet: `room` was counted in
+    # its widths when the page was prepared, so rendering in another one would
+    # letter to a budget nothing had measured.
+    font = args.font or values.get("font") or FONT
+    if not Path(font).exists():
+        raise SystemExit(
+            f"no font at {font!r}. Put 2005_iannnnnJPG under fonts/, name a face "
+            "in the work's lettering.json, or point --font / MANGA_HONYAKU_FONT "
+            "at another Thai face whose marks have zero advance — see this "
+            "module's docstring."
+        )
+    _, free = widths(font)
     weights = (
         {"bold": args.font_bold}
         if args.font_bold and Path(args.font_bold).exists()
@@ -432,9 +482,19 @@ def main() -> None:
         clean = Image.open(work.derived(page, "clean.png")).convert("RGB")
         masks = np.asarray(Image.open(work.derived(page, "masks.png")))
         out = work.rendered(page)
-        render(clean, masks, data, args.font, custom, weights, values).save(out)
+        render(clean, masks, data, font, custom, weights, values).save(out)
         drawn = sum(1 for r in data["regions"] if r.get("target"))
         print(f"{page}  {out}  {drawn} regions")
+
+        # Not a failure, so not a warning: a line may miss its budget and be the
+        # right line anyway. Said once, in numbers, for whoever wants to look.
+        for region in data["regions"]:
+            target, room = region.get("target"), region.get("room")
+            if not target or not room:
+                continue
+            written = sum(1 for c in target if c not in free)
+            if not EMPTY * room < written < CRAMPED * room:
+                print(f"{' ' * len(page)}  {region['id']} wrote {written} of {room}")
 
 
 if __name__ == "__main__":

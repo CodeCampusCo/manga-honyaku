@@ -141,10 +141,13 @@ whole bubble's size down.
 
 `render` letters in **2005_iannnnnJPG**, a Thai comic face by iannnnn released
 free for commercial use through [f0nt.com](https://www.f0nt.com/release/iannnnnjpg/).
-It is in `fonts/`; see `NOTICE`. `--font` and `--font-bold`, or
-`MANGA_HONYAKU_FONT` and `MANGA_HONYAKU_FONT_BOLD`, point elsewhere. A region may
-ask for the bolder cut with `weight` — a chapter heading is set in a display face
-at twice the ink density of the bubbles.
+It is in `fonts/`; see `NOTICE`. A work names its own face under `font` in
+`lettering.json`, which is where it belongs: `room` on each region counts that
+face's widths, so rendering in a different one would letter to a budget nothing
+measured. `--font` overrides it for an experiment, and `MANGA_HONYAKU_FONT` sets
+the fallback for a work that names none. A region may ask for the bolder cut with
+`weight` — a chapter heading is set in a display face at twice the ink density of
+the bubbles.
 
 The face carries no `♥ ♡ ★ ☆ ♪ 「」 ○` and no CJK brackets. `render` reports any
 character it cannot draw before drawing the page.

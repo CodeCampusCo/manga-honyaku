@@ -109,6 +109,7 @@ The shape, filled in from one work as a worked example:
 
 ```json
 {
+  "font": "fonts/iannnnnJPG/2005_iannnnnJPG.ttf",
   "page_height": 1600,
   "line_spacing": 1.32,
   "floor": 9,
@@ -119,11 +120,17 @@ The shape, filled in from one work as a worked example:
 
 | | is | measured how |
 | --- | --- | --- |
+| `font` | the face this work is lettered in | chosen once, then everything below is quoted for it |
 | `page_height` | the page both sets of numbers are quoted for | read off a scan |
 | `bands` | the ceiling in the **original's** pixels that gives a region its tag | step 3 |
 | `sizes` | what each tag is worth in **the translation's** pixels | steps 4–5 |
 | `line_spacing` | a property of the face, not the work | changes only with the face |
 | `floor` | below this the lettering stops being readable at print size | one look at a printed page |
+
+The face belongs in this file rather than on the command line because the rest of
+the file is quoted for it: `room` on each region counts how many of that face's
+characters the box holds, and `line_spacing` is the face's own. Rendering in
+another face letters to a budget nothing measured.
 
 `bands` is read once, when a page is prepared; `sizes` at every render. Quoting
 both against `page_height` is what lets the same file survive a rescan at another
