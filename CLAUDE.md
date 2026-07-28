@@ -11,6 +11,11 @@ up a manga that has not been translated here before, then `japanese-to-thai-mang
 `docs/specs/2026-07-26-design.md` is the original design — read it for why the work
 is split this way, not for how anything currently works.
 
+**Start at the work's `handoff.md`.** A work is translated a chapter at a time by
+someone who did not translate the one before it, so that file — not this one —
+says where the chapters stand, what was decided late, and what not to re-run.
+Read it before anything else in `series/<work>/`.
+
 ## Working here
 
 One directory per work, and every stage takes it as its first argument:
@@ -19,7 +24,7 @@ One directory per work, and every stage takes it as its first argument:
     uv run python -m manga_honyaku.render series/<work> X0006      # one page
     uv run python -m manga_honyaku.render series/<work> 01/ch02    # a directory
 
-`detect`, `annotate`, `prepare`, `clean` and `render` all read that way. Inside:
+`detect`, `annotate`, `prepare`, `clean`, `render` and `audit` all read that way. Inside:
 `pages/` is the translation and rebuilds from nothing, `build/` rebuilds from the
 scans in seconds, `out/` is the finished pages, and the scans themselves are
 read-only wherever `raw.txt` points.
@@ -53,9 +58,24 @@ region on the same page. That is the one failure a re-read of the page will not
 show — the Thai is plausible where it sits, and only the boxes disagree. Three
 bubbles on X0048 held each other's lines, and nothing else found them.
 
+After rendering, run `python -m manga_honyaku.audit <work> <pages>`. It checks a
+finished page against the artwork it actually produced, and every check in it is
+there because that failure reached a rendered page once and nothing said so — a
+region erased and never drawn back into, Japanese left under the Thai by `clean`,
+a broken reading order, a decline with no reason. `check` and `audit` do not
+overlap: one re-reads the Japanese, the other looks at what came out.
+
 `python -m manga_honyaku.chapters <work> X0006-X0008` prints what the reading
 found on particular pages, so asking about three of them does not mean loading
 the chapter they are in.
 
-When you decline a region, mark it `declined` with a reason. Never silently skip or
-soften.
+A region's `status` says what happens to it, and the three values answer
+different questions: **`ok`** takes the Japanese out and puts Thai in its place,
+**`declined`** leaves the artwork alone and says why in `reason`, **`erase`**
+takes the Japanese out and puts nothing back — furigana the detector boxed on
+its own, a glyph the interior fill could not reach.
+
+Never silently skip or soften. `ok` with nothing to draw cannot be told from a
+line somebody forgot, and `declined` is never erased at all, so the page keeps
+the Japanese while the record says it was handled. Both mistakes have been made
+here; that is why the third value exists.
