@@ -92,12 +92,24 @@ agent corrected are counted, not listed, unless you ask with `--differences`.
 `audit` runs after `render` and asks what the finished page can be asked without
 a model: a region that was erased and then drew nothing back into the hole,
 Japanese that survived `clean`, a reading order with a gap in it, a decline with
-no reason, a line that misses the box it was composed against, a polite particle
-misspelt. Two of those are silent by construction — `render` counts regions that
+no reason, a polite particle misspelt. It does not judge how the page looks — a
+check counting a line against its box lived here and was removed, because a size
+step is an accepted price for a fuller line, so the count was reporting
+something that was never work while burying the findings that were.
+
+Two of its checks are silent by construction — `render` counts regions that
 *have* a translation rather than regions it drew, and nothing anywhere reports
 Japanese left under the Thai. Every check in it is there because that failure
 reached a rendered page once and nothing said so. `check` and `audit` do not
 overlap: one re-reads the Japanese, the other looks at what came out.
+
+Four passes look at a finished chapter, and **the split is by what each is
+allowed to see.** A pass that can see everything checks nothing, because the
+translator knows what it meant and reads its own error as correct. So
+`translate-pages` writes; `proofread-against-source` has the Japanese and the
+Thai and never opens `out/`; `page-look` has only the rendered page and no
+Japanese at all; `audit` is this program. A line that is fluent, sits well, and
+says the opposite of the original gets past three of the four.
 
 ```sh
 uv run python -m manga_honyaku.render series/<work> X0006          # one page

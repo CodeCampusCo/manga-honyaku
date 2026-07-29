@@ -130,15 +130,18 @@ its ink and 45 from its box is one where 45 fits the line exactly.
 
 ### When it will not fit
 
-Even calibrated, four regions in ten come down. **The lever is the Thai, not the
-number.** Of the regions that came down in one volume, the median needed to be a
-third shorter to have fitted; only a quarter of them were within 20% of fitting.
-That is a translation instruction and it belongs in the translating skill.
+Even calibrated, four regions in ten come down, and **that is the system working,
+not a backlog.** The size a region asks for is measured off the original and the
+box is the artist's, so the only thing that could close the gap is a shorter
+sentence — and a shorter sentence is usually the worse translation. Ruled on a
+six-page A/B: the fuller version ran 31% longer, dropped the share keeping its
+asked-for size from 71% to 59%, and won. **A size step is cheaper than a dropped
+nuance.** Do not read a low fitted-rate as work to do.
 
-Some cannot be won at all: **a narrow box cannot hold large horizontal Thai** at
-any size, because 64 pixels of width is three characters a line whatever the
-size, and the line breaker will come down until they fit. Reword it, or accept
-it, or let it run outside its box if it sits on white.
+Some cannot be won at any length: **a narrow box cannot hold large horizontal
+Thai**, because 64 pixels of width is three characters a line whatever size is
+asked for, and the breaker comes down until they fit. Accept it, or let it run
+outside its box if it sits on white.
 
 `weight` is the other thing in the working file, and it is not size. **Ink
 density tells a display face from a body face** — dark pixels over the region's

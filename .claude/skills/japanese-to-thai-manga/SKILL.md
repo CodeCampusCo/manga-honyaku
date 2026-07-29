@@ -1,9 +1,59 @@
 ---
 name: japanese-to-thai-manga
-description: Use when translating Japanese manga dialogue into Thai — choosing pronouns and register, matching a line's length to the bubble it was drawn for, establishing reading order and speaker attribution, and keeping a series consistent across chapters. Covers what to check before the pages are lettered.
+description: Use when translating Japanese manga dialogue into Thai — reading order and speaker attribution, composing an utterance whole before cutting it across balloons, choosing pronouns and register, and why an accurate line still reads stiff. Covers keeping a series consistent across chapters and what to check before the pages are lettered.
 ---
 
 # Translating manga into Thai
+
+## Read the page before you translate any of it
+
+Build a contact sheet of the annotated pages, two to four at a time, and settle
+**reading order and speaker attribution first**. Right-to-left within a row of
+panels, right-to-left and top-down within a panel. A bubble drawn across a panel
+border belongs to the panel its tail comes from.
+
+Attribution is where the guessing goes wrong, and the check is cheap: read the
+sequence back as a conversation. `それに…` following a line by the same speaker
+means you have the order right; following a line by the other speaker means you
+do not.
+
+**The page is the unit of context, and it is measured, not a preference.** For
+text embedded in an image, one page per call with the units numbered in reading
+order beats every alternative tried: line-by-line loses on every metric, and *so
+does more* — three pages, and a whole volume, both score below a single page
+(Lippmann et al., COLING 2025, JP→EN ChrF: line-by-line < 36.0 page text < 36.6
++ page image < **36.8** + numbered units in order; 3-page 35.9, whole volume
+35.7). Below the page a line is under-determined — Japanese drops subjects, so a
+bubble alone has to guess, and the documented failure is a first-person line
+coming out as *you*. Above the page, context dilutes.
+
+So read the page, and do not reach for the chapter to translate from. The
+chapter file is background — what the scene is and who is in it — and is not a
+source: it holds no Japanese, and translating from a summary of the words
+instead of the words is a loss no later pass recovers.
+
+## The unit of translation is the utterance, not the bubble
+
+A sentence split across two or three balloons is **one sentence**. Compose it
+whole in Thai, then cut it across the regions, giving each piece its own
+region's `room`. Mark the group with `utterance` so `render` letters them at one
+size — one sentence at two sizes reads as two sentences.
+
+**Do not close what the original left open.** A balloon that ends mid-clause in
+Japanese ends mid-clause in Thai. Translating balloon by balloon quietly finishes
+each one, and the rhythm goes: `最初はもっとそういうんじゃなくて` runs on into the
+next balloon, but came out `ตอนแรกไม่ได้เป็นแบบนั้นเลย` — a closed sentence with
+a full stop's worth of finality the original does not have.
+
+This is also the lever the research measures. Numbering the units in reading
+order is worth about as much as adding the page image at all, and what it buys
+is exactly this: the sequence relation that lets a sentence split across two
+bubbles be joined before it is translated.
+
+**The risk it introduces is real and there is a check for it.** Composing whole
+and then cutting makes it easier for a line to land in the wrong region, and that
+is the one failure re-reading will not show, because the Thai reads plausibly in
+both places. `check` exists for it — run it.
 
 ## Pronouns are not translated, they are re-chosen
 
@@ -87,9 +137,9 @@ role produces nonsense.
 
 ## Politeness lands once per utterance
 
-`ค่ะ` / `ครับ` at the end of every bubble in a three-bubble sentence reads as
-three sentences. Put the particle on the utterance, not on the bubble — usually
-the last one — and let the rest carry the register through word choice.
+A three-bubble sentence takes one `ค่ะ` / `ครับ`, on the last bubble — the
+particle belongs to the utterance, which is the unit everything else here is
+composed in too.
 
 Who gets one at all follows the same distance the pronouns do. A woman speaking
 politely ends with `ค่ะ`. **Men among themselves take no particle**: `ครับ`
@@ -142,13 +192,93 @@ than the Japanese, **shorten the line rather than the lettering** — a
 four-character shout cannot be lettered large under a fifteen-character
 translation of it.
 
-**Going over `room` is the ordinary case, not the exception**, and it is the
-one thing here the machine cannot do for you. Four regions in ten across a
-volume overflow and get shrunk, and of those the median needed to be a third
-shorter to have fitted. Nothing else can recover that: the size a region asks
-for is measured off the original, and the box is the artist's. **The only lever
-is the sentence.** Where a line is close, cutting a hedge or a particle wins it
-outright — a quarter of the overflowing regions were within 20% of fitting.
+**Going over `room` is the ordinary case, not the exception.** Four regions in
+ten across a volume overflow and are lettered a step smaller, and of those the
+median would have had to be a third shorter to fit. That is not a backlog to
+work through. `room` is itself about 15% optimistic — the breaker leaves slack
+on most lines and a word cannot be split — so a line written to exactly `room`
+already costs its bubble a step.
+
+**Pay the step.** A six-page rerun composed 31% longer, dropped the share of
+bubbles keeping their asked-for size from 71% to 59%, and was the better
+translation: it was ruled *"อ่านลื่นขึ้นและดูเป็นการพูดคุยที่เป็นธรรมชาติขึ้น"*,
+with the single longest line on the page named as the best one on it. The size
+step is cheap and the dropped nuance is not — an aspect marker, a hedge, whose
+face is red. Nothing downstream puts those back.
+
+So when a line will not fit, **cut padding you added, never content the original
+has.** A phrase repeated for emphasis in Japanese that Thai does not need, a
+pronoun the Thai can drop, a transliteration that could be a translation — those
+are yours to spend. The hedge that carries the speaker's hesitation is not.
+
+## Why an accurate line still reads stiff
+
+Every fault below produces Thai in which **no word is wrong**. Checking the
+translation for accuracy cannot find any of them, which is why they survive a
+whole volume.
+
+The governing rule, from Thai translation teaching: carry the original's
+structure and word order across *as far as it holds* — and **the moment the Thai
+sounds ขัดหู, abandon the structure, not the wording.** Nudging words inside a
+Japanese-shaped sentence never repairs it. `Not until I filled my glass did I
+notice that it was broken` has three Thai renderings; the first two keep the
+shape and *do not communicate*, and only the third — which rebuilds the sentence
+as Thai — does. The failure here is stopping at the first two.
+
+### A noun in Japanese is usually a verb in Thai
+
+Japanese builds compound nouns freely and Thai does not. `コーティング量がズバ抜
+けてる` came out `ปริมาณที่เคลือบมามันเหนือชั้นกว่าใครเพื่อน` — a noun phrase
+built to the Japanese's shape. Thai says it with a verb: `เคลือบมาเยอะกว่าเจ้า
+อื่นเยอะเลย`.
+
+The same finding comes back from the other direction. A study of 214 Japanese
+sound and manner words in published Thai manga and novel translations found five
+methods, and in order of frequency they are **adverb, verb, left untranslated,
+noun, result phrase** — the two commonest are both predicates and the noun is
+next to last. **When a Japanese noun is doing the work of a verb, translate it
+as a verb.**
+
+### Words that are each correct and wrong together
+
+Thai calls this คู่คำ; the error is a *collocational clash*, and it is the exact
+shape of "accurate but reads wrong":
+
+| wrong | right |
+| --- | --- |
+| เปียโน**อันนี้** | เปียโน**หลังนี้** |
+| อากาศร้อน**แรง** | อากาศร้อน**ระอุ** |
+| น้ำตา**ตกหล่น** | น้ำตา**ร่วงหล่น** |
+| ปรบมือ**เร็วๆ** | ปรบมือ**รัวๆ** |
+| พระสงฆ์ 3 **องค์** | พระสงฆ์ 3 **รูป** |
+
+A pair you had to think about is a pair worth recording in the work's
+`glossary.md`, the same as a term.
+
+### The final particle is information, not decoration
+
+Japanese marks stance on the sentence end — `よ ね ぞ わ の さ ぜ` — and **Thai has
+its own system in the same slot**, so the information is in the source and
+dropping it is a choice. Thai's particles split into stance (`นะ` `สิ` `ล่ะ`
+`หรอก` `เลย` `ไง` `แหละ` `เนี่ย` `ว่ะ`) and politeness (`ค่ะ` `ครับ`), and the
+vowel's length carries the feeling: **short is curt or serious** — `ซิ` `นะ`
+`เถอะ` `ละ` — **long is coaxing** — `ซี่` `น่า` `น้า`.
+
+`小口が落ちたぞ!!` came out `โคงุจิตกลงไปแล้ว!!`, which drops `ぞ` — and `ぞ` was
+the whole of the line's voice. Over one volume, **56% of dialogue lines ended
+with no particle at all**, against 33% with a stance particle and 11% with a
+polite one. Some of those are right — an exclamation, a fragment running into
+the next balloon — but a bare majority is worth suspecting.
+
+Aspect and reason markers go the same way. `まざっちゃうから...` became
+`มันจะปนกันค่ะ…`, which keeps the fact and loses both the `ちゃう` that says *and
+that would be a shame* and the `から` that says *that's why*.
+
+### An idiom translated by its parts inverts
+
+`覚悟を決める` is *to steel yourself*, and came out `ทำใจ`, which is *to resign
+yourself* — the opposite stance. When a phrase is idiomatic, ask what it is for
+before what it says; an accurate rendering of the parts can invert the speaker.
 
 ## Thai lengthens by opening the vowel
 
@@ -377,18 +507,6 @@ that every session that had to go past it left what it found behind.
 Where a page is content you will not describe, still record its panels, who is
 in it, and what it does to the story. Those are the parts a later chapter needs,
 and they are not the part being declined.
-
-## Read the page before you translate any of it
-
-Build a contact sheet of the annotated pages, two to four at a time, and settle
-**reading order and speaker attribution first**. Right-to-left within a row of
-panels, right-to-left and top-down within a panel. A bubble drawn across a panel
-border belongs to the panel its tail comes from.
-
-Attribution is where the guessing goes wrong, and the check is cheap: read the
-sequence back as a conversation. `それに…` following a line by the same speaker
-means you have the order right; following a line by the other speaker means you
-do not.
 
 ## Verify the record before rendering
 

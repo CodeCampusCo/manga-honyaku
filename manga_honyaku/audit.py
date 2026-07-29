@@ -22,6 +22,14 @@ have gone and did not.
 The rest is bookkeeping the working file can answer on its own, and is here
 because a translator checking it by hand is a translator not reading the page.
 
+**Nothing here judges how the page looks.** A check counting a line against its
+box lived here once and was removed: the `page-look` pass does that by eye,
+against an exception list a Thai reader calibrated, and a size step has since
+been ruled an acceptable price for a fuller line — so the count was reporting
+something that was never work. It was also 96 of one volume's 107 findings, and
+it buried the eleven that were real. **A check whose output is never work is not
+a check**, and this file is only worth running if everything it prints is.
+
 `status` has three values and each answers a different question, which is why
 the third had to exist:
 
@@ -46,7 +54,6 @@ from PIL import Image
 
 from .clean import KEEP, PAPER
 from .page import Series
-from .render import CRAMPED, EMPTY, widths
 
 # A region's box is where the lettering sat, so on a tight box some of the
 # bubble's own outline falls inside it and reads as ink no matter how clean the
@@ -147,21 +154,6 @@ def residue(data: dict, clean_png: Path, masks: Path) -> list[str]:
     return out
 
 
-def fit(data: dict, free: set[str]) -> list[str]:
-    """Lines that miss the box they were composed against."""
-    out = []
-    for r in data["regions"]:
-        target, room = r.get("target"), r.get("room")
-        if not target or not room:
-            continue
-        written = sum(1 for c in target if c not in free)
-        if written <= EMPTY * room:
-            out.append(f"{r['id']}: {written} of {room} — the bubble reads empty")
-        elif written >= CRAMPED * room:
-            out.append(f"{r['id']}: {written} of {room} — letters visibly smaller")
-    return out
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("series", help="a work's directory under series/")
@@ -174,8 +166,6 @@ def main() -> None:
     args = parser.parse_args()
 
     work = Series(Path(args.series))
-    lettering = json.loads((work.root / "lettering.json").read_text())
-    _, free = widths(str(Path(lettering["font"])))
 
     total = 0
     for page in work.ids(args.pages):
@@ -185,7 +175,6 @@ def main() -> None:
             + spelling(data)
             + drawn(data, work.derived(page, "masks.png"))
             + residue(data, work.derived(page, "clean.png"), work.derived(page, "masks.png"))
-            + fit(data, free)
         )
         if not work.rendered(page).exists():
             found.insert(0, "not rendered")
