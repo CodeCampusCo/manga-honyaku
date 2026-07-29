@@ -1,6 +1,6 @@
 ---
 name: new-manga-work
-description: Use when starting a manga that has not been translated here before — setting up the work's directory, checking the detector against its art style, calibrating its lettering sizes, and seeding the notes files. Covers the order the steps have to happen in, and the two points where the person has to look at a page before you go on.
+description: Use when starting a manga that has not been translated here before — setting up the work's directory, checking the detector against its art style, calibrating its lettering multiplier, and seeding the notes files. Covers the order the steps have to happen in, and the two points where the person has to look at a page before you go on.
 ---
 
 # Bringing up a new work
@@ -61,17 +61,17 @@ artwork and stay.
 uv run python -m manga_honyaku.prepare series/<work>
 ```
 
-OCR runs here into `source`, and each region gets a `size` tag from what the
-Japanese in its box was lettered at.
+OCR runs here into `source`, and each region gets a `size` — a number in the
+page's own pixels, measured from its box and the Japanese in it.
 
-The tags are provisional until this work has its own `lettering.json`, and that
-ordering is forced: the measurement divides a box by its character count, and the
-character count comes from the OCR that runs here.
+That ordering is forced: the measurement divides a box by its character count,
+and the character count comes from the OCR that runs here.
 
 ## 4. Calibrate the lettering, then stop
 
-Measure, cluster, put the band boundaries in the gaps, take a first guess at the
-sizes — the `thai-manga-lettering` skill has all of it, under *Starting a new
+One number, `k`, turns that measurement into Thai pixels. Finding it needs a
+translated chapter to look at, and it has a knee past which raising it does
+nothing — the `thai-manga-lettering` skill has the method under *Starting a new
 work*. Write `series/<work>/lettering.json`, then
 
 ```sh
@@ -117,5 +117,6 @@ in the `japanese-to-thai-manga` skill.
 
 - **Detection before anything.** Changing it after a page has been read means
   starting that page again; there is no merge.
-- **OCR before the size bands**, for the reason in step 3 — which is why the
-  first tags are provisional and get re-applied once `lettering.json` exists.
+- **OCR before the sizes**, for the reason in step 3. `--retag` re-applies them
+  from the working files without touching anything else, so `k` can move after
+  pages have been read.
