@@ -15,11 +15,8 @@ import pytest
 
 from manga_honyaku.chapters import chosen, entries
 from manga_honyaku.check import settle, says_something
-from manga_honyaku.prepare import lettered_at, size_of, tag
+from manga_honyaku.prepare import cells, lettered_at, tag, tag_page
 from manga_honyaku.render import FONT, lay_out, room_for, widths
-
-BANDS = {"quiet": 35, "normal": 47, "loud": 60, "shout": 88}
-SIZES = {"quiet": 24, "normal": 34, "loud": 50, "shout": 67, "display": 101}
 
 
 # --- what a character costs -------------------------------------------------
@@ -92,6 +89,19 @@ def test_room_grows_with_the_box_and_shrinks_with_the_size():
 
 # --- what the Japanese was lettered at --------------------------------------
 
+def test_a_pause_recorded_twice_over_is_one_pause_on_the_page():
+    """The bug: `・・・...` is three dots read twice, in two scripts.
+
+    Twenty-eight regions in volume one carry a pause written both ways, from two
+    readings of one box being merged. Counted as six characters the region
+    measures a sixth smaller than it is — and small lettering is the fault this
+    measurement exists to find.
+    """
+    assert cells("じゃあさ・・・...") == cells("じゃあさ・・・") == 7
+    assert cells("あ...") == 4                       # a pause written once stands
+    assert cells("あ い") == 2                       # whitespace is not a cell
+
+
 def test_punctuation_alone_cannot_be_measured():
     """`!?` in a burst bubble and `…` in a pause are both unmeasurable.
 
@@ -109,69 +119,70 @@ def test_more_characters_in_the_same_box_measure_smaller():
     assert big > small
 
 
-def test_whitespace_is_not_a_character():
-    assert lettered_at([0, 0, 100, 100], "あ い") == lettered_at([0, 0, 100, 100], "あい")
-
-
-def test_size_of_reads_the_bands_against_the_scale():
-    """A larger scan measures larger throughout, so the bands are quoted for a
-    stated page height and scaled to the page in hand."""
-    box = [0, 0, 100, 100]                   # ten characters measure at 31.6
-    ten = "あいうえおかきくけこ"
-    assert size_of(box, ten, BANDS, scale=1) == "quiet"
-    assert size_of(box, ten, BANDS, scale=0.6) == "loud"
-    assert size_of(box, ten, BANDS, scale=0.2) == "display"   # past every band
-    assert size_of(box, "!?", BANDS, scale=1) == "normal"     # the fallback
-
-
 # --- the two fields prepare writes ------------------------------------------
 
 def style(**over):
-    return {"sizes": SIZES, "line_spacing": 1.32, "one": 0.46, **over}
+    return {"k": 1.45, "line_spacing": 1.32, "one": 0.46, **over}
+
+
+def bubble(box, **over):
+    return {"box": box, "bubble": box, **over}
+
+
+def test_a_region_that_cannot_be_measured_takes_the_rest_of_its_page():
+    """The bug: --retag overwrote sizes it could not measure with a constant.
+
+    A burst bubble reading `!?` still has to be lettered, and what the page it
+    sits on was set at is a better answer than a number carried in from another
+    book.
+    """
+    regions = [
+        bubble([0, 0, 100, 100], source="あいうえ"),
+        bubble([100, 0, 200, 100], source="あいうえ"),
+        bubble([200, 0, 300, 100], source="!?"),
+    ]
+    tag_page(regions, 200, style())
+    assert regions[0]["size"] == regions[1]["size"] == regions[2]["size"]
 
 
 def test_a_fallback_does_not_displace_a_size_set_by_eye():
-    """The bug: --retag overwrote sizes it could not measure.
-
-    A burst bubble reading `!?` had been set to `display` by hand and came back
-    as `normal`, which is what the measurement says when it has nothing to say.
-    """
-    region = {"box": [0, 0, 100, 100], "bubble": [0, 0, 100, 100],
-              "source": "!?", "size": "display"}
-    tag(region, region, BANDS, style(), scale=1)
-    assert region["size"] == "display"
-
-
-def test_an_unmeasurable_region_with_no_size_yet_still_gets_one():
-    region = {"box": [0, 0, 100, 100], "bubble": [0, 0, 100, 100], "source": "!?"}
-    tag(region, region, BANDS, style(), scale=1)
-    assert region["size"] == "normal"
+    regions = [bubble([200, 0, 300, 100], source="!?", size=99)]
+    tag_page(regions, 200, style())
+    assert regions[0]["size"] == 99
 
 
 def test_a_measurable_region_is_always_re_measured():
-    region = {"box": [0, 0, 100, 100], "bubble": [0, 0, 100, 100],
-              "source": "あいうえおかきくけこ", "size": "display"}
-    tag(region, region, BANDS, style(), scale=1)
-    assert region["size"] == "quiet"
+    regions = [bubble([0, 0, 100, 100], source="あいうえ", size=99)]
+    tag_page(regions, 200, style())
+    assert regions[0]["size"] != 99
 
 
 def test_free_floating_text_gets_no_budget():
-    """It is lettered to its own extent rather than to a step."""
-    region = {"box": [0, 0, 400, 200], "source": "あい", "room": 99}
-    tag(region, region, BANDS, style(), scale=1)
+    """It is lettered to its own extent rather than to a size."""
+    region = {"box": [0, 0, 400, 200], "room": 99}
+    tag(region, 30, style())
     assert "room" not in region
 
 
 def test_a_bubble_too_small_for_one_line_gets_no_budget():
-    region = {"box": [0, 0, 200, 10], "bubble": [0, 0, 200, 10], "source": "あい"}
-    tag(region, region, BANDS, style(), scale=1)
+    region = bubble([0, 0, 200, 10])
+    tag(region, 30, style())
     assert "room" not in region
 
 
 def test_a_bubble_that_holds_something_states_how_much():
-    region = {"box": [0, 0, 400, 200], "bubble": [0, 0, 400, 200], "source": "あい"}
-    tag(region, region, BANDS, style(), scale=1)
+    region = bubble([0, 0, 400, 200])
+    tag(region, 20, style())
     assert region["room"] > 0
+
+
+def test_one_multiplier_moves_every_region_together():
+    """What survives translation is the ratio between the regions on a page, so
+    the budget answers to `k` the same way wherever the region sits."""
+    small, large = bubble([0, 0, 400, 200]), bubble([0, 0, 400, 200])
+    tag(small, 20, style())
+    tag(large, 20, style(k=2.9))
+    assert small["room"] > large["room"]
 
 
 # --- comparing a reading against what was recorded --------------------------

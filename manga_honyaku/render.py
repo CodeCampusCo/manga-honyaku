@@ -78,12 +78,18 @@ REPEATING = "ๆ"
 ORPHAN_CLUSTERS = 3
 ORPHAN_PENALTY = 5000.0
 
-# Fallbacks only. What each named size is worth comes from
-# series/lettering.json, because a letterer works from a small set of sizes and
-# the translation should use the same set the same way. Nothing here is a size to
-# letter at; these exist so a series with no file still renders.
-SIZES = {"quiet": 24, "normal": 34, "loud": 50, "shout": 67, "display": 101}
+# Thai pixels per pixel of the original's lettering. One number for a whole
+# work — the real one is in series/lettering.json — because what has to survive
+# translation is the *ratio* between the regions on a page, and a single
+# multiplier preserves every one of them exactly. It is a property of the two
+# faces, Thai against Japanese, so it is set once by eye on a rendered page and
+# then left alone. Nothing about a region changes it.
+K = 1.07
 FLOOR = 9
+
+# A page where nothing could be measured still has to be lettered. Ordinary
+# dialogue runs about this fraction of the page's height.
+TYPICAL = 0.022
 
 # Enough of the alphabet to take a median from. Thai consonants are drawn to one
 # width give or take, so the middle of these is what one character costs.
@@ -94,8 +100,9 @@ THAI_CONSONANTS = "กขคงจฉชซดตถทนบปผพฟมย�
 # smaller than its neighbours. Between them nothing is wrong enough to mention.
 EMPTY, CRAMPED = 0.45, 1.8
 
-# The height the sizes above are quoted for. A volume scanned larger needs its
-# lettering scaled with it, or the same numbers come out half as big on the page.
+# The height `floor` is quoted for — the one number left that is an absolute
+# count of pixels rather than a ratio, so a volume scanned larger needs it
+# scaled or the smallest lettering allowed comes out half as big on the page.
 PAGE_HEIGHT = 1600
 
 # Thai stacks marks above and below the base letter, so lines need more room
@@ -379,7 +386,7 @@ def render(
     values: dict | None = None,
 ):
     values = values or {}
-    sizes = values.get("sizes") or SIZES
+    k = values.get("k", K)
     line_spacing = values.get("line_spacing", LINE_SPACING)
     scale = page.height / values.get("page_height", PAGE_HEIGHT)
     image = page.copy()
@@ -412,12 +419,11 @@ def render(
         bx, by, bw, bh = box
 
         if region.get("bubble"):
-            # The tag was written when the page was prepared, from what the
-            # Japanese was lettered at. What it is worth in Thai is the
-            # stylesheet's to say, and a person's to adjust by eye.
-            wanted = max(
-                smallest, round(sizes.get(region.get("size"), sizes["normal"]) * scale)
-            )
+            # The size was measured when the page was prepared: what the
+            # Japanese was lettered at, in this page's own pixels. Both faces
+            # are measured on the same page, so `k` needs no scaling.
+            measured = region.get("size") or TYPICAL * page.height
+            wanted = max(smallest, round(k * measured))
         else:
             # Free-floating text takes no step. Its box is the lettering's own
             # extent, drawn around it, so filling that box is the answer the
@@ -465,10 +471,56 @@ def render(
     return image
 
 
+def calibrate(work: Series, pages, custom, font: str, values: dict) -> None:
+    """What each candidate `k` would do, so it is chosen on evidence.
+
+    A region is set at `k` times its measured size and comes down while it
+    overflows, so past some `k` the page stops getting bigger and raising it only
+    turns regions that fitted into regions that get shrunk. Shrinking is
+    arbitrary, so what pays is the ratio between the regions on a page, which is
+    the one thing the size carries. The eye cannot see that happening — the last
+    three rows of this table look alike on paper and are not alike at all.
+
+    Take the knee: the largest `k` at which `drew` is still rising.
+    """
+    spacing = values.get("line_spacing", LINE_SPACING)
+    regions = []
+    for page in pages:
+        data = json.loads(work.agent(page).read_text())
+        scale = data["img_height"] / values.get("page_height", PAGE_HEIGHT)
+        smallest = max(4, round(values.get("floor", FLOOR) * scale))
+        for r in data["regions"]:
+            if not r.get("target") or not r.get("bubble"):
+                continue
+            x1, y1, x2, y2 = r["box"]
+            size = r.get("size") or TYPICAL * data["img_height"]
+            regions.append((r["target"], (x1, y1, x2 - x1, y2 - y1), smallest, size))
+
+    print(f"{len(regions)} regions with Thai in a bubble")
+    print(f"{'k':>6}{'fitted':>9}{'drew':>9}{'ratios kept':>14}")
+    for k in (0.7, 0.8, 0.9, 1.0, 1.1, 1.2):
+        got = []
+        for target, box, smallest, size in regions:
+            wanted = max(smallest, round(k * size))
+            laid = lay_out(target, box, font, smallest, wanted, custom, spacing)
+            if laid:
+                got.append((laid[0].size / size, laid[0].size >= wanted))
+        drew = [g for g, _ in got]
+        fitted = sum(f for _, f in got) / len(got)
+        kept = 1 - statistics.pstdev(drew) / statistics.mean(drew)
+        print(f"{k:6.2f}{fitted:8.0%}{statistics.median(drew):8.2f}x{kept:13.0%}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("series", type=Path, help="a work's directory under series/")
     ap.add_argument("pages", nargs="*", help="page ids; a directory; none for all")
+    ap.add_argument(
+        "--calibrate",
+        action="store_true",
+        help="draw nothing; print what each candidate `k` would do, to choose "
+        "the one in lettering.json by",
+    )
     ap.add_argument(
         "--font",
         help="path to a Thai .ttf, overriding the one in lettering.json",
@@ -497,6 +549,9 @@ def main() -> None:
             "module's docstring."
         )
     _, free = widths(font)
+    if args.calibrate:
+        calibrate(work, work.ids(args.pages), custom, font, values)
+        return
     weights = (
         {"bold": args.font_bold}
         if args.font_bold and Path(args.font_bold).exists()

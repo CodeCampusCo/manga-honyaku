@@ -25,6 +25,7 @@ import argparse
 import json
 import math
 import unicodedata
+from itertools import groupby
 from pathlib import Path
 
 from PIL import Image
@@ -33,8 +34,9 @@ from manga_honyaku.ocr import load_reader, read
 from manga_honyaku.page import Series
 from manga_honyaku.render import (
     FONT,
+    K,
     LINE_SPACING,
-    SIZES,
+    TYPICAL,
     room_for,
     settings,
     widths,
@@ -45,19 +47,52 @@ from manga_honyaku.render import (
 # `render` read absent and null alike.
 SLOTS = {"source": None, "role": None}
 
-# Fallback bands, for a series with no stylesheet. The real ones are in
-# series/lettering.json, because where one size ends and the next begins is a
-# fact about the artist's hand and not about this program.
-BANDS = {"quiet": 35, "normal": 47, "loud": 60, "shout": 88}
-LARGEST = "display"
-PAGE_HEIGHT = 1600
+# Every way this book writes a pause.
+PAUSE = ".。・…‥·˙⋯｡︙"
+
+
+def cells(source: str) -> int:
+    """How many cells of the grid the source fills.
+
+    One character to a cell, except that a pause is often recorded twice over,
+    once in each script — `・・・...` where the page has three dots. Two readings
+    of the same box were merged and nobody looked, because to a translator it
+    reads as a pause either way. Counting both makes the region's lettering a
+    sixth smaller than it is, and small lettering is the fault this whole
+    measurement exists to find. A run of pause marks counts as its longest
+    unbroken stretch of one mark.
+    """
+    total = 0
+    for pause, run in groupby("".join(source.split()), key=lambda c: c in PAUSE):
+        marks = list(run)
+        total += (
+            max(len(list(same)) for _, same in groupby(marks)) if pause else len(marks)
+        )
+    return total
 
 
 def lettered_at(box: list[float], source: str) -> float | None:
-    """The size the Japanese was set at, from the box and the character count.
+    """How large this region has to be lettered, in the page's own pixels.
 
-    Japanese sets on a square grid, so a box of area A holding n characters was
-    lettered at about sqrt(A / n) whichever way the text ran.
+    `sqrt(box area / n)` — Japanese sets on a square grid, so n characters
+    filling a box of area A were set at about sqrt(A / n) whichever way the text
+    ran.
+
+    Measuring the *ink* inside the box instead was tried and is worse, which is
+    worth writing down because the argument for it is convincing and wrong. The
+    detector's box is loose: its padding runs from 4% to six times the ink, so it
+    plainly does not measure the original's letters. But the padding varies with
+    the region's *shape*, not with its scale, which makes the box a tilted ruler
+    that is steady, against ink extent that swings with whichever glyphs a region
+    happens to contain. Volume one contains its own proof: 80 groups of bubbles
+    that were one sentence in the original, and so were certainly lettered alike.
+    The box holds them to 10% at the median, the ink to 16%.
+
+    And the tilt is not a defect here. This number does not have to describe the
+    Japanese — it has to letter the Thai, which is set horizontally into boxes
+    drawn for vertical Japanese and has to fill them. Carrying some of the space
+    available into the answer is what makes it fill them. A caption measured at
+    20 from its ink and 45 from its box is one where 45 fits the line exactly.
 
     A region holding only a pause is excluded: one character in a box sized for a
     beat of silence measures as enormous lettering, and the dots were drawn at
@@ -65,52 +100,35 @@ def lettered_at(box: list[float], source: str) -> float | None:
     """
     if not any(unicodedata.category(c).startswith(("L", "N")) for c in source):
         return None
-    characters = len([c for c in source if not c.isspace()])
+    characters = cells(source)
     if not characters:
         return None
     x1, y1, x2, y2 = box
     return math.sqrt((x2 - x1) * (y2 - y1) / characters)
 
 
-def size_of(box: list[float], source: str, bands: dict, scale: float) -> str:
-    """Which of the series' sizes this region's Japanese was lettered at.
-
-    Measured once, here, and written into the working file: the number is a
-    property of the artwork and it never changes again, so deriving it at every
-    render is the same work for the same answer. What the name is worth in Thai
-    is the stylesheet's business, so a size can be changed by eye afterwards
-    without anything being measured a second time.
-    """
-    measured = lettered_at(box, source)
-    if measured is None:
-        return "normal"
-    for name, ceiling in sorted(bands.items(), key=lambda item: item[1]):
-        if measured < ceiling * scale:
-            return name
-    return LARGEST
-
-
-def tag(region: dict, entry: dict, bands: dict, style: dict, scale: float) -> None:
+def tag(entry: dict, size: float | None, style: dict) -> None:
     """The two fields the geometry decides: what size, and how much of it.
 
-    Where the Japanese cannot be measured — a region holding only punctuation —
-    a size already on the region is kept. The measurement has nothing to say
-    about `!?` in a burst bubble, so `normal` there is a fallback and not an
-    answer, and overwriting a size someone set by eye with a fallback loses the
-    only judgement that region ever had.
+    `size` is a number in the page's own pixels, and deliberately not a name.
+    Naming it `quiet` or `shout` was tried and is a mistake, because why the
+    artist set a line large cannot be read back off the page — a shout from
+    across the street is lettered small — so the name is a guess, and a region
+    labelled `quiet` that holds a shout sends the translator after the wrong
+    words. A wrong label is worse than none. Nothing here interprets the number:
+    what carries meaning is the ratio between the regions on a page, and one
+    multiplier preserves every one of them exactly.
     """
-    measured = lettered_at(region["box"], entry.get("source") or "")
-    if measured is not None or not entry.get("size"):
-        entry["size"] = size_of(region["box"], entry.get("source") or "", bands, scale)
-    if not region.get("bubble"):
+    if size is not None:
+        entry["size"] = round(size)
+    if not entry.get("bubble"):
         # Free-floating text is lettered to its own extent rather than to a
-        # step, so there is no budget to state.
+        # size, so there is no budget to state.
         entry.pop("room", None)
         return
-    sizes = style.get("sizes") or SIZES
-    at = max(1, round(sizes.get(entry["size"], sizes["normal"]) * scale))
+    at = max(1, round(style.get("k", K) * entry["size"]))
     room = room_for(
-        region["box"], at, style.get("line_spacing", LINE_SPACING), style["one"]
+        entry["box"], at, style.get("line_spacing", LINE_SPACING), style["one"]
     )
     # A box too small to hold one line at its own size has no budget to state,
     # and a stated zero reads as "write nothing".
@@ -120,24 +138,42 @@ def tag(region: dict, entry: dict, bands: dict, style: dict, scale: float) -> No
         entry.pop("room", None)
 
 
+def tag_page(entries: list[dict], height: int, style: dict) -> None:
+    """Size every region on a page, then the budget that follows from it.
+
+    A page at a time because of the regions that cannot be measured — a burst
+    bubble reading `!?`, a box holding only a pause. They still have to be
+    lettered, and the honest guess is what the rest of this page was set at
+    rather than a constant carried in from another book. A size already on such
+    a region is kept: it is the only judgement that region has ever had.
+    """
+    measured = [lettered_at(e["box"], e.get("source") or "") for e in entries]
+    known = sorted(m for m in measured if m)
+    usual = known[len(known) // 2] if known else TYPICAL * height
+    for entry, size in zip(entries, measured):
+        if size is None:
+            # Only a number is a size someone can have meant. Anything else is
+            # a name from the model this replaced, and names are what it got rid
+            # of: the page cannot say why the artist set a line large, so a
+            # region tagged `quiet` may hold a shout from across the street.
+            kept = entry.get("size")
+            size = kept if isinstance(kept, (int, float)) else usual
+        tag(entry, size, style)
+
+
 def reading(
     detected: dict, image: Image.Image | None, reader, values: dict | None = None
 ) -> dict:
     values = values or {}
-    bands = values.get("bands") or BANDS
     style = {**values, "one": widths(values.get("font") or FONT)[0]}
-    # The bands are quoted for a page of a stated height. A volume scanned larger
-    # measures larger throughout, and would otherwise land every bubble in the
-    # loudest band it has.
-    scale = detected["img_height"] / values.get("page_height", PAGE_HEIGHT)
 
     regions = []
     for region in detected["regions"]:
         entry = {**region, **SLOTS}
         if reader is not None:
             entry["source"] = read(image, region["box"], reader)
-        tag(region, entry, bands, style, scale)
         regions.append(entry)
+    tag_page(regions, detected["img_height"], style)
 
     return {
         "version": detected["version"],
@@ -163,8 +199,8 @@ def main() -> None:
     ap.add_argument(
         "--retag",
         action="store_true",
-        help="only re-apply the size tags from the current lettering.json, "
-        "leaving everything else in the working files alone",
+        help="only re-measure the size tags and the room that follows from "
+        "them, leaving everything else in the working files alone",
     )
     ap.add_argument(
         "--no-ocr",
@@ -176,23 +212,21 @@ def main() -> None:
     work = Series(args.series)
     values = settings(args.series)
 
-    # Adjusting the bands after pages have been read is ordinary — the first ones
-    # are guessed before there is anything to measure. Re-running prepare would
-    # answer it by discarding the translation, so retagging is its own switch:
-    # it reads what the working files already say and writes back one field.
+    # Changing `k` after pages have been read is ordinary — the first one is
+    # guessed before there is a rendered page to judge it on. Re-running prepare
+    # would answer it by discarding the translation, so retagging is its own
+    # switch: it reads what the working files already say and writes back the
+    # two fields the geometry decides.
     if args.retag:
-        bands = values.get("bands") or BANDS
         style = {**values, "one": widths(values.get("font") or FONT)[0]}
         for page in work.ids(args.pages):
             out = work.agent(page)
             data = json.loads(out.read_text())
-            scale = data["img_height"] / values.get("page_height", PAGE_HEIGHT)
-            moved = 0
-            for region in data["regions"]:
-                before = (region.get("size"), region.get("room"))
-                tag(region, region, bands, style, scale)
-                moved += (region.get("size"), region.get("room")) != before
+            before = [(r.get("size"), r.get("room")) for r in data["regions"]]
+            tag_page(data["regions"], data["img_height"], style)
+            after = [(r.get("size"), r.get("room")) for r in data["regions"]]
             out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+            moved = sum(a != b for a, b in zip(before, after))
             print(f"{page}  {moved} of {len(data['regions'])} retagged")
         return
 

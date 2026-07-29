@@ -31,8 +31,8 @@ Point Claude Code at the scans and ask:
 
 It follows the `new-manga-work` skill from there — makes the directory, runs
 detection, and stops to show you what the detector found. It stops twice more,
-for the lettering size and before the first chapter is translated, because those
-are looks at a page rather than numbers. You need no other command to begin.
+for the lettering multiplier and before the first chapter is translated, because
+those are looks at a page rather than numbers. You need no other command to begin.
 
 ## A work on disk
 
@@ -41,7 +41,7 @@ One directory per work. Nothing is configured but where the scans are.
 ```
 series/<work>/
     raw.txt              one line: the path to the scans
-    lettering.json       the size bands, and what each size is worth in Thai
+    lettering.json       the face, and one multiplier from the original's size to Thai
     words.txt            one Thai word per line; the line breaker's dictionary
     glossary.md          terms, honorifics, agreed transliterations
     characters.md        who they are, and how each one speaks
@@ -72,13 +72,14 @@ Naming no page means the whole work; naming a directory means everything under i
 uv run python -m manga_honyaku.detect   series/<work>     # -> build/<id>.detector.json
 uv run python -m manga_honyaku.annotate series/<work>     # -> build/<id>.boxes.png
 uv run python -m manga_honyaku.prepare  series/<work>     # -> pages/<id>.agent.json
-#   prepare also OCRs the Japanese into it, and tags each region with the size
-#   the original was lettered at; --no-ocr leaves the reading to the agent
+#   prepare also OCRs the Japanese into it, and measures the size each region
+#   has to be lettered at; --no-ocr leaves the reading to the agent
 #   the agent then reads the page and edits pages/<id>.agent.json
 uv run python -m manga_honyaku.check    series/<work>     # before rendering
 uv run python -m manga_honyaku.clean    series/<work>     # -> build/<id>.clean.png
                                                            #    build/<id>.masks.png
 uv run python -m manga_honyaku.render   series/<work>     # -> out/<id>.png
+#   render --calibrate draws nothing and prints what each candidate k would do
 uv run python -m manga_honyaku.audit    series/<work>     # after rendering
 ```
 
@@ -154,10 +155,17 @@ lettering sat — breaks it to that column, and comes down a size while it
 overflows. Nothing else: the box is the right rectangle for the translation for
 the same reason it was right for the original.
 
-Size comes from a tag on the region, written once when the page was prepared from
-what the Japanese in that box was lettered at. `lettering.json` says what each tag
-is worth in Thai, quoted against a stated page height, so it can be adjusted by
-eye without anything being measured again.
+`size` on a region is a number in the page's own pixels, measured once when the
+page was prepared from its box and the Japanese in it. Thai is lettered at `k` ×
+that, one `k` for a whole work, so it can be adjusted by eye without anything
+being measured again — and because both are measured on the same page, neither
+needs scaling when a volume is rescanned.
+
+It is deliberately a number and not a name. Sizes here were once tagged `quiet`
+through `shout`, and the page cannot support it: a shout from across the street
+is lettered small, so the label is a guess, and a wrong one sends the translator
+after the wrong words. What the number carries is the ratio between the regions
+on a page, which one multiplier preserves exactly.
 
 `words.txt` is the line breaker's dictionary: without it a transliterated name is
 broken across lines as though it were several words. Keep phrases out of it — a

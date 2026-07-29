@@ -46,51 +46,99 @@ shape, minimising the sum of slack cubed, plus a penalty when a continuation lin
 would start with a short Thai token. That is the line breaker doing its own job,
 not a search around it. Their geometry and shaping stack are not worth porting.
 
-## Size comes from the original: a tag, and a stylesheet
+## Size comes from the original: one number, one multiplier
 
-A letterer works from a small set of sizes. **Give the translation the same set,
-let the original choose which one each region gets, and keep what each one is
-worth somewhere a person can change it by eye.** That is a tag on the element and
-a stylesheet beside it, and the split is the same one HTML makes for the same
-reason.
+**Measure what each region has to be lettered at, write the number down, and
+multiply by one number for the whole work.** That is the entire model.
 
-- **Measure once, when the page is prepared, and write the answer down.**
-  `sqrt(box_area / japanese_character_count)` — Japanese sets on a square grid,
-  so it holds whichever way the text ran. The number is a property of the
-  artwork and never changes, so measuring it at every render is work done
-  repeatedly to reach the same answer.
-- **Cluster the measurements to find the bands, once.** The artist's own sizes
-  come out in a handful of clumps with clear gaps between them; put the
-  boundaries in the gaps, not at even intervals. Four or five clumps is what to
-  expect, and the largest holds about half the bubbles on its own.
+- **`size` is `sqrt(box area / japanese cells)`**, in the page's own pixels,
+  measured once when the page is prepared. Japanese sets on a square grid, so it
+  holds whichever way the text ran. It never changes again, so deriving it at
+  every render is work repeated to reach the same answer.
+- **Thai pixels = `k` × `size`.** One `k` per work, in the stylesheet, set by eye
+  on a rendered page. Both numbers are measured on the same page, so `k` needs no
+  scaling for a rescan and neither does `size`.
+- **A run of pause marks counts once.** A pause is often recorded twice over,
+  once in each script — `・・・...` where the page has three dots, from two
+  readings of one box being merged. Count both and the region measures a sixth
+  smaller than it is, which is the exact fault this measurement is for.
+- **A region that cannot be measured takes the median of its page.** A burst
+  bubble reading `!?` still has to be lettered, and what the rest of that page
+  was set at beats a constant carried in from another book.
+- **Free-floating text takes no size.** It is lettered to its own extent — it
+  fills the box it was drawn into. A chapter heading is this case, and what makes
+  it a heading is the face, so it takes `weight`.
 
-  **Do the clustering — do not carry a remembered answer into it.** On one work
-  the three chapters measured separately agreed to within a pixel, which says
-  the calibration is stable *within* a work and nothing at all about the next
-  one. The numbers below are that work's, and are in this file to show the shape
-  of an answer, not to be one.
-- **Store the tag, not the size.** `"size": "loud"` in the working file. What
-  `loud` is worth in Thai belongs in the stylesheet, because it is the one thing
-  here a person has to judge with their eyes rather than measure.
-- **Do not average, and do not chase precision.** Take a first value, render,
-  look, adjust the one number. The measurement's job was to sort regions into
-  groups; the group's size is not a measurement at all.
-- **Tags are for bubbles.** Free-floating text is not speech and belongs to no
-  set; it fills the box it was drawn into. A chapter heading is this case.
-- **Exclude a pause-only region.** Its box is sized for a beat of silence; one
-  character in a large box measures as enormous lettering — give it the ordinary
-  speech tag, which is what the dots were drawn at.
-- **A tag that overflows brings that one region down; the tag does not move.**
-- **A chapter heading is free-floating text and fills its own box.** What makes
-  it a heading is the face, so it takes `weight` rather than a tag.
+### Do not give the number a name
 
-Why bands at all, rather than `thai = measured × k`? Because the measurement is
-noisy — the detector's box is looser on some regions than others, and
-punctuation and furigana count as characters. Across 46 groups of bubbles that
-were one sentence in the original, and so were certainly lettered the same, the
-measured sizes spread by 10% at the median and 32% at the ninth decile, and 11
-of the 46 straddled a band boundary. A continuous mapping puts that noise
-straight onto the page.
+`quiet`, `normal`, `loud`, `shout` was the model here for seven chapters and it
+is a mistake. **Why the artist set a line large cannot be read back off the
+page.** A shout from across the street is lettered small; a whisper close to the
+reader can be lettered large. Size is one input to loudness among several — the
+balloon's outline, the distance in the drawing, the words themselves — and
+loudness cannot be recovered from it alone.
+
+So the name is a guess, and a region labelled `quiet` that holds a shout sends
+the translator after the wrong words. **A wrong label is worse than no label.**
+The emotion is in the source sentence, where the translator can read it.
+
+Nothing needs the name anyway: rendering needs `k` × the number, budget needs
+`room`, which follows from the number. Names bought nothing and cost accuracy.
+
+### What `k` cannot do
+
+**Above a certain `k` the page stops getting bigger.** `render` sets each region
+at `k` × `size` and steps down while it overflows, so once most regions are
+already overflowing, raising `k` only converts regions that fitted into regions
+that get shrunk — and shrinking is arbitrary, so it is the ratios between regions
+that pay. One volume, 1,489 bubbles:
+
+| `k` | fitted at the size asked for | size actually drawn | ratios kept |
+| --- | --- | --- | --- |
+| 0.80 | 80% | 0.80 × | 92% |
+| **0.90** | **58%** | **0.89 ×** | **89%** |
+| 1.00 | 36% | 0.92 × | 86% |
+| 1.07 | 23% | 0.92 × | 84% |
+| 1.20 | 10% | 0.92 × | 82% |
+
+Past 0.9 the third column is flat. **Calibrate to the knee, not by eye alone** —
+the eye cannot see the difference between the last three rows on a page, and the
+first column says they are not the same at all.
+
+### The measurement that looks right and is not
+
+Measuring the **ink inside the box** instead of the box was tried, and the
+argument for it is convincing and wrong. Write it down or it will be tried again.
+
+The detector's box is loose — its padding runs from 4% to six times the ink — so
+it plainly does not measure the original's letters. But the padding varies with
+the region's *shape*, not with its scale, which makes the box a tilted ruler that
+holds steady, against an ink extent that swings with whichever glyphs a region
+happens to contain.
+
+**A work carries its own proof.** Regions that share an utterance were one
+sentence in the original and so were certainly lettered alike; their spread is
+the ruler's own error. Over 80 such groups the box held them to 10% at the
+median, the ink to 16%. Weighed against the range each has to resolve, the box
+tells apart 7.5 steps and the ink 5.5.
+
+And the tilt is not a defect. **This number does not have to describe the
+Japanese — it has to letter the Thai**, which is set horizontally into boxes
+drawn for vertical Japanese and has to fill them. Carrying some of the space
+available into the answer is what makes it fill them. A caption measuring 20 from
+its ink and 45 from its box is one where 45 fits the line exactly.
+
+### When it will not fit
+
+Even calibrated, four regions in ten come down. **The lever is the Thai, not the
+number.** Of the regions that came down in one volume, the median needed to be a
+third shorter to have fitted; only a quarter of them were within 20% of fitting.
+That is a translation instruction and it belongs in the translating skill.
+
+Some cannot be won at all: **a narrow box cannot hold large horizontal Thai** at
+any size, because 64 pixels of width is three characters a line whatever the
+size, and the line breaker will come down until they fit. Reword it, or accept
+it, or let it run outside its box if it sits on white.
 
 `weight` is the other thing in the working file, and it is not size. **Ink
 density tells a display face from a body face** — dark pixels over the region's
@@ -99,65 +147,50 @@ twice.
 
 ## Starting a new work
 
-The method transfers; none of the numbers do. Every work has its own hand and
-every scan its own resolution, so **every number below is an output of the five
-steps, not an input to them.** Copying the file into a new work gives lettering
-that is wrong by however much that artist differs from another — which is
-usually visible on the first page and always visible on the tenth.
-
-The shape, filled in from one work as a worked example:
+The method transfers; the numbers do not. Every work has its own hand and every
+scan its own resolution, so **every number below is an output of the steps, not
+an input to them.**
 
 ```json
 {
   "font": "fonts/iannnnnJPG/2005_iannnnnJPG.ttf",
-  "page_height": 1600,
+  "page_height": 1200,
   "line_spacing": 1.32,
-  "floor": 9,
-  "bands": { "quiet": 35, "normal": 47, "loud": 60, "shout": 88 },
-  "sizes": { "quiet": 24, "normal": 34, "loud": 50, "shout": 67, "display": 101 }
+  "floor": 7,
+  "k": 0.90
 }
 ```
 
-| | is | measured how |
+| | is | found how |
 | --- | --- | --- |
-| `font` | the face this work is lettered in | chosen once, then everything below is quoted for it |
-| `page_height` | the page both sets of numbers are quoted for | read off a scan |
-| `bands` | the ceiling in the **original's** pixels that gives a region its tag | step 3 |
-| `sizes` | what each tag is worth in **the translation's** pixels | steps 4–5 |
+| `font` | the face this work is lettered in | chosen once, then everything else is quoted for it |
+| `k` | Thai pixels per pixel of the original's lettering | the loop below |
 | `line_spacing` | a property of the face, not the work | changes only with the face |
 | `floor` | below this the lettering stops being readable at print size | one look at a printed page |
+| `page_height` | the height `floor` is quoted for | read off a scan |
 
 The face belongs in this file rather than on the command line because the rest of
 the file is quoted for it: `room` on each region counts how many of that face's
 characters the box holds, and `line_spacing` is the face's own. Rendering in
 another face letters to a budget nothing measured.
 
-`bands` is read once, when a page is prepared; `sizes` at every render. Quoting
-both against `page_height` is what lets the same file survive a rescan at another
-resolution — without it a larger scan measures larger throughout and puts every
-bubble in the loudest band there is.
+`floor` is the one number left that counts absolute pixels rather than a ratio,
+which is why `page_height` is still here: a volume scanned larger needs it scaled
+or the smallest lettering allowed comes out half as big on the page.
 
-The names are not fixed either. Four bands plus a display size is what one work
-needed; another may want three, or five, or different names. What has to hold is
-that a letterer's set is small and the translation uses the same one.
+Calibrating `k`, once per work:
 
-Five steps, once per work:
+1. **Detect and prepare a chapter, and translate it.** `k` is judged on set Thai,
+   so there is nothing to calibrate against until there is a translation.
+2. **Render at `k = 1` and look.** One page tells you which way to go.
+3. **Plot the knee** — `render <work> --calibrate` draws nothing and prints the
+   table above for that work. Take the largest `k` at which `drew` is still
+   rising; past it the page is no bigger and only the ratios suffer.
+4. **Look again at the knee, and at one step either side.** The numbers narrow it
+   to two or three candidates; a person picks between them.
 
-1. **Detect and prepare a chapter.** Nothing here needs the translation.
-2. **Measure every region**: `sqrt(box_area / japanese_character_count)`.
-3. **Cluster the measurements and look at where they clump.** The boundaries go
-   in the gaps, not at even intervals. Four or five clumps is what to expect — a
-   letterer works from a small set, which is the whole premise.
-4. **Take a first `sizes` from the clump centres and render.** Do not average, do
-   not tune the numbers on paper. The clump centres are in the original's script
-   at the original's proportions; the translation's script has its own, and only
-   a person looking at a page can say by how much.
-5. **Adjust one number, render, look again.** That loop is the calibration. It
-   converges in a few passes and nothing is ever measured again.
-
-Steps 1–3 are measurement and belong to the machine. Steps 4–5 are judgement and
-belong to a person — which is exactly why the sizes live in a file of their own
-rather than anywhere near the code.
+Step 3 is arithmetic and belongs to the machine. Steps 2 and 4 are judgement.
+Nothing is measured again afterwards.
 
 ## Line breaking
 
@@ -191,9 +224,10 @@ rather than anywhere near the code.
   down a tall narrow box — one character per line — so the box comes out a
   character and a half wide. Thai lengthens by opening the vowel, and `อ๊าาาาาา`
   has no break point in it, so the breaker cannot stack it and the whole region
-  comes down to whatever fits on one line: a display shout lettered at body size,
+  comes down to whatever fits on one line: a cry lettered at conversation size,
   in a column left nine-tenths empty. **Break the run into groups** — `อ๊า าา าา
-  าา` stacks four lines at the tag's own size, which is what the original does.
+  าา` stacks four lines at the size the region asked for, which is what the
+  original does.
   The same catches any long unbroken transliteration in a narrow box.
 
 ## Fonts
@@ -213,11 +247,12 @@ rather than anywhere near the code.
 ## What goes here, and what goes in the work's own files
 
 This file holds **method, and facts about the two scripts** — that Thai marks
-stack with zero advance, that a name means nothing cut in half, that a letterer
-works from a small set of sizes. Those hold for the next manga too.
+stack with zero advance, that a name means nothing cut in half, that the size a
+region asks for cannot be named without guessing. Those hold for the next manga
+too.
 
-A work's own directory holds **what measuring that work produced**: its bands,
-its sizes, its page height, its word list, and how its characters speak. Every
+A work's own directory holds **what measuring that work produced**: its `k`, its
+page height, its word list, and how its characters speak. Every
 one of those is re-derived for the next work by running the same method, which
 is why none of them is written down here.
 
@@ -238,7 +273,7 @@ belongs to the work that answered it.
 | Empty boxes that look like letters | Font lacks the glyph; nothing checked |
 | Heading no bigger than speech | Given a tag instead of filling its own box |
 | A pause bubble lettered enormous | Its one character measured against its whole box |
-| A display shout lettered at body size, its column left empty | A held vowel or a long transliteration with no break point in it, in a box drawn for vertical Japanese |
+| A cry lettered at conversation size, its column left empty | A held vowel or a long transliteration with no break point in it, in a box drawn for vertical Japanese |
 | A loud page comes back ordinary | Sizes normalised against that page's own median |
 
 Text placed off-centre or into a sliver of a bubble is a mask problem, not a

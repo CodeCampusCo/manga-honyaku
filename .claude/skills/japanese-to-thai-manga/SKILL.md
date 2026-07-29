@@ -125,7 +125,7 @@ The bubble was drawn to hold what the Japanese said. A version carrying the
 meaning in half the words leaves it looking empty, and the reader sees the gap
 before they read the line.
 
-`room` on the region is how many characters the box holds at the size its tag
+`room` on the region is how many characters the box holds at the size that region
 asks for — counted as widths, so a mark above or below costs nothing and `ที่` is
 one. Compose against it. A line coming in at half of `room` leaves the bubble
 looking empty; one well past it gets lettered smaller to fit. Neither is a
@@ -141,6 +141,14 @@ A line the artist drew short stays short. And where the Thai runs much longer
 than the Japanese, **shorten the line rather than the lettering** — a
 four-character shout cannot be lettered large under a fifteen-character
 translation of it.
+
+**Going over `room` is the ordinary case, not the exception**, and it is the
+one thing here the machine cannot do for you. Four regions in ten across a
+volume overflow and get shrunk, and of those the median needed to be a third
+shorter to have fitted. Nothing else can recover that: the size a region asks
+for is measured off the original, and the box is the artist's. **The only lever
+is the sentence.** Where a line is close, cutting a hedge or a particle wins it
+outright — a quarter of the overflowing regions were within 20% of fitting.
 
 ## Thai lengthens by opening the vowel
 
