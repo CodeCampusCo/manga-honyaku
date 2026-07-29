@@ -46,7 +46,9 @@ series/<work>/
     glossary.md          terms, honorifics, agreed transliterations
     characters.md        who they are, and how each one speaks
     summary.md           rolling plot summary
-    questions.md         unresolved items
+    questions.md         what the work has not answered yet
+    handoff.md           what the next translator has to pick up
+    chapters/<n>.md      what was seen while reading, one entry per page
 
     pages/               <id>.agent.json — the translation
     build/               <id>.detector.json .boxes.png .clean.png .masks.png
@@ -77,6 +79,7 @@ uv run python -m manga_honyaku.check    series/<work>     # before rendering
 uv run python -m manga_honyaku.clean    series/<work>     # -> build/<id>.clean.png
                                                            #    build/<id>.masks.png
 uv run python -m manga_honyaku.render   series/<work>     # -> out/<id>.png
+uv run python -m manga_honyaku.audit    series/<work>     # after rendering
 ```
 
 `check` reads every region again and reports any whose text belongs to a
@@ -84,6 +87,16 @@ different region on the same page — two lines written onto each other's ids.
 Nothing else finds that: the Thai reads plausibly in both places, so re-reading
 the page does not show it. It exits non-zero when it finds one. Readings the
 agent corrected are counted, not listed, unless you ask with `--differences`.
+
+`audit` runs after `render` and asks what the finished page can be asked without
+a model: a region that was erased and then drew nothing back into the hole,
+Japanese that survived `clean`, a reading order with a gap in it, a decline with
+no reason, a line that misses the box it was composed against, a polite particle
+misspelt. Two of those are silent by construction — `render` counts regions that
+*have* a translation rather than regions it drew, and nothing anywhere reports
+Japanese left under the Thai. Every check in it is there because that failure
+reached a rendered page once and nothing said so. `check` and `audit` do not
+overlap: one re-reads the Japanese, the other looks at what came out.
 
 ```sh
 uv run python -m manga_honyaku.render series/<work> X0006          # one page
@@ -126,6 +139,15 @@ free-floating text out as a plain white rectangle. It only touches regions the
 agent has given a role, and never those roled `sfx` or `image_text` — both are
 artwork. On a page margin the white is invisible; over drawn artwork it is a
 visible patch.
+
+A region's `status` says what should happen to it, and the three values answer
+different questions: `ok` takes the Japanese out and puts Thai in its place,
+`declined` leaves the artwork alone and says why, and `erase` takes the Japanese
+out and puts nothing back. The third is for lettering that has to go and has no
+translation — furigana the detector boxed on its own, a glyph the interior fill
+could not reach. Written as `ok` with no translation it cannot be told from a
+line somebody forgot; written as `declined` it is never erased at all, and the
+page keeps the Japanese while the record says it was handled.
 
 `render` lays the Thai into each region's own box — where the original's
 lettering sat — breaks it to that column, and comes down a size while it

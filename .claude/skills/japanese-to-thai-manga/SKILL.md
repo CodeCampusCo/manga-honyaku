@@ -100,6 +100,25 @@ sentence-final particle.
 Give the same treatment to a pronoun split across bubbles: `私 / 頑張ります!`
 is `ฉัน` then `จะตั้งใจทำให้เต็มที่ค่ะ!`, not `ฉัน` then `ฉันจะ…`.
 
+### `นะ` takes `คะ`, `น่ะ` takes `ค่ะ` — the tone mark matches or it is wrong
+
+Four spellings are in circulation and two of them are misspellings:
+
+| | |
+| --- | --- |
+| **`นะคะ`** | correct |
+| **`น่ะค่ะ`** | correct |
+| `นะค่ะ` | **wrong** |
+| `น่ะคะ` | **wrong** |
+
+The particles agree: no tone mark on both, or a mái èk on both. Mixed across the
+pair is an error, and **Thai writers make it constantly**, so it cannot be judged
+by whether a line looks like ordinary writing — that instinct is what produces
+it. It is a rule, and it is deterministic, so `audit` checks it.
+
+Where the particle is doing no work, drop it and let the bare `ค่ะ` or `คะ`
+carry the politeness on its own.
+
 ## Match the original's length, not only its sense
 
 The bubble was drawn to hold what the Japanese said. A version carrying the
@@ -195,6 +214,14 @@ the work that told you.
   never need the file; a general rule written down per work is a copy that will
   drift from the one it was copied from.
 - **`summary.md`** — capped length, rewritten rather than appended.
+- **`handoff.md`** — what the *next translator* has to pick up, and nothing about
+  the work itself. Where the chapters stand, anything left undone, anything
+  decided late that earlier chapters predate, and whatever operational fact about
+  this work would otherwise have to be rediscovered. **Rewritten, never appended**
+  — it describes the situation as it stands, not how it got there. An item leaves
+  when someone does it, which is a different clock from `questions.md`, which is
+  why it is a different file. Say "nothing outstanding" rather than deleting the
+  heading; silence and unchecked look identical.
 - **`questions.md`** — what the work has not answered yet, and nothing else.
   **Update it at the end of a chapter, not while translating.** An item leaves
   the moment the work answers it, and the answer goes to `characters.md`. Keeping
@@ -202,6 +229,90 @@ the work that told you.
   chapters, a question it settled in the first — which happened. A per-page
   `questions` field is a different thing: it is about one page's output, and
   stays there.
+
+## When the chapter is rendered, read your own chapter back
+
+**One pass, after the pages are out, over the finished working files rather than
+the art.** It is a separate step from translating because what it looks for
+cannot be seen from inside a page: counts, firsts, and comparisons against the
+chapters before. Its output goes to `characters.md`, and that file is the only
+reason chapter 8 sounds like chapter 1.
+
+Four questions, and they all have answers that are numbers or page ids:
+
+- **Count the register, do not remember it.** How many of a character's lines
+  took the polite particle, out of how many. A ratio that has moved since last
+  chapter is characterisation and goes in the file. One that has not moved is
+  worth a line saying so, because *confirmed* and *never checked* look identical
+  a chapter later.
+- **Find the onlys and the firsts.** Something a character did exactly once in a
+  chapter is the chapter's own hinge — the artist spent it deliberately. Once is
+  a decision; twice is a habit; the file should say which. This is invisible
+  while translating, where every line is the only one in front of you.
+- **Answer the gauges the file already set.** `characters.md` names things to
+  watch — a suffix that has not dropped, a pronoun that has not moved. Say
+  outright whether each moved this chapter. **"Three chapters in, neither has
+  moved" is worth writing**, because without it a later session finds an
+  unanswered gauge and decides it must have happened offscreen.
+- **Say what the chapter proved or broke.** A rule that survived a page built to
+  fool it is stronger and should record the page that tested it. A rule the
+  chapter contradicted is simply wrong: fix the rule, do not annotate it. Two
+  rules that disagree are worse than one rule that is out of date.
+
+**A count extends the series, it does not restart it.** The previous chapters'
+numbers are already in the work's file; add this chapter's to them and read the
+row. A count taken against one chapter alone answers nothing — the question is
+always *has it moved*, and one number cannot move.
+
+Then the discipline that keeps the file usable:
+
+- **Cite page ids for everything.** An observation a later session cannot check
+  is one it has to either trust blindly or re-derive, and both are worse than a
+  number and an id.
+- **Do not restate what is already there.** The file grows every chapter, and a
+  paraphrase of an existing paragraph is drift with a delay on it. Add, sharpen,
+  or delete; never re-say.
+- **Cut what has stopped earning its place, and expect to.** The test is the
+  file's own job: *would someone starting at the next chapter need this line?* An
+  observation a later chapter superseded is rewritten, not annotated with an
+  exception. Two entries saying one thing become one entry. A gauge the work has
+  answered leaves, and its answer goes where answers go. **These are working
+  briefs, not logs — a good pass often makes them shorter.** A file nobody can
+  read to the end protects nothing.
+- **Sort by which file it belongs to.** How a character speaks is
+  `characters.md`. What happened is `summary.md`. What the work has not answered
+  is `questions.md`. What the next translator has to pick up is `handoff.md`. A
+  fact about the two languages is this file, not any of them.
+
+**`summary.md` cannot hold a section per chapter.** A long series would end with
+a file nobody reads, duplicating `chapters/NN.md` at lower resolution. Keep the
+premise and the recent chapters at length, and compress older ones toward a line
+each as they recede. The detail already exists per chapter; this file is for the
+shape of the work.
+
+## How much of the record to read before starting a chapter
+
+Reading everything defeats the point of a record. Reading nothing repeats work
+already done and contradicts decisions already made.
+
+- **The work's own files, always, in full** — `characters.md`, `glossary.md`,
+  `style.md` if it exists, `questions.md`, `handoff.md`, `summary.md`. These are
+  short by design and they are the whole handover.
+- **The previous chapter's `chapters/NN.md`, always.** Scenes and states run
+  across the break, and a chapter that opens mid-situation will not tell you so.
+- **Any other chapter, only when a question actually arises**, and then through
+  `chapters.py` for the specific pages rather than by opening the file. That is
+  what the tool is for.
+
+## Applying a chapter's translation
+
+**One throwaway script per batch of pages, never one edit per region.** A chapter
+is 150–250 regions; editing them one at a time is slow, and the diff it produces
+is unreviewable. Write the batch as data — page, region id, and the fields to set
+— run it, and let it report which regions fell outside their `room` band so the
+misses are a list rather than a discovery at render.
+
+Delete the script afterwards. It described one batch and is wrong for the next.
 
 ## Write down what you saw, page by page
 
@@ -282,6 +393,53 @@ that list is the same every run.
 
 Then check the targets for characters the face cannot draw, before a page is
 rendered rather than after.
+
+## Cleaning up a finished volume
+
+**Once, when a volume is complete — never between chapters.** A correction that
+arrives in chapter 4 does not justify stopping to repaint chapters 1–3: the
+error costs less than the interruption, and a decision made late is usually
+still settling. Collect them instead, and pay them off together.
+
+Three passes, in this order, because each narrows what the next has to look at.
+
+**1. `audit`, because it is free and it does not get tired.** It reads every
+finished page against the artwork actually produced and reports what no other
+stage can: a region that was erased and drew nothing back, Japanese that
+survived `clean`, a broken reading order, a decline with no reason. Every one of
+those has reached a rendered page in silence at least once. Fix all of it.
+
+Two of its findings are notes rather than defects, and over-fixing them costs
+more than leaving them:
+
+- **Fit.** A line well under its `room` is usually a one-character reaction
+  bubble that is correct; a line well over it is usually the better sentence,
+  lettered smaller. Look at each, change few.
+- **Surviving ink.** How much is left is not the question — *where* is. Original
+  lettering runs past its own box routinely, and residue at a margin is
+  invisible. Open the rendered page: fix it only where it shows under the Thai.
+  Chasing the rest means hand-editing boxes or masks, which breaks more than it
+  repairs.
+
+**2. The sweeps.** Anything the work decided after pages were already rendered —
+a term that turned out to mean something else, a rule that was scoped later.
+These are grep-shaped: the decision names the Japanese it applies to, so search
+the recorded `source` fields for it rather than re-reading. A sweep that cannot
+be expressed as a search is usually a rule that has not been stated clearly
+enough yet.
+
+**3. The read, which is the only part that needs a person.** Open the rendered
+pages and the originals together and ask of each line: does this read like
+something a Thai speaker would say, in this character's voice, at this moment?
+
+**The bar for changing a line is that it is wrong or it stumbles — not that you
+would have written it differently.** A cleanup pass that rewrites everything it
+touches has destroyed the consistency the notes files exist to protect, and
+nobody can tell afterwards which changes were fixes. Count the lines you change;
+if it is most of them, the problem is the bar, not the chapter.
+
+Then rewrite the notes files **once**, from the finished state — not once per
+chapter. Seven partial edits to one file produce a file with seven voices in it.
 
 ## Record uncertainty where it changes the output
 

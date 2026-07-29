@@ -187,6 +187,14 @@ rather than anywhere near the code.
   the test that finds them will not.
 - **Letter regions that share an utterance at one size.** One sentence at two
   sizes reads as two sentences.
+- **A held vowel is one token, and a shout box is a column.** A Japanese cry runs
+  down a tall narrow box — one character per line — so the box comes out a
+  character and a half wide. Thai lengthens by opening the vowel, and `อ๊าาาาาา`
+  has no break point in it, so the breaker cannot stack it and the whole region
+  comes down to whatever fits on one line: a display shout lettered at body size,
+  in a column left nine-tenths empty. **Break the run into groups** — `อ๊า าา าา
+  าา` stacks four lines at the tag's own size, which is what the original does.
+  The same catches any long unbroken transliteration in a narrow box.
 
 ## Fonts
 
@@ -230,6 +238,7 @@ belongs to the work that answered it.
 | Empty boxes that look like letters | Font lacks the glyph; nothing checked |
 | Heading no bigger than speech | Given a tag instead of filling its own box |
 | A pause bubble lettered enormous | Its one character measured against its whole box |
+| A display shout lettered at body size, its column left empty | A held vowel or a long transliteration with no break point in it, in a box drawn for vertical Japanese |
 | A loud page comes back ordinary | Sizes normalised against that page's own median |
 
 Text placed off-centre or into a sliver of a bubble is a mask problem, not a
