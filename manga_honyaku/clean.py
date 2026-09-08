@@ -6,11 +6,9 @@ be thrown away and rebuilt from the scans at any time.
 Reads pages/<id>.agent.json, which by this point says which regions are speech
 and which are artwork. The detector's own file is not consulted.
 
-The upstream cleaner takes a segmentation mask per bubble, from either SAM or a
-YOLO model. Excluding `ultralytics` took the YOLO one with it, and RT-DETR
-returns boxes, not masks. Rather than add a segmentation model back, the
-interior is recovered from the artwork: inside a detected bubble box, the
-interior is simply the largest region of paper that the outline encloses.
+RT-DETR returns boxes, not masks, and nothing here segments. The interior is
+recovered from the artwork instead: inside a detected bubble box, it is the
+largest region of paper that the outline encloses.
 
 Free-floating text is painted out as a white rectangle. There is no outline to
 follow and no way to know what the artwork behind it looked like, so nothing
@@ -164,11 +162,6 @@ def interiors(gray: np.ndarray, group: list[dict]) -> dict[str, np.ndarray]:
     # Each lobe keeps what its own outline encloses. The detector drew a box per
     # lobe and those boxes overlap only in the waist, so the only pixels in
     # dispute are the ones in that overlap, and they go to the nearer lobe.
-    #
-    # Two other ways were tried and both were worse. Sharing the whole interior
-    # out by which text centre is nearer draws a straight bisector clean across
-    # both lobes. A watershed on the interior's depth follows its medial axis
-    # and hands the lobes back interleaved.
     rows, cols = np.mgrid[y1:y2, x1:x2]
     owned = []
     for region in group:
@@ -193,11 +186,10 @@ def interiors(gray: np.ndarray, group: list[dict]) -> dict[str, np.ndarray]:
 def free_mask(shape: tuple[int, int], box: list[float]) -> np.ndarray:
     """The box itself, not a pixel more.
 
-    The design notes that these boxes are cropped tight and asks what margin
-    they need. For erasing, none: the chapter title's box ends on the very row
-    where the panel's top rule begins, so any margin at all cuts the rule. A
-    margin is still likely wanted before OCR, where reading a clipped glyph
-    costs nothing but a wider crop.
+    No margin: these boxes are cropped tight enough that a chapter title's box
+    ends on the row where the panel's top rule begins, so any margin at all cuts
+    the rule. `ocr.py` does grow its crop, where a clipped glyph costs more than
+    the extra pixels.
     """
     x1, y1, x2, y2 = box
     mask = np.zeros(shape, bool)

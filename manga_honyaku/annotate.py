@@ -29,9 +29,9 @@ def annotate(image: Image.Image, regions: list[dict]) -> Image.Image:
         colour = COLOURS.get(region.get("placement"), (128, 128, 128))
         draw.rectangle([x1, y1, x2, y2], outline=colour, width=3)
 
-        # The label sits outside the box. Drawn inside it covers the first
-        # character of the very text the annotation exists to make readable,
-        # and nothing signals the error — the agent just reads it wrong.
+        # Outside the box: drawn inside, the label covers the first character
+        # of the text the annotation exists to make readable, and nothing about
+        # the result says so.
         tw, th = draw.textbbox((0, 0), region["id"], font=font)[2:]
         lx, ly = x1, y1 - th - 8
         if ly < 0:

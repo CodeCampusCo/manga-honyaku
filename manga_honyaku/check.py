@@ -8,14 +8,12 @@ reading and are not worth looking at. One kind is:
     page has recorded, the two lines were written onto each other's ids.
 
 Nothing else catches that. Re-reading the page will not, because the Thai is
-plausible where it sits; only the boxes disagree. Three bubbles on one page were
-found holding each other's lines this way, and one on another.
+plausible where it sits; only the boxes disagree.
 
 Differences that are not swaps are counted and not printed unless asked for. A
 source the agent wrote rather than read — a placeholder in parentheses, a name
 the reader gets wrong every time — differs on every run and always will, so the
-list of them is a constant and reading it teaches nothing. The count moving is
-worth noticing; the list is not.
+list of them is a constant. The count moving is worth noticing; the list is not.
 """
 
 from __future__ import annotations
@@ -33,8 +31,7 @@ from manga_honyaku.page import Series
 
 # A pause is written a dozen ways between the page, the reader and the agent —
 # `…`, `...`, `・・・`, and a colon where the reader saw three dots on a slant.
-# None of the differences are differences, and left in they were most of what
-# this stage printed.
+# None of those differences are differences.
 PAUSE = str.maketrans(dict.fromkeys(".・:：", "…"))
 
 
@@ -46,10 +43,10 @@ def settle(text: str) -> str:
 
 
 def says_something(text: str) -> bool:
-    """Whether a reading could identify a line. A pause could not.
+    """Whether a reading could identify a line.
 
-    Thirty-two regions in one volume record nothing but `…`, so any box that
-    reads as a pause matches one of them and means nothing by it.
+    A pause could not: many regions record nothing but `…`, so a box reading as
+    a pause matches any of them and means nothing by it.
     """
     return any(unicodedata.category(c).startswith(("L", "N")) for c in text)
 

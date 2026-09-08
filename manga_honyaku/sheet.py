@@ -6,16 +6,12 @@ full-resolution page costs the most a page can cost and shows nothing a 1568px
 one does not. Pages laid out side by side share that budget: four pages on one
 sheet cost what one page costs.
 
-Two things this exists to stop, both found by doing them:
+So the width is capped at `WIDEST`: a page at 1568px costs about 2300 tokens and
+at 800px about 1200, and reads no worse. One page and two pages then come out the
+same price, which makes reading a spread free next to reading a page.
 
-- **Filling the limit with one image.** Fitting one page to 1568px costs about
-  2300 tokens; at 800px it costs 1200 and reads no worse, because a page is
-  already legible well below the limit. So the width is capped at `WIDEST`, and
-  one page and two pages come out the same price — which makes reading a spread
-  free next to reading a page.
-- **Reaching past this for a crop.** Reading one bubble whose OCR looked wrong
-  meant cropping, and cropping meant writing the resize by hand and guessing at
-  the size. `--crop` is here so that never has to happen.
+`--crop` takes a box out before the sheet is built, so reading one bubble never
+means writing a resize by hand and guessing at the size.
 """
 
 from __future__ import annotations
