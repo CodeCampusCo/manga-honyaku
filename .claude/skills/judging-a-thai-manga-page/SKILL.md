@@ -63,6 +63,28 @@ not a fault.** In particular these are all correct:
   be half its size. Its box is smaller too — that is what tells it apart from
   type that has simply been shrunk
 
+### A white erase plate does not end where it looks like it ends
+
+Free-floating text is erased as a white rectangle, and on a light ground its
+edges are invisible: the plate and the artwork are the same white. Two things
+then read as an edge that is not one — **a panel border whited out where it
+passes behind the plate**, and the bottom of the type itself. Both put the
+apparent edge above the real one, and the last line or two of a centred block
+then look as though they have fallen out onto the drawing.
+
+**They have not.** One chapter reported this way six times on six pages; measured
+against the mask, the whole chapter had 83 pixels of ink outside a plate — a few
+glyph edges by one or two pixels, out of 28 pages. **A plate is a rectangle and
+the text is centred in it, so text cannot land outside it.** Do not report text
+running off its plate, in any direction. If something genuinely looks wrong
+there, describe what you see without claiming the type has left its box.
+
+What *is* worth reporting about a plate: one that **erases drawn detail the page
+needs** — an arrow the caption was pointing along, the outline of a tilted card
+or a screen the text sat inside, a panel border a reader uses to follow the row.
+That is a reason to re-cut the region, and it is a different observation from the
+plate merely being visible.
+
 ### A drawn-out vowel broken across lines is accepted
 
 A held cry sets a run of repeated vowels, and the line breaker splits it, so a
