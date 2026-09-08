@@ -520,17 +520,59 @@ that list is the same every run.
 Then check the targets for characters the face cannot draw, before a page is
 rendered rather than after.
 
-## Cleaning up a finished volume
+## Reviewing pages that are already rendered
 
-**Once, when a volume is complete — never between chapters.** A correction that
-arrives in chapter 4 does not justify stopping to repaint chapters 1–3: the
-error costs less than the interruption, and a decision made late is usually
-still settling. Collect them instead, and pay them off together.
+Two different jobs are easy to bundle here, because on the first work they fell
+at the same moment — the end of a volume. **One protects the chapters that come
+after it. The other repairs chapters already out.** Their triggers are not the
+same, and only the second one wants to be batched.
 
-Three passes, in this order, because each narrows what the next has to look at.
+### Review a chapter when what it settles will be inherited
 
-**1. `audit`, because it is free and it does not get tired.** It reads every
-finished page against the artwork actually produced and reports what no other
+**Always a work's first chapter, before the second one starts.** It is where the
+register, the pronouns, the glossary and the character file are invented, and
+every chapter after it copies them. Held to the end of a volume, it is reviewed
+after six chapters have already inherited whatever it got wrong.
+
+One first chapter, read back against its source, returned **eleven real findings
+in 238 regions** — among them a potential negative rendered as a plain one,
+`聞けず` as *did not ask* rather than *could not ask*, on the line the work's
+whole premise rests on; and two terms that had already drifted from the work's
+own glossary. Six chapters would have carried all of it.
+
+After that, review a chapter that **establishes** rather than one that continues:
+a character who will recur, a term that had to be decided, a register that moved.
+A chapter spending only what earlier ones settled has little to give a pass that
+`audit` has not already given it.
+
+**This is not "review every chapter."** A restricted pass costs what translating
+a chapter costs, and spent on a chapter that established nothing it buys noise.
+Where a work has no volume boundary at all — a web serial that simply runs — this
+is the rule that stands in for one, and it needs no calendar.
+
+### Sweep a span when a decision has settled
+
+A correction that arrives in chapter 4 does not justify stopping to repaint
+chapters 1–3: **the error costs less than the interruption, and a decision made
+late is usually still settling.** Collect them and pay them off together, once
+the decision has stopped moving, over whatever span it reaches — a volume where a
+work has volumes, and simply a span where it does not.
+
+The sweeps are grep-shaped: the decision names the Japanese it applies to, so
+search the recorded `source` fields for it rather than re-reading. **A sweep that
+cannot be expressed as a search is usually a rule that has not been stated
+clearly enough yet.**
+
+Rewrite the notes files at the sweep, **whole and once** — not once per chapter.
+Seven partial edits to one file produce a file with seven voices in it. A single
+chapter's review adds to `questions.md` and to `handoff.md` and leaves the rest
+alone.
+
+### What a review looks at, in this order, because each narrows the next
+
+**1. `audit`, because it is free and it does not get tired.** This one runs on
+every chapter as it lands, review or no review. It reads every finished page
+against the artwork actually produced and reports what no other
 stage can: a region that was erased and drew nothing back, Japanese that
 survived `clean`, a broken reading order, a decline with no reason. Every one of
 those has reached a rendered page in silence at least once. Fix all of it.
@@ -547,25 +589,15 @@ more than leaving them:
   Chasing the rest means hand-editing boxes or masks, which breaks more than it
   repairs.
 
-**2. The sweeps.** Anything the work decided after pages were already rendered —
-a term that turned out to mean something else, a rule that was scoped later.
-These are grep-shaped: the decision names the Japanese it applies to, so search
-the recorded `source` fields for it rather than re-reading. A sweep that cannot
-be expressed as a search is usually a rule that has not been stated clearly
-enough yet.
-
-**3. The read, which is the only part that needs a person.** Open the rendered
+**2. The read, which is the only part that needs a person.** Open the rendered
 pages and the originals together and ask of each line: does this read like
 something a Thai speaker would say, in this character's voice, at this moment?
 
 **The bar for changing a line is that it is wrong or it stumbles — not that you
-would have written it differently.** A cleanup pass that rewrites everything it
-touches has destroyed the consistency the notes files exist to protect, and
-nobody can tell afterwards which changes were fixes. Count the lines you change;
-if it is most of them, the problem is the bar, not the chapter.
-
-Then rewrite the notes files **once**, from the finished state — not once per
-chapter. Seven partial edits to one file produce a file with seven voices in it.
+would have written it differently.** A review that rewrites everything it touches
+has destroyed the consistency the notes files exist to protect, and nobody can
+tell afterwards which changes were fixes. Count the lines you change; if it is
+most of them, the problem is the bar, not the chapter.
 
 ## Record uncertainty where it changes the output
 
