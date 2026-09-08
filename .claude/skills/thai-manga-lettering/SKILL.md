@@ -143,6 +143,30 @@ Thai**, because 64 pixels of width is three characters a line whatever size is
 asked for, and the breaker comes down until they fit. Accept it, or let it run
 outside its box if it sits on white.
 
+### In a narrow box the size is set by the longest token, not by the length
+
+A word cannot be split, so the size a region can hold is `width ÷ the longest
+token`, and everything else about the sentence is irrelevant to it. That makes
+the wording, not the box, the thing to move: `เธอนำแสงสว่าง` in an 84px column
+draws at 31px because `แสงสว่าง` is one dictionary token, and `เธอนำแสง` — the
+same line, one word shorter — draws at 70, against a Japanese 72. **The fix for
+a caption lettered half-size is usually a different word of the same meaning, not
+a shorter sentence.**
+
+Two consequences worth spelling out:
+
+- **Where one sentence spans several boxes, cut it by their widths.** Put the
+  short words in the narrow columns. The clause boundary the Japanese used is not
+  binding — it was chosen for a script that runs the other way.
+- **A name in `words.txt` is unsplittable by construction**, which is right in a
+  bubble and expensive in a display column: `“คุณทามากาวะ` drew at 44 in a 136px
+  column asking for 110. A space inside it lets the breaker stack it — and the
+  original stacked it too, one character per line, so the break is not a loss.
+
+**Ask before you apply, not after.** `lay_out` answers this directly; a throwaway
+probe that prints the size and the lines for a candidate against the region's own
+box turns the wording pass from a re-render loop into arithmetic.
+
 `weight` is the other thing in the working file, and it is not size. **Ink
 density tells a display face from a body face** — dark pixels over the region's
 box against the speech bubbles on the same page; a display face measures about
@@ -277,6 +301,8 @@ belongs to the work that answered it.
 | Heading no bigger than speech | Given a tag instead of filling its own box |
 | A pause bubble lettered enormous | Its one character measured against its whole box |
 | A cry lettered at conversation size, its column left empty | A held vowel or a long transliteration with no break point in it, in a box drawn for vertical Japanese |
+| One caption half the size of its neighbours, for no reason you can see | One long token in it, in a box too narrow for that token at the size the rest of the page is set at |
+| A whole sentence's worth of captions lettered small, one of them tiny | Free-floating regions grouped into an `utterance`: they letter at what the narrowest of them holds, and free text has no common size to protect |
 | A loud page comes back ordinary | Sizes normalised against that page's own median |
 
 Text placed off-centre or into a sliver of a bubble is a mask problem, not a
