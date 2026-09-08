@@ -163,9 +163,14 @@ Two consequences worth spelling out:
   column asking for 110. A space inside it lets the breaker stack it — and the
   original stacked it too, one character per line, so the break is not a loss.
 
-**Ask before you apply, not after.** `lay_out` answers this directly; a throwaway
-probe that prints the size and the lines for a candidate against the region's own
-box turns the wording pass from a re-render loop into arithmetic.
+**Ask before you apply, not after.** `fit` measures a candidate against the
+region's own box and draws nothing, which turns the wording pass from a
+render-and-look loop into arithmetic:
+
+```sh
+uv run python -m manga_honyaku.fit series/<work> 01/05 F1 "เธอนำแสง"
+uv run python -m manga_honyaku.fit series/<work> 01/05     # what is already set
+```
 
 `weight` is the other thing in the working file, and it is not size. **Ink
 density tells a display face from a body face** — dark pixels over the region's
