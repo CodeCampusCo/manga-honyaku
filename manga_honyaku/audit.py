@@ -22,13 +22,10 @@ have gone and did not.
 The rest is bookkeeping the working file can answer on its own, and is here
 because a translator checking it by hand is a translator not reading the page.
 
-**Nothing here judges how the page looks.** A check counting a line against its
-box lived here once and was removed: the `page-look` pass does that by eye,
-against an exception list a Thai reader calibrated, and a size step has since
-been ruled an acceptable price for a fuller line — so the count was reporting
-something that was never work. It was also 96 of one volume's 107 findings, and
-it buried the eleven that were real. **A check whose output is never work is not
-a check**, and this file is only worth running if everything it prints is.
+**Nothing here judges how the page looks.** The `page-look` pass does that by
+eye, against an exception list a Thai reader calibrated. **A check whose output
+is never work is not a check**, and this file is only worth running if everything
+it prints is.
 
 `status` has three values and each answers a different question, which is why
 the third had to exist:
@@ -41,7 +38,7 @@ the third had to exist:
 own, a stray glyph the interior fill could not reach. Written as `ok` with no
 target it is indistinguishable from a line somebody forgot to translate, and
 written as `declined` it is never erased at all, so the page keeps the Japanese
-while the record says it was handled. Both mistakes have been made here.
+while the record says it was handled.
 """
 
 import argparse

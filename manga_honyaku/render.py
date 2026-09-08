@@ -14,13 +14,6 @@ already chose it, and it is already the right shape: tall and narrow where the
 Japanese ran down a bubble. Set the Thai into it, let the line breaker fill it,
 and come down a size while it overflows.
 
-Everything that used to stand between those two sentences is gone: the
-centroid-expansion rectangle, the corner collision test, the column narrowed a
-tenth at a time in search of a taller block, and the ladder of finer and finer
-break points. Each was a way of recovering a column the box already gave, and
-each needed patches of its own — protecting names from being split, rejoining
-lengthened vowels — that vanish with it.
-
 Thai needs no complex-text shaping here. Its marks stack above and below the base
 letter, and in a font that gives them zero advance — every Thai comic face does —
 basic layout puts them in the right place. A font that positions marks through
@@ -100,9 +93,9 @@ THAI_CONSONANTS = "กขคงจฉชซดตถทนบปผพฟมย�
 # smaller than its neighbours. Between them nothing is wrong enough to mention.
 EMPTY, CRAMPED = 0.45, 1.8
 
-# The height `floor` is quoted for — the one number left that is an absolute
-# count of pixels rather than a ratio, so a volume scanned larger needs it
-# scaled or the smallest lettering allowed comes out half as big on the page.
+# The height `floor` is quoted for. `floor` counts absolute pixels rather than a
+# ratio, so a volume scanned larger needs it scaled or the smallest lettering
+# allowed comes out half as big on the page.
 PAGE_HEIGHT = 1600
 
 # Thai stacks marks above and below the base letter, so lines need more room
@@ -139,12 +132,8 @@ def settings(series: Path) -> dict:
     small is too small — those vary by work and by font, and they are recorded
     with the rest of the series' conventions rather than compiled in.
 
-    These numbers were once a table in a prose document, parsed by rules the
-    document never stated. How to arrive at them for a new work is in the
-    `thai-manga-lettering` skill.
-
-    Absent values fall back to the defaults above, so a series with no file
-    letters the way this one started out.
+    How to arrive at them for a new work is in the `thai-manga-lettering` skill.
+    Absent values fall back to the defaults above.
     """
     path = series / "lettering.json"
     return json.loads(path.read_text()) if path.exists() else {}
@@ -209,18 +198,13 @@ def room_for(box: list[float], size: int, spacing: float, one: float) -> int:
 def lexicon(series: Path):
     """The segmenter's dictionary: pythainlp's, plus `series/words.txt`.
 
-    One Thai word per line, nothing else in the file. It used to be a table in
-    `glossary.md` and the parsing — find the heading, find the rows, take the
-    second cell — was a set of rules invented here that the file itself never
-    stated, and that a later edit could break in silence.
+    One Thai word per line, nothing else in the file.
 
     What belongs in it: words that mean nothing once cut in half. Names, and
     transliterations no Thai dictionary carries — `ฮารุกะ` otherwise segments as
     `ฮา|รุ|กะ` and lands across two lines. What does not: a phrase whose parts
-    are ordinary words. In the dictionary a phrase is a single token, and a
-    token that will not fit its box brings the whole bubble's size down — one
-    twelve-character compound measured 139px against a 96px box and cost its
-    caption a third of its size, and the caption sharing its utterance the same.
+    are ordinary words. In the dictionary a phrase is a single token, and a token
+    too wide for its box brings that whole region's size down.
 
     Called once per run: the Trie costs about 200ms to build, and every page
     after the first reuses it.

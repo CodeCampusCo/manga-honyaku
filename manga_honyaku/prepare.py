@@ -5,9 +5,9 @@ slot for everything the agent is about to work out. From here on the working
 file is the agent's: it drops the regions it will not touch, adds the ones the
 detector never saw, and accumulates the source and the translation.
 
-This stage is mechanical on purpose. It carries 212 regions across a chapter
-without a judgement being made about any of them, which is the part worth
-automating; deciding which of them is speech is the part that is not.
+This stage is mechanical on purpose. Carrying a chapter's regions across without
+a judgement being made about any of them is the part worth automating; deciding
+which of them is speech is the part that is not.
 
 OCR runs here rather than as a stage of its own. Its output is a `source` field
 in the working file, and a stage that filled that field afterwards would be
@@ -55,12 +55,9 @@ def cells(source: str) -> int:
     """How many cells of the grid the source fills.
 
     One character to a cell, except that a pause is often recorded twice over,
-    once in each script — `・・・...` where the page has three dots. Two readings
-    of the same box were merged and nobody looked, because to a translator it
-    reads as a pause either way. Counting both makes the region's lettering a
-    sixth smaller than it is, and small lettering is the fault this whole
-    measurement exists to find. A run of pause marks counts as its longest
-    unbroken stretch of one mark.
+    once in each script — `・・・...` where the page has three dots. Counting both
+    makes the region measure about a sixth smaller than it is, so a run of pause
+    marks counts as its longest unbroken stretch of one mark.
     """
     total = 0
     for pause, run in groupby("".join(source.split()), key=lambda c: c in PAUSE):
@@ -78,21 +75,13 @@ def lettered_at(box: list[float], source: str) -> float | None:
     filling a box of area A were set at about sqrt(A / n) whichever way the text
     ran.
 
-    Measuring the *ink* inside the box instead was tried and is worse, which is
-    worth writing down because the argument for it is convincing and wrong. The
-    detector's box is loose: its padding runs from 4% to six times the ink, so it
-    plainly does not measure the original's letters. But the padding varies with
-    the region's *shape*, not with its scale, which makes the box a tilted ruler
-    that is steady, against ink extent that swings with whichever glyphs a region
-    happens to contain. Volume one contains its own proof: 80 groups of bubbles
-    that were one sentence in the original, and so were certainly lettered alike.
-    The box holds them to 10% at the median, the ink to 16%.
-
-    And the tilt is not a defect here. This number does not have to describe the
-    Japanese — it has to letter the Thai, which is set horizontally into boxes
-    drawn for vertical Japanese and has to fill them. Carrying some of the space
-    available into the answer is what makes it fill them. A caption measured at
-    20 from its ink and 45 from its box is one where 45 fits the line exactly.
+    The box is measured rather than the ink it contains. The box is loose — its
+    padding runs from 4% to six times the ink — but the padding varies with the
+    region's shape and not with its scale, so it stays steady where an ink extent
+    swings with whichever glyphs a region happens to hold. It also carries some
+    of the space available into the answer, which is what makes horizontal Thai
+    fill a box drawn for vertical Japanese. The `thai-manga-lettering` skill has
+    the measurements behind both.
 
     A region holding only a pause is excluded: one character in a box sized for a
     beat of silence measures as enormous lettering, and the dots were drawn at
@@ -110,13 +99,8 @@ def lettered_at(box: list[float], source: str) -> float | None:
 def tag(entry: dict, size: float | None, style: dict) -> None:
     """The two fields the geometry decides: what size, and how much of it.
 
-    `size` is a number in the page's own pixels, and deliberately not a name.
-    Naming it `quiet` or `shout` was tried and is a mistake, because why the
-    artist set a line large cannot be read back off the page — a shout from
-    across the street is lettered small — so the name is a guess, and a region
-    labelled `quiet` that holds a shout sends the translator after the wrong
-    words. A wrong label is worse than none. Nothing here interprets the number:
-    what carries meaning is the ratio between the regions on a page, and one
+    `size` is a number in the page's own pixels and nothing here interprets it.
+    What carries meaning is the ratio between the regions on a page, and one
     multiplier preserves every one of them exactly.
     """
     if size is not None:
@@ -152,10 +136,8 @@ def tag_page(entries: list[dict], height: int, style: dict) -> None:
     usual = known[len(known) // 2] if known else TYPICAL * height
     for entry, size in zip(entries, measured):
         if size is None:
-            # Only a number is a size someone can have meant. Anything else is
-            # a name from the model this replaced, and names are what it got rid
-            # of: the page cannot say why the artist set a line large, so a
-            # region tagged `quiet` may hold a shout from across the street.
+            # Only a number is a measurement; anything else in the slot is not
+            # one, and the page's own median is the better guess.
             kept = entry.get("size")
             size = kept if isinstance(kept, (int, float)) else usual
         tag(entry, size, style)

@@ -16,8 +16,7 @@ chaptered one are not two cases anything has to handle.
 
 `pages/` is kept apart from `build/` because everything in `build/` rebuilds from
 raw in seconds and nothing in `pages/` rebuilds at all — it is hours of reading
-the page. On one work that was 316MB against 564KB, sharing a name, one `rm -rf`
-apart.
+the page.
 
 The pipeline runs one way:
 

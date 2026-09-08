@@ -60,11 +60,10 @@ def _iou(a: list[float], b: list[float]) -> float:
 def dedupe(found, threshold: float = 0.5):
     """Keep the highest-scoring box where several cover the same thing.
 
-    RT-DETR does not need NMS as a rule, and over a chapter of 227 regions only
-    one thing produced duplicates: a panel edge of screentone, whose dot lattice
-    read as a column of vertical text and returned five near-identical boxes at
-    up to 0.95 IoU. No pair of genuine regions came close to the threshold —
-    adjacent lobes of a conjoined bubble overlap, but nothing like this much.
+    RT-DETR does not need NMS as a rule. What produces duplicates is screentone
+    whose dot lattice reads as a column of vertical text, returning several boxes
+    at up to 0.95 IoU. Genuine regions stay well under the threshold: adjacent
+    lobes of a conjoined bubble overlap, but nothing like this much.
     """
     kept: list = []
     for region in sorted(found, key=lambda f: f[2], reverse=True):

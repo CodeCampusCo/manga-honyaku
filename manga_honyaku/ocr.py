@@ -21,17 +21,15 @@ from transformers import VisionEncoderDecoderModel, ViTImageProcessor
 
 READER = os.environ.get("MANGA_HONYAKU_OCR", "kha-white/manga-ocr-base")
 
-# Kept on CPU with the detector. Both models are small and run once per page,
-# and pinning the device once is what keeps the MPS float64 failure from
-# reappearing somewhere new.
+# Kept on CPU with the detector, for the reason in detect.py. Both models are
+# small and run once per page.
 DEVICE = torch.device("cpu")
 
 SPECIAL = {"[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"}
 
-# The crop is grown a little before reading. Free-floating boxes are cropped
-# tight enough to clip the first glyph, which is the margin question the design
-# leaves open — and unlike erasing, where any margin at all cuts into artwork,
-# reading a clipped glyph costs nothing but a wider crop.
+# The crop is grown before reading: free-floating boxes are tight enough to clip
+# the first glyph. Unlike erasing, where any margin cuts into artwork, a wider
+# crop costs nothing here.
 MARGIN = 0.05
 
 
