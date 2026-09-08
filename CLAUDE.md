@@ -69,6 +69,21 @@ overlap: one re-reads the Japanese, the other looks at what came out.
 found on particular pages, so asking about three of them does not mean loading
 the chapter they are in.
 
+Three more tools answer questions about a work without changing anything in
+it, and none of them is a stage:
+
+    regions <work> 01/ch02        # the working file: boxes, sizes, room, source
+    regions <work> --match 聞け    # every line of the work that ever said this
+    regions <work> 01 --overlaps  # region pairs standing on the same lettering
+    regions <work> 01 --todo      # what the file still leaves unfinished
+    regions <work> 01 --repeats   # lines this chapter says twice, before reading any
+    tally <work>                  # the counts a finished chapter is read back against
+    fit <work> 01/05 F1 "…"       # what size a candidate line would be drawn at
+
+**`regions` is what to open a chapter with.** `chapters` holds what somebody
+wrote *about* a page; `regions` holds the file being worked on, which on a fresh
+chapter is the only one of the two that exists.
+
 A region's `status` says what happens to it, and the three values answer
 different questions: **`ok`** takes the Japanese out and puts Thai in its place,
 **`declined`** leaves the artwork alone and says why in `reason`, **`erase`**

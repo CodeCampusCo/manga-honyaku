@@ -39,6 +39,7 @@ from manga_honyaku.render import (
     TYPICAL,
     room_for,
     settings,
+    warn,
     widths,
 )
 
@@ -143,6 +144,44 @@ def tag_page(entries: list[dict], height: int, style: dict) -> None:
         tag(entry, size, style)
 
 
+def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
+    """Region pairs standing on the same lettering, largest coverage first.
+
+    `detect` drops a duplicate only when both boxes came back under the same
+    class, so one piece of text found once as bubble text and once as free text
+    survives as two regions. It happens on every chapter, and reading a box
+    column by eye does not find them all: on the third chapter here a translator
+    doing exactly that found 6 of the 14 pairs, which is the kind of reading a
+    machine should be doing instead.
+
+    **A pair is a decision, not a defect.** One of the two is the region to
+    letter and the other has to be declined, and which is which depends on what
+    the text is: the free one for a sign or a spine, the bubble one where the
+    balloon's outline was found and `clean` can follow it. So this reports and
+    does not choose. Nothing downstream reports it at all — two regions both set
+    to `ok` are erased and lettered on top of each other.
+
+    Coverage is measured against the smaller box rather than the union, because
+    the shape that matters is containment: a box drawn around a whole phrase and
+    a second box around one of its columns overlap very little as a fraction of
+    the pair, and completely as a fraction of the smaller.
+    """
+    found = []
+    for i, a in enumerate(regions):
+        for b in regions[i + 1 :]:
+            ax1, ay1, ax2, ay2 = a["box"]
+            bx1, by1, bx2, by2 = b["box"]
+            wide = min(ax2, bx2) - max(ax1, bx1)
+            tall = min(ay2, by2) - max(ay1, by1)
+            if wide <= 0 or tall <= 0:
+                continue
+            smaller = min((ax2 - ax1) * (ay2 - ay1), (bx2 - bx1) * (by2 - by1))
+            cover = wide * tall / smaller
+            if cover > threshold:
+                found.append((a, b, cover))
+    return sorted(found, key=lambda pair: -pair[2])
+
+
 def reading(
     detected: dict, image: Image.Image | None, reader, values: dict | None = None
 ) -> dict:
@@ -225,6 +264,11 @@ def main() -> None:
         data = reading(detected, scan, reader, values)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
         print(f"{page}  {out}  {len(data['regions'])} regions")
+        for a, b, cover in overlapping(data["regions"]):
+            warn(
+                f"{page} {a['id']} and {b['id']}: one covers {cover:.0%} of the "
+                f"other. Letter one and decline the other."
+            )
 
 
 if __name__ == "__main__":
