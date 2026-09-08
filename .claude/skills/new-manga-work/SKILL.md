@@ -97,6 +97,9 @@ round is one number and one re-render.
   answered goes to `characters.md`, and the item leaves this file. Easy to
   forget, because nothing in the pipeline asks for it.
 - **`style.md`** — only if this work departs from the skills. Most never do.
+- **`handoff.md`** — at the end of the first session, and rewritten at the end of
+  every one after it. `CLAUDE.md` sends the next translator here first, so it is
+  the file that decides whether they can start without asking.
 
 ## 6. Then the ordinary loop
 

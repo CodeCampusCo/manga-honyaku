@@ -14,9 +14,10 @@ import unicodedata
 import pytest
 
 from manga_honyaku.chapters import chosen, entries
+from manga_honyaku.fit import measure
 from manga_honyaku.check import settle, says_something
 from manga_honyaku.prepare import cells, lettered_at, tag, tag_page
-from manga_honyaku.render import FONT, lay_out, room_for, widths
+from manga_honyaku.render import FONT, LINE_SPACING, lay_out, room_for, widths
 
 
 # --- what a character costs -------------------------------------------------
@@ -260,3 +261,39 @@ def test_a_line_too_long_is_brought_down_rather_than_overflowing():
     long = lay_out("สวัสดีครับผมมาจากที่ไกลมากเลยนะครับ", box, FONT, 9, 40)
     assert long[0].size < short[0].size
     assert long[2] * len(long[1]) <= 60      # line height times lines fits the box
+
+
+# --- the size a candidate line would be drawn at ----------------------------
+
+def test_the_longest_word_sets_the_size_not_the_length():
+    """The bug: a caption lettered half-size was read as a line that ran long.
+
+    A word cannot be broken, so in a column this narrow the binding constraint is
+    the widest single token. These two lines are the same thirteen letters and
+    differ only in how they tokenise, and the one whose longest token is shorter
+    is set nearly twice as large. That is why the fix for a small caption is a
+    different word rather than a shorter sentence.
+    """
+    column = {"box": [0, 0, 84, 309]}
+    one_long_token = measure(column, "เธอนำแสงสว่าง", FONT, None, LINE_SPACING)
+    four_short_ones = measure(column, "เธอ นำ แสง สว่าง", FONT, None, LINE_SPACING)
+    assert four_short_ones[0] > one_long_token[0] * 1.8
+
+
+def test_a_longer_line_of_short_words_still_beats_a_short_line_of_long_ones():
+    column = {"box": [0, 0, 84, 309]}
+    shorter = measure(column, "เธอนำแสงสว่าง", FONT, None, LINE_SPACING)
+    longer = measure(column, "เธอ นำ แสง มา ให้ ผม", FONT, None, LINE_SPACING)
+    assert len("เธอ นำ แสง มา ให้ ผม".replace(" ", "")) > len("เธอนำแสงสว่าง")
+    assert longer[0] > shorter[0]
+
+
+def test_a_line_that_cannot_be_broken_small_enough_reports_rather_than_guesses():
+    hair_thin = {"box": [0, 0, 12, 300]}
+    assert measure(hair_thin, "ยินดีต้อนรับ", FONT, None, LINE_SPACING) is None
+
+
+def test_fill_is_the_share_of_the_box_the_stack_covers():
+    size, fill, lines = measure({"box": [0, 0, 400, 200]}, "สวัสดี", FONT, None, 1.32)
+    assert 0 < fill <= 1
+    assert fill == pytest.approx(int(size * 1.32) * len(lines) / 200)

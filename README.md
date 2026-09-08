@@ -123,10 +123,16 @@ segmenter's dictionary takes about 200ms to build and is built once per run.
 ```sh
 uv run python -m manga_honyaku.sheet out/X0006.png out/X0007.png -o /tmp/look.png
 uv run python -m manga_honyaku.chapters series/<work> X0006-X0008
+uv run python -m manga_honyaku.fit series/<work> X0006 B1 "สวัสดีครับ"
 ```
 
 `chapters` prints what the reading found on the pages you name, from whichever
 chapter file holds them, with the rule at the top of those files attached.
+
+`fit` says what size a candidate line would be lettered at in a region's own box,
+and what it breaks into, without drawing anything. In a box drawn for vertical
+Japanese the size is set by the longest single word rather than by the length of
+the line, so this is worth asking before a wording is applied rather than after.
 
 `sheet` scales pages down to the size past which reading stops getting easier,
 lays them out together, and reports what the result costs to read.

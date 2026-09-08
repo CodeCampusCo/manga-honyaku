@@ -360,6 +360,14 @@ the work that told you.
   when someone does it, which is a different clock from `questions.md`, which is
   why it is a different file. Say "nothing outstanding" rather than deleting the
   heading; silence and unchecked look identical.
+
+  **Everything it points at has to still be there when it is read.** It is picked
+  up by someone with none of the context that wrote it, so it cannot refer to a
+  pull request or an issue number, to a file in a scratch directory, or to
+  anything else that was true of the session rather than of the work. A rule that
+  has landed is named where it now lives; a rule still in flight does not belong
+  in the file at all. The test: could this line be acted on a month from now by
+  someone who was not there?
 - **`questions.md`** — what the work has not answered yet, and nothing else.
   **Update it at the end of a chapter, not while translating.** An item leaves
   the moment the work answers it, and the answer goes to `characters.md`. Keeping
