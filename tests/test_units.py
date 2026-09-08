@@ -12,6 +12,7 @@ from __future__ import annotations
 import unicodedata
 
 import pytest
+from PIL import ImageFont
 
 from manga_honyaku.chapters import chosen, entries
 from manga_honyaku.fit import measure
@@ -277,7 +278,13 @@ def test_the_longest_word_sets_the_size_not_the_length():
     column = {"box": [0, 0, 84, 309]}
     one_long_token = measure(column, "เธอนำแสงสว่าง", FONT, None, LINE_SPACING)
     four_short_ones = measure(column, "เธอ นำ แสง สว่าง", FONT, None, LINE_SPACING)
-    assert four_short_ones[0] > one_long_token[0] * 1.8
+    assert four_short_ones[0] > one_long_token[0]
+
+    # And this is the mechanism, rather than a ratio between two builds' numbers:
+    # at the larger size the undivided word is wider than the column, so the line
+    # holding it has to come down until it is not.
+    larger = ImageFont.truetype(FONT, four_short_ones[0])
+    assert larger.getlength("แสงสว่าง") > 84
 
 
 def test_a_longer_line_of_short_words_still_beats_a_short_line_of_long_ones():
