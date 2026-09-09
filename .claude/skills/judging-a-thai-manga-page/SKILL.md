@@ -27,8 +27,21 @@ fourteen things and **thirteen were normal**. Learn these before looking.
 and the list is meant to keep growing that way.** Nobody can write it from
 memory — the entries arrived one at a time, each because a pass flagged something
 and a reader said *that is fine, and here is why*. When a future pass reports
-something and the ruling is that it reads fine, the ruling belongs here. A pass
-whose false positives are not fed back will keep making the same ones.
+something and the ruling is that it reads fine, the ruling belongs here — **if
+it would still be true of a different manga by a different artist.** That a
+face draws its tone marks high is one. That a plate is a rectangle with the
+text centred in it is one.
+
+**A number measured off one artist is not**, however much it settled the argument
+it was measured for. How far Thai strays over a balloon's outline is a fact about
+how tightly that artist draws balloons and about the work's own `k`, so a
+threshold carried across from one book would quiet a pass on the next one exactly
+where it should have spoken. Those belong in the **work's own `style.md`**, which
+is the file for what a work does differently. What goes here is the thing to look
+at — a number may stand in an entry as the observation that settled it, as the 83
+pixels below do, but never as a line a later pass measures against.
+
+A pass whose false positives are not fed back will keep making the same ones.
 
 ### The face draws tone marks high and detached
 

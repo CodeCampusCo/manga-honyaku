@@ -48,9 +48,11 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
+from pythainlp.tokenize import word_tokenize
 
 from .clean import KEEP, PAPER
 from .page import Series
+from .render import ENGINE, lexicon
 
 # A region's box is where the lettering sat, so on a tight box some of the
 # bubble's own outline falls inside it and reads as ink no matter how clean the
@@ -115,6 +117,54 @@ def spelling(data: dict) -> list[str]:
     return out
 
 
+# Thai is written without spaces, so a space in a target is a phrase separator
+# and the line breaker is free to set a line there. Put one inside a word and the
+# word is cut in two on the page, and the reader gets `ล้ม เหลว` where the
+# translator wrote a word.
+#
+# **Only a space with Thai on both sides is a split.** Beside Latin, digits or
+# punctuation a space is ordinary typesetting, and the segmenter has no boundary
+# to offer there. Measured over four finished chapters that distinction is the
+# whole of the noise: without it the check reports 4, 2, 3, 12 by chapter; with
+# it, 2, 2, 0, 12 — and the four surviving on the finished chapters are the two
+# exceptions `style.md` names by name, twice each. The twelve are all real.
+#
+# A space after a closing particle is the one false positive left standing
+# (`…นะครับ ผมจะ…`): the segmenter marks no boundary at a sentence end. One in
+# four chapters is a report worth reading rather than a rule worth bending.
+def _thai(character: str) -> bool:
+    return 0x0E00 <= ord(character) <= 0x0E7F
+
+
+def split_words(text: str, custom) -> bool:
+    """Whether any space in this line falls inside a word rather than between two."""
+    if " " not in text:
+        return False
+    bounds, at = {0}, 0
+    for token in word_tokenize(text.replace(" ", ""), engine=ENGINE, custom_dict=custom):
+        at += len(token)
+        bounds.add(at)
+    seen = 0
+    for i, character in enumerate(text):
+        if character != " ":
+            seen += 1
+            continue
+        before = next((c for c in reversed(text[:i]) if c != " "), "")
+        after = next((c for c in text[i + 1:] if c != " "), "")
+        if _thai(before) and _thai(after) and seen not in bounds:
+            return True
+    return False
+
+
+def spacing(data: dict, custom) -> list[str]:
+    """Targets whose spaces would break a word in half when the line wraps."""
+    return [
+        f"{r['id']}: a space falls inside a word — {r['target']!r}"
+        for r in data["regions"]
+        if r.get("status") == "ok" and split_words(r.get("target") or "", custom)
+    ]
+
+
 def drawn(data: dict, masks: Path) -> list[str]:
     """Regions that were erased and then drew nothing into the hole."""
     if not masks.exists():
@@ -163,6 +213,7 @@ def main() -> None:
     args = parser.parse_args()
 
     work = Series(Path(args.series))
+    custom = lexicon(Path(args.series))
 
     total = 0
     for page in work.ids(args.pages):
@@ -170,6 +221,7 @@ def main() -> None:
         found = (
             record(data)
             + spelling(data)
+            + spacing(data, custom)
             + drawn(data, work.derived(page, "masks.png"))
             + residue(data, work.derived(page, "clean.png"), work.derived(page, "masks.png"))
         )

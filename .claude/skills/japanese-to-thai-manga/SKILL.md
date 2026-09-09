@@ -12,6 +12,11 @@ Build a contact sheet of the annotated pages, two to four at a time, and settle
 panels, right-to-left and top-down within a panel. A bubble drawn across a panel
 border belongs to the panel its tail comes from.
 
+Print the working file beside the sheet: `regions <work> <chapter>` gives every
+box with the size the Japanese was lettered at, the `room` that follows, and the
+reading. The sheet says where a region is on the page; only the file says what is
+in it and how much of it there is room for.
+
 Attribution is where the guessing goes wrong, and the check is cheap: read the
 sequence back as a conversation. `それに…` following a line by the same speaker
 means you have the order right; following a line by the other speaker means you
@@ -327,8 +332,8 @@ has not answered yet. The grid above says what a register becomes in Thai;
 other's job.
 
 The test when something new is learned: *would this still be true of a different
-manga?* If yes it belongs here. If it is something a page told you, it belongs to
-the work that told you.
+manga by a different artist?* If yes it belongs here. If a page, a face or a
+measurement told you, it belongs to the work that told you.
 
 ## Keep the series files current as you go
 
@@ -387,10 +392,12 @@ reason chapter 8 sounds like chapter 1.
 Four questions, and they all have answers that are numbers or page ids:
 
 - **Count the register, do not remember it.** How many of a character's lines
-  took the polite particle, out of how many. A ratio that has moved since last
-  chapter is characterisation and goes in the file. One that has not moved is
-  worth a line saying so, because *confirmed* and *never checked* look identical
-  a chapter later.
+  took the polite particle, out of how many. `tally <work>` prints this for
+  every speaker and every chapter at once, the Japanese `ですます` beside the
+  Thai particle, so the row can be read rather than assembled. A ratio that
+  has moved since last chapter is characterisation and goes in the file. One
+  that has not moved is worth a line saying so, because *confirmed* and
+  *never checked* look identical a chapter later.
 - **Find the onlys and the firsts.** Something a character did exactly once in a
   chapter is the chapter's own hinge — the artist spent it deliberately. Once is
   a decision; twice is a habit; the file should say which. This is invisible
@@ -483,9 +490,14 @@ Who speaks — who says each line, and what settled it: tail direction, where a
   saying where the answer came from.
 ```
 
-Quote a line to refer to it — the Japanese, no region id and no translation. An
-id means opening another file; **a translation written here becomes the answer
-your translation pass was supposed to reach on its own.**
+Quote a line to refer to it — the Japanese, **never the translation.** A
+translation written here becomes the answer your translation pass was supposed to
+reach on its own.
+
+Name a region id where the note is about that region's handling — which box the
+detector missed, which of a pair to keep. `regions <work> <page>` prints the file
+in one command, so an id costs nothing now and makes the note checkable instead
+of merely readable. Do not use one as a substitute for saying what the line is.
 
 Head every one of these files with the rule that makes them safe:
 
@@ -525,8 +537,10 @@ one page held each other's lines and read perfectly as a conversation; only this
 found them. Readings you corrected by hand are counted and not listed, because
 that list is the same every run.
 
-Then check the targets for characters the face cannot draw, before a page is
-rendered rather than after.
+**Then `regions <work> <pages> --todo`**, which reports what the file still
+leaves unfinished and the characters this face cannot draw. Ask the font, never
+a list somebody typed: `render` warns about the same thing, and two sessions in
+a row wrote their own regex against a work's `style.md` before finding that out.
 
 ## Reviewing pages that are already rendered
 
@@ -567,9 +581,10 @@ the decision has stopped moving, over whatever span it reaches — a volume wher
 work has volumes, and simply a span where it does not.
 
 The sweeps are grep-shaped: the decision names the Japanese it applies to, so
-search the recorded `source` fields for it rather than re-reading. **A sweep that
-cannot be expressed as a search is usually a rule that has not been stated
-clearly enough yet.**
+search the recorded `source` fields for it rather than re-reading —
+`regions <work> --match <japanese>` is that search, over `source`, `target` and
+`reason` across every chapter. **A sweep that cannot be expressed as a search
+is usually a rule that has not been stated clearly enough yet.**
 
 Rewrite the notes files at the sweep, **whole and once** — not once per chapter.
 Seven partial edits to one file produce a file with seven voices in it. A single

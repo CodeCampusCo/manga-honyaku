@@ -9,6 +9,7 @@ Run from the repository root, which is where the font path resolves from.
 
 from __future__ import annotations
 
+import json
 import unicodedata
 
 import pytest
@@ -17,7 +18,12 @@ from PIL import ImageFont
 from manga_honyaku.chapters import chosen, entries
 from manga_honyaku.fit import measure
 from manga_honyaku.check import settle, says_something
-from manga_honyaku.prepare import cells, lettered_at, tag, tag_page
+from manga_honyaku.audit import split_words
+from manga_honyaku.prepare import (cells, lettered_at, overlapping, tag,
+                                   tag_page, uncovered)
+from manga_honyaku.page import Series
+from manga_honyaku.regions import drifted, repeated
+from manga_honyaku.tally import chapter_of, polite_jp, polite_th
 from manga_honyaku.render import FONT, LINE_SPACING, lay_out, room_for, widths
 
 
@@ -304,3 +310,213 @@ def test_fill_is_the_share_of_the_box_the_stack_covers():
     size, fill, lines = measure({"box": [0, 0, 400, 200]}, "สวัสดี", FONT, None, 1.32)
     assert 0 < fill <= 1
     assert fill == pytest.approx(int(size * 1.32) * len(lines) / 200)
+
+
+# --- regions standing on the same lettering ---------------------------------
+
+def box(x1, y1, x2, y2, rid="R"):
+    return {"id": rid, "box": [x1, y1, x2, y2]}
+
+
+def test_the_same_text_found_twice_is_one_pair():
+    pair = overlapping([box(10, 10, 60, 200, "B1"), box(10, 10, 60, 200, "F1")])
+    assert [(a["id"], b["id"]) for a, b, _ in pair] == [("B1", "F1")]
+
+
+def test_a_column_inside_a_phrase_counts_even_though_the_union_barely_overlaps():
+    """The shape this exists for: one box round a whole phrase, one round a
+    column of it. As a share of the pair they overlap a third; as a share of the
+    smaller they overlap entirely, and it is the smaller that is redundant."""
+    phrase, column = box(0, 0, 300, 100, "F5"), box(0, 0, 100, 100, "F8")
+    assert overlapping([phrase, column])
+    union = 100 * 100 / (300 * 100)
+    assert union < 0.85
+
+
+def test_boxes_that_only_touch_at_a_margin_are_not_a_pair():
+    assert not overlapping([box(0, 0, 100, 100, "A"), box(90, 90, 200, 200, "B")])
+
+
+def test_regions_that_do_not_meet_at_all_are_not_a_pair():
+    assert not overlapping([box(0, 0, 50, 50, "A"), box(60, 60, 100, 100, "B")])
+
+
+def test_the_worst_pair_is_reported_first():
+    found = overlapping(
+        [box(0, 0, 100, 100, "A"), box(0, 0, 100, 100, "B"), box(0, 0, 92, 100, "C")]
+    )
+    assert [(a["id"], b["id"]) for a, b, _ in found][0] == ("A", "B")
+
+
+# --- counting a register rather than remembering it -------------------------
+
+def test_politeness_is_read_off_the_verb_ending():
+    assert polite_jp("靴紐ほどけてますよっ")
+    assert polite_jp("お待たせしました...")
+    assert not polite_jp("やっぱ店長面白い人だなぁ")
+
+
+def test_board_slang_misspelling_the_polite_form_still_counts_as_polite():
+    assert polite_jp("特定しますた。")
+
+
+def test_a_held_vowel_is_still_the_politeness_slot():
+    """This artist draws out final vowels, and `ค่าาา` is `ค่ะ` held. Matching
+    only the dictionary spelling undercounts exactly the most obviously polite
+    lines."""
+    assert polite_th("ล้อเล่นน่ะ โกหกค่าาา——")
+    assert polite_th("ฉันใส่ตลอดเลยค่ะ")
+    assert not polite_th("ทีแบ็ค")
+
+
+def test_a_page_id_carries_the_chapter_it_belongs_to():
+    assert chapter_of("02/05") == "02"
+    assert chapter_of("01/ch02/003") == "01/ch02"
+
+
+def test_a_flat_work_is_one_chapter_rather_than_none():
+    assert chapter_of("X0006") == "—"
+
+
+# --- what a chapter says twice ----------------------------------------------
+
+def work_of(pages: dict, root):
+    """A series on disk holding nothing but sources, which is all `repeats` reads."""
+    for page, sources in pages.items():
+        path = root / "pages" / f"{page}.agent.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({
+            "regions": [
+                {"id": f"B{i}", "box": [0, 0, 10, 10], "placement": "bubble",
+                 "source": s, "target": t}
+                for i, (s, t) in enumerate(sources, 1)
+            ]
+        }, ensure_ascii=False))
+    return Series(root)
+
+
+def test_a_line_the_chapter_says_twice_is_found_before_anyone_reads_a_page(tmp_path):
+    work = work_of({
+        "02/09": [("私はいつも穿いてますよ", None)],
+        "02/16": [("私はいつも穿いてますよ", None)],
+        "02/21": [("よいしょ", None)],
+    }, tmp_path)
+    found = {said: len(rows) for said, rows, _ in repeated(work, work.ids(["02"]))}
+    assert found == {"私はいつも穿いてますよ": 2}
+
+
+def test_an_earlier_chapter_that_already_answered_it_comes_with_its_answer(tmp_path):
+    work = work_of({
+        "01/21": [("あ...ありじゃす", "ข…ขอบคุงคับ")],
+        "02/14": [("あ・・・ありじゃす", None)],
+    }, tmp_path)
+    (said, rows, elsewhere), = repeated(work, work.ids(["02"]))
+    assert len(rows) == 1 and [p for p, _ in elsewhere] == ["01/21"]
+    assert elsewhere[0][1]["target"] == "ข…ขอบคุงคับ"
+
+
+def test_a_pause_identifies_no_line_and_is_not_a_repeat(tmp_path):
+    work = work_of({"02/09": [("...", None)], "02/15": [("・・・", None)]}, tmp_path)
+    assert repeated(work, work.ids(["02"])) == []
+
+
+def test_one_japanese_line_answered_two_ways_is_drift():
+    rows = [
+        ("01/16", {"status": "ok", "target": "ยังไม่รู้เลย…"}),
+        ("02/20", {"status": "ok", "target": "ยังไม่รู้อยู่ดี…"}),
+    ]
+    assert drifted(rows)
+    assert not drifted([(p, {**r, "target": "เหมือนกัน"}) for p, r in rows])
+
+
+def test_a_region_nobody_lettered_is_not_a_disagreement():
+    """A duplicate box has one region declined and no target on it. That is the
+    ordinary case, not two answers to one line."""
+    rows = [
+        ("02/06", {"status": "ok", "target": "กำลังเติมของ"}),
+        ("02/06", {"status": "declined", "target": None}),
+    ]
+    assert not drifted(rows)
+
+
+def test_one_piece_of_lettering_found_twice_is_not_a_line_said_twice(tmp_path):
+    """The detector returns some text once as bubble text and once as free text.
+    Both boxes stand on the same drawn phrase, so the chapter said it once."""
+    root = tmp_path / "w"
+    (root / "pages" / "03").mkdir(parents=True)
+    (root / "pages" / "03" / "01.agent.json").write_text(json.dumps({
+        "regions": [
+            {"id": "B3", "box": [0, 0, 60, 200], "placement": "bubble", "source": "ぼー"},
+            {"id": "F1", "box": [0, 0, 60, 200], "placement": "free", "source": "ぼー"},
+        ]
+    }, ensure_ascii=False))
+    work = Series(root)
+    assert repeated(work, work.ids(["03"])) == []
+
+
+def test_the_shi_row_of_both_polite_auxiliaries_counts():
+    """Written as a list of endings rather than of stems, this matcher let
+    ましょう, でしょう and でした through and read a chapter as a register lower
+    than it was."""
+    assert polite_jp("ではお客さん相手で実践してみましょうか")
+    assert polite_jp("そうでしょうね")
+    assert polite_jp("大変でした")
+    assert polite_jp("数え切れません")
+    assert not polite_jp("やっぱ店長面白い人だなぁ")
+
+
+def test_a_line_a_character_quotes_is_not_their_own_register():
+    """This work's whole joke is a man repeating a polite question he cannot
+    ask. Counting the quotation as his register reads him as polite in the panel
+    where he is talking to himself."""
+    assert not polite_jp("「玉川さんAV出てました?」って…")
+    assert polite_jp("「AV出てた?」なんて聞けませんよ")
+
+
+# --- a space inside a word ---------------------------------------------------
+
+def test_a_space_between_two_words_is_not_a_split():
+    assert not split_words("ผมจะไป สั่งของ", None)
+    assert not split_words("เขา ไป", None)
+
+
+def test_a_space_forced_into_a_dictionary_word_is_reported_and_should_be():
+    """`ยินดีต้อนรับ` is one word, so `ยินดี ต้อนรับค่ะ!` splits it — which a work
+    may still want, and `style.md` names that line as a deliberate exception.
+    The check reports it; the exception is recorded where the decision was made,
+    not suppressed in the code."""
+    assert split_words("ยินดี ต้อนรับค่ะ!", None)
+
+
+def test_a_space_inside_a_word_is_caught():
+    """`ล้ม เหลว` reached a rendered page twelve times in one chapter: the line
+    breaker is free to break at a space, so the word comes apart on the page."""
+    assert split_words("ล้ม เหลว", None)
+    assert split_words("เสียง คราง", None)
+
+
+def test_a_space_beside_latin_or_digits_is_ordinary_typesetting():
+    """Only Thai on both sides makes a space a word-splitter. Without this the
+    check reports every price, every `AV`, every bracket — three of its four
+    false positives across four chapters were exactly that."""
+    assert not split_words("ราคา 2,180 เยน", None)
+    assert not split_words("ดู AV มาแล้ว", None)
+
+
+# --- a declined box holding a lettered one -----------------------------------
+
+def test_a_declined_box_whose_parts_cover_it_is_not_reported():
+    whole = {"id": "F3", "box": [0, 0, 100, 400], "status": "declined"}
+    parts = [{"id": "F4", "box": [0, 0, 100, 200], "status": "ok"},
+             {"id": "F5", "box": [0, 200, 100, 400], "status": "ok"}]
+    (_, _, share), = uncovered([whole] + parts)
+    assert share > 0.85
+
+
+def test_a_declined_box_a_lettered_part_barely_covers_is_reported():
+    """`04/09`: the whole phrase declined as "partial", one column lettered, and
+    the rest of the Japanese left standing under the Thai."""
+    whole = {"id": "F3", "box": [0, 0, 100, 500], "status": "declined"}
+    part = {"id": "F4", "box": [0, 0, 100, 150], "status": "ok"}
+    (_, inside, share), = uncovered([whole, part])
+    assert [r["id"] for r in inside] == ["F4"] and share < 0.4

@@ -69,6 +69,21 @@ overlap: one re-reads the Japanese, the other looks at what came out.
 found on particular pages, so asking about three of them does not mean loading
 the chapter they are in.
 
+Three more tools answer questions about a work without changing anything in
+it, and none of them is a stage:
+
+    regions <work> 01/ch02        # the working file: boxes, sizes, room, source
+    regions <work> --match 聞け    # every line of the work that ever said this
+    regions <work> 01 --overlaps  # region pairs standing on the same lettering
+    regions <work> 01 --todo      # what the file still leaves unfinished
+    regions <work> 01 --repeats   # lines this chapter says twice, before reading any
+    tally <work>                  # the counts a finished chapter is read back against
+    fit <work> 01/05 F1 "…"       # what size a candidate line would be drawn at
+
+**`regions` is what to open a chapter with.** `chapters` holds what somebody
+wrote *about* a page; `regions` holds the file being worked on, which on a fresh
+chapter is the only one of the two that exists.
+
 A region's `status` says what happens to it, and the three values answer
 different questions: **`ok`** takes the Japanese out and puts Thai in its place,
 **`declined`** leaves the artwork alone and says why in `reason`, **`erase`**
@@ -79,3 +94,42 @@ Never silently skip or soften. `ok` with nothing to draw cannot be told from a
 line somebody forgot, and `declined` is never erased at all, so the page keeps
 the Japanese while the record says it was handled. Both mistakes have been made
 here; that is why the third value exists.
+
+**`role` says what the region *is*, and the stages read it before they read
+`status`.** These five are the whole vocabulary. Nothing validates the field, so
+a sixth value invented in good faith fails quietly — `tally <work>` prints every
+value a work is using, and a count of 1 beside one is either something new or a
+typo.
+
+| `role` | What it is | `clean` | `render` |
+| --- | --- | --- | --- |
+| `dialogue` | said aloud, in a balloon | erases | draws Thai |
+| `caption` | thought, narrated, or a plate the artist set over the art | erases | draws Thai |
+| `title` | display type that is nobody speaking — the work's own chapter titles and scene headers, and the magazine's masthead, promo strips, credits and logos | erases | draws Thai |
+| `image_text` | writing inside the drawing — a sign, a badge, a screen, a spine | **leaves alone** | **draws nothing** |
+| `sfx` | a sound drawn into the artwork | **leaves alone** | **draws nothing** |
+
+**Most `title` is `declined`** — 37 of the 63 in this repository — because the
+magazine's furniture is printed over the artwork rather than drawn into it, and
+translating it would put a Thai masthead on somebody else's page. The role says
+what a region is; `status` still decides what happens to it.
+
+**`image_text` and `sfx` are recorded and not lettered.** Set `status: ok` with a
+`target` on them anyway: the Thai reaches the reader through the working file,
+and the drawing keeps its own lettering. A sound effect you *do* want drawn takes
+`role: dialogue`, which is right when it sits in an ordinary balloon `clean` can
+follow.
+
+**`image_text` is a decision about the reader, not about where the writing sits.**
+Nearly everything in a panel is writing inside the drawing, so that description
+chooses nothing. Ask instead what the reader loses: it is right when the content
+reaches them another way — a chyron whose story is in the lettered post beside it
+— or when losing it costs nothing. **When the scene does not work without it, it
+is not furniture. Draw it.** Filed wrongly it is the quiet failure: recorded, so
+it looks handled, and Japanese on the page at the one place that mattered.
+
+**`caption` against `dialogue` is not a formatting choice.** It is the difference
+between what a character thinks and what they say, which is what `tally` counts
+and what `characters.md` tracks across chapters. A chapter that files a
+narrator's interior voice as `dialogue` reports them as having spoken every line
+of it, and that number then joins a column counting something else.
