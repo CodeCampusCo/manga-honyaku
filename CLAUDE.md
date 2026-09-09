@@ -105,16 +105,28 @@ typo.
 | --- | --- | --- | --- |
 | `dialogue` | said aloud, in a balloon | erases | draws Thai |
 | `caption` | thought, narrated, or a plate the artist set over the art | erases | draws Thai |
-| `title` | a chapter title or a display line belonging to the work | erases | draws Thai |
+| `title` | display type that is nobody speaking — the work's own chapter titles and scene headers, and the magazine's masthead, promo strips, credits and logos | erases | draws Thai |
 | `image_text` | writing inside the drawing — a sign, a badge, a screen, a spine | **leaves alone** | **draws nothing** |
 | `sfx` | a sound drawn into the artwork | **leaves alone** | **draws nothing** |
+
+**Most `title` is `declined`** — 37 of the 63 in this repository — because the
+magazine's furniture is printed over the artwork rather than drawn into it, and
+translating it would put a Thai masthead on somebody else's page. The role says
+what a region is; `status` still decides what happens to it.
 
 **`image_text` and `sfx` are recorded and not lettered.** Set `status: ok` with a
 `target` on them anyway: the Thai reaches the reader through the working file,
 and the drawing keeps its own lettering. A sound effect you *do* want drawn takes
 `role: dialogue`, which is right when it sits in an ordinary balloon `clean` can
-follow. Putting a line the reader needs under `image_text` is the quiet failure —
-it is recorded, it looks handled, and the page still shows Japanese.
+follow.
+
+**`image_text` is a decision about the reader, not about where the writing sits.**
+Nearly everything in a panel is writing inside the drawing, so that description
+chooses nothing. Ask instead what the reader loses: it is right when the content
+reaches them another way — a chyron whose story is in the lettered post beside it
+— or when losing it costs nothing. **When the scene does not work without it, it
+is not furniture. Draw it.** Filed wrongly it is the quiet failure: recorded, so
+it looks handled, and Japanese on the page at the one place that mattered.
 
 **`caption` against `dialogue` is not a formatting choice.** It is the difference
 between what a character thinks and what they say, which is what `tally` counts
