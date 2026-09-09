@@ -27,9 +27,10 @@ fourteen things and **thirteen were normal**. Learn these before looking.
 and the list is meant to keep growing that way.** Nobody can write it from
 memory — the entries arrived one at a time, each because a pass flagged something
 and a reader said *that is fine, and here is why*. When a future pass reports
-something and the ruling is that it reads fine, the ruling belongs here — **if it
-would still be a ruling on a different book.** That a face draws its tone marks
-high is one. That a plate is a rectangle with the text centred in it is one.
+something and the ruling is that it reads fine, the ruling belongs here — **if
+it would still be true of a different manga by a different artist.** That a
+face draws its tone marks high is one. That a plate is a rectangle with the
+text centred in it is one.
 
 **A number measured off one artist is not**, however much it settled the argument
 it was measured for. How far Thai strays over a balloon's outline is a fact about

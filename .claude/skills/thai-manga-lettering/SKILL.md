@@ -250,6 +250,16 @@ Nothing is measured again afterwards.
   word it repeats and sits alone at the head of a line, meaning nothing —
   `สาวๆ` comes back as `สาว / ๆ`. Name it alongside the closing marks, because
   the test that finds them will not.
+- **A space is a break point, so a space inside a word cuts the word in half.**
+  Thai writes without spaces, so a space in a target reads as a phrase
+  separator and the breaker is free to set a line on it: `ล้ม เหลว` arrives
+  as two lines and a word the reader has to reassemble. **When a token will
+  not fit, change the word, not the spacing** — that is what the paragraph on
+  the longest token is for. Deliberate exceptions exist, and the display
+  column above is one, but they are cases a work names rather than a
+  technique. `audit` reports every space that falls off a segmenter boundary
+  with Thai on both sides; one work ran at one or two a chapter for three
+  chapters and then twelve in one.
 - **Letter regions that share an utterance at one size.** One sentence at two
   sizes reads as two sentences.
 - **A held vowel is one token, and a shout box is a column.** A Japanese cry runs
@@ -289,8 +299,8 @@ one of those is re-derived for the next work by running the same method, which
 is why none of them is written down here.
 
 The test when something new is learned: *would this still be true of a different
-manga by a different artist?* If yes it belongs here. If it is an answer, it
-belongs to the work that answered it.
+manga by a different artist?* If yes it belongs here. If a page, a face or a
+measurement told you, it belongs to the work that told you.
 
 ## Symptoms and causes
 

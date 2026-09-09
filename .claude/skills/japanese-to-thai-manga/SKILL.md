@@ -332,8 +332,8 @@ has not answered yet. The grid above says what a register becomes in Thai;
 other's job.
 
 The test when something new is learned: *would this still be true of a different
-manga?* If yes it belongs here. If it is something a page told you, it belongs to
-the work that told you.
+manga by a different artist?* If yes it belongs here. If a page, a face or a
+measurement told you, it belongs to the work that told you.
 
 ## Keep the series files current as you go
 
@@ -490,9 +490,14 @@ Who speaks — who says each line, and what settled it: tail direction, where a
   saying where the answer came from.
 ```
 
-Quote a line to refer to it — the Japanese, no region id and no translation. An
-id means opening another file; **a translation written here becomes the answer
-your translation pass was supposed to reach on its own.**
+Quote a line to refer to it — the Japanese, **never the translation.** A
+translation written here becomes the answer your translation pass was supposed to
+reach on its own.
+
+Name a region id where the note is about that region's handling — which box the
+detector missed, which of a pair to keep. `regions <work> <page>` prints the file
+in one command, so an id costs nothing now and makes the note checkable instead
+of merely readable. Do not use one as a substitute for saying what the line is.
 
 Head every one of these files with the rule that makes them safe:
 
@@ -532,8 +537,10 @@ one page held each other's lines and read perfectly as a conversation; only this
 found them. Readings you corrected by hand are counted and not listed, because
 that list is the same every run.
 
-Then check the targets for characters the face cannot draw, before a page is
-rendered rather than after.
+**Then `regions <work> <pages> --todo`**, which reports what the file still
+leaves unfinished and the characters this face cannot draw. Ask the font, never
+a list somebody typed: `render` warns about the same thing, and two sessions in
+a row wrote their own regex against a work's `style.md` before finding that out.
 
 ## Reviewing pages that are already rendered
 
