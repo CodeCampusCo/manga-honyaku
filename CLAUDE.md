@@ -94,3 +94,30 @@ Never silently skip or soften. `ok` with nothing to draw cannot be told from a
 line somebody forgot, and `declined` is never erased at all, so the page keeps
 the Japanese while the record says it was handled. Both mistakes have been made
 here; that is why the third value exists.
+
+**`role` says what the region *is*, and the stages read it before they read
+`status`.** These five are the whole vocabulary. Nothing validates the field, so
+a sixth value invented in good faith fails quietly — `tally <work>` prints every
+value a work is using, and a count of 1 beside one is either something new or a
+typo.
+
+| `role` | What it is | `clean` | `render` |
+| --- | --- | --- | --- |
+| `dialogue` | said aloud, in a balloon | erases | draws Thai |
+| `caption` | thought, narrated, or a plate the artist set over the art | erases | draws Thai |
+| `title` | a chapter title or a display line belonging to the work | erases | draws Thai |
+| `image_text` | writing inside the drawing — a sign, a badge, a screen, a spine | **leaves alone** | **draws nothing** |
+| `sfx` | a sound drawn into the artwork | **leaves alone** | **draws nothing** |
+
+**`image_text` and `sfx` are recorded and not lettered.** Set `status: ok` with a
+`target` on them anyway: the Thai reaches the reader through the working file,
+and the drawing keeps its own lettering. A sound effect you *do* want drawn takes
+`role: dialogue`, which is right when it sits in an ordinary balloon `clean` can
+follow. Putting a line the reader needs under `image_text` is the quiet failure —
+it is recorded, it looks handled, and the page still shows Japanese.
+
+**`caption` against `dialogue` is not a formatting choice.** It is the difference
+between what a character thinks and what they say, which is what `tally` counts
+and what `characters.md` tracks across chapters. A chapter that files a
+narrator's interior voice as `dialogue` reports them as having spoken every line
+of it, and that number then joins a column counting something else.
