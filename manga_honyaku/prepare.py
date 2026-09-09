@@ -182,6 +182,48 @@ def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
     return sorted(found, key=lambda pair: -pair[2])
 
 
+def uncovered(regions: list[dict]) -> list[tuple]:
+    """Declined regions with a lettered one inside them, and how much of their
+    height that lettered part actually covers.
+
+    The shape it is looking for reached a rendered page: a drawn phrase boxed
+    whole and boxed again in part, the whole declined as "partial" and the part
+    lettered, so the rest of the phrase stands in Japanese under the Thai. On
+    `04/09` the reason recorded for the declined box says the small one is the
+    whole phrase; the boxes say the opposite, and 「ファンじゃん」 is still on the
+    page.
+
+    **It reports and does not judge, because no threshold separates the two
+    cases.** Measured over four chapters, the same arrangement occurs seven
+    times legitimately: a box drawn round a logo that happens to contain the
+    chapter title, a caption whose remainder is Latin and needs nothing, a
+    phrase whose parts are *all* lettered so the whole is covered. Their
+    coverage runs 17% to 100% and the real defects run 29% and 46% — the ranges
+    overlap, and what separates them is the reason, which is prose. So this is a
+    worklist for `regions --todo`, not a check for `audit`, whose standard is
+    that everything it prints is work.
+    """
+    out = []
+    for big in regions:
+        if big.get("status") != "declined":
+            continue
+        inside = [
+            r for r in regions
+            if r is not big and r.get("status") == "ok"
+            and big["box"][0] - 1 <= r["box"][0] and r["box"][2] <= big["box"][2] + 1
+            and big["box"][1] - 1 <= r["box"][1] and r["box"][3] <= big["box"][3] + 1
+        ]
+        if not inside:
+            continue
+        top, bottom = int(big["box"][1]), int(big["box"][3])
+        covered = sum(
+            any(r["box"][1] <= y <= r["box"][3] for r in inside)
+            for y in range(top, bottom)
+        )
+        out.append((big, inside, covered / max(1, bottom - top)))
+    return sorted(out, key=lambda row: row[2])
+
+
 def reading(
     detected: dict, image: Image.Image | None, reader, values: dict | None = None
 ) -> dict:

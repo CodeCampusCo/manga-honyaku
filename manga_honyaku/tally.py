@@ -160,6 +160,21 @@ def main() -> None:
         )
         print(f"  {field:<9}" + "  ".join(f"{v} {n}" for v, n in used))
 
+    # A role every other chapter uses heavily and this one does not use at all
+    # is not a style: it is a chapter whose regions were tagged wrong. Chapter 4
+    # of the first work here carried 129 `dialogue` and no `caption`, so a man
+    # whose interior voice is most of the book was recorded as having said all of
+    # it out loud — and the count went from here into `characters.md`, beside
+    # three chapters that had counted a different thing.
+    for role in sorted({r for b in found.values() for r in b["roles"]}, key=str):
+        elsewhere = [b for k, b in found.items() if b["roles"][role]]
+        for book in books:
+            if found[book]["roles"][role] or len(elsewhere) < 2:
+                continue
+            usual = sorted(b["roles"][role] for b in elsewhere)[len(elsewhere) // 2]
+            print(f"  ** chapter {book} has no `{role}` at all, where the others "
+                  f"average about {usual}. Check how its regions were tagged.")
+
     print("\nregions lettered, by role")
     roles = sorted({r for b in found.values() for r in b["roles"]}, key=str)
     print("  " + "chapter".ljust(9) + "".join(str(r).rjust(12) for r in roles))

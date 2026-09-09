@@ -18,7 +18,9 @@ from PIL import ImageFont
 from manga_honyaku.chapters import chosen, entries
 from manga_honyaku.fit import measure
 from manga_honyaku.check import settle, says_something
-from manga_honyaku.prepare import cells, lettered_at, overlapping, tag, tag_page
+from manga_honyaku.audit import split_words
+from manga_honyaku.prepare import (cells, lettered_at, overlapping, tag,
+                                   tag_page, uncovered)
 from manga_honyaku.page import Series
 from manga_honyaku.regions import drifted, repeated
 from manga_honyaku.tally import chapter_of, polite_jp, polite_th
@@ -469,3 +471,52 @@ def test_a_line_a_character_quotes_is_not_their_own_register():
     where he is talking to himself."""
     assert not polite_jp("「玉川さんAV出てました?」って…")
     assert polite_jp("「AV出てた?」なんて聞けませんよ")
+
+
+# --- a space inside a word ---------------------------------------------------
+
+def test_a_space_between_two_words_is_not_a_split():
+    assert not split_words("ผมจะไป สั่งของ", None)
+    assert not split_words("เขา ไป", None)
+
+
+def test_a_space_forced_into_a_dictionary_word_is_reported_and_should_be():
+    """`ยินดีต้อนรับ` is one word, so `ยินดี ต้อนรับค่ะ!` splits it — which a work
+    may still want, and `style.md` names that line as a deliberate exception.
+    The check reports it; the exception is recorded where the decision was made,
+    not suppressed in the code."""
+    assert split_words("ยินดี ต้อนรับค่ะ!", None)
+
+
+def test_a_space_inside_a_word_is_caught():
+    """`ล้ม เหลว` reached a rendered page twelve times in one chapter: the line
+    breaker is free to break at a space, so the word comes apart on the page."""
+    assert split_words("ล้ม เหลว", None)
+    assert split_words("เสียง คราง", None)
+
+
+def test_a_space_beside_latin_or_digits_is_ordinary_typesetting():
+    """Only Thai on both sides makes a space a word-splitter. Without this the
+    check reports every price, every `AV`, every bracket — three of its four
+    false positives across four chapters were exactly that."""
+    assert not split_words("ราคา 2,180 เยน", None)
+    assert not split_words("ดู AV มาแล้ว", None)
+
+
+# --- a declined box holding a lettered one -----------------------------------
+
+def test_a_declined_box_whose_parts_cover_it_is_not_reported():
+    whole = {"id": "F3", "box": [0, 0, 100, 400], "status": "declined"}
+    parts = [{"id": "F4", "box": [0, 0, 100, 200], "status": "ok"},
+             {"id": "F5", "box": [0, 200, 100, 400], "status": "ok"}]
+    (_, _, share), = uncovered([whole] + parts)
+    assert share > 0.85
+
+
+def test_a_declined_box_a_lettered_part_barely_covers_is_reported():
+    """`04/09`: the whole phrase declined as "partial", one column lettered, and
+    the rest of the Japanese left standing under the Thai."""
+    whole = {"id": "F3", "box": [0, 0, 100, 500], "status": "declined"}
+    part = {"id": "F4", "box": [0, 0, 100, 150], "status": "ok"}
+    (_, inside, share), = uncovered([whole, part])
+    assert [r["id"] for r in inside] == ["F4"] and share < 0.4

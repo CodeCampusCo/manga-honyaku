@@ -46,6 +46,14 @@ two, every duplicate the detector leaves behind arrives here as a line the
 chapter says twice, which is noise and is also false — that is `--overlaps`'s
 question, not this one.
 
+**What it compares is OCR, not Japanese.** `source` is what the reader made of a
+box, so two regions the artist drew identically can differ in the file, and two
+it drew differently can match. A `DRIFTED` line is therefore *a place to open the
+scan*, never a translation error on its own: one such pair here was `失敗!!` and
+`失敗!!!`, reported upward as a mistranslation and then found on the page to be
+the original counting 1→2→3→4, with the Thai right all along and the reading
+wrong. Open the page before believing the tool.
+
 It finds strings, so it finds neither a pun nor a paraphrase: `ティーバッグ` and
 `Tバック` are the joke of that same chapter and are two different strings. What it
 is for is the repeat that must not drift, not the reading.
@@ -71,7 +79,7 @@ from PIL import ImageFont
 from manga_honyaku.audit import record
 from manga_honyaku.check import settle, says_something
 from manga_honyaku.page import Series
-from manga_honyaku.prepare import overlapping
+from manga_honyaku.prepare import overlapping, uncovered
 from manga_honyaku.render import FONT, missing_glyphs, settings
 
 
@@ -241,6 +249,13 @@ def main() -> None:
                 ]
             if args.todo:
                 said += record(data)
+                said += [
+                    f"{big['id']} is declined and holds "
+                    f"{', '.join(r['id'] for r in inside)}, which cover "
+                    f"{share:.0%} of it — is the rest meant to stay Japanese?"
+                    for big, inside, share in uncovered(data["regions"])
+                    if share < 0.85
+                ]
                 absent = missing_glyphs(
                     probe, "".join(r.get("target") or "" for r in data["regions"])
                 )
