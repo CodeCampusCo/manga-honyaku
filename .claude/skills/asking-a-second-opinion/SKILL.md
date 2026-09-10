@@ -61,8 +61,19 @@ order they expect to be obeyed. Quote the Japanese. Say what you have so far and
 what is wrong with it.
 
 **Ask for options with the difference named**, not for the answer. Three
-renderings and what separates them beats one confident line, because the choosing
-is yours and you need the axis to choose along.
+renderings and what separates them beats one confident line: you know the
+character and the answerer does not, so what you want back is a palette and the
+axis it varies along, and the choosing is yours. Expect more than one of them to
+be usable — that is the answer working, not the answerer hedging.
+
+**Let them explain.** Do not ask for one line back. The reason is the part you
+weigh; an answer clipped to a verdict has thrown away what you would have judged
+it by.
+
+**Ask how they know.** Whether they looked it up or are recalling it, and say
+that either is a fine answer. It changes what the answer is worth — a plain "I am
+recalling this, I ran no search" is worth more than a confident claim to have
+checked that you cannot check.
 
 **Never send the artwork, and never send the chapter.** The question travels; the
 work does not.
@@ -97,9 +108,14 @@ noticed, and it is worth the question even when you keep what you had.
 
 ## Afterwards
 
-If the answer changed a term, it belongs in `glossary.md` with the reason — and
-the reason is *why the Thai is right*, never *because it was suggested*. A row
-that records who said so instead of what makes it true is a row nobody can
-overturn later.
+If the answer changed something, write it where that kind of decision lives: a
+term of the work in `glossary.md`, **how a person sounds — a tic, a register, a
+pronoun — in `characters.md`**, under their key. The two are easy to confuse and
+a verbal habit filed as a term is a term nobody will think to check against a
+character.
+
+Either way the reason is *why the Thai is right*, never *because it was
+suggested*. A row that records who said so instead of what makes it true is a row
+nobody can overturn later.
 
 If it changed nothing, that is a result too and does not need writing down.
