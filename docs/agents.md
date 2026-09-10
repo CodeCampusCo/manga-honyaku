@@ -1,7 +1,7 @@
 # Agents
 
 Nothing in this file is method. The method is [`AGENTS.md`](../AGENTS.md) and the
-five files it names; this is only how each tool finds them, and what this
+files it names; this is only how each tool finds them, and what this
 repository commits so that nobody has to wire it up again.
 
 | Tool | Reads instructions from | Finds the method through | Committed for it |
@@ -26,7 +26,7 @@ the rows cost nothing to re-check, and those three are the ones to trust:
   `~/.codex/skills`, that directory's `.system`, and the plugin caches — no root
   inside the repository. `codex doctor` names one config file, `~/.codex/config.toml`;
   a `.codex/config.toml` committed here changes nothing, which was tried.
-- **goose**: `goose skills list` prints all five of this repository's skills, by
+- **goose**: `goose skills list` prints every one of this repository's skills, by
   path. Asked what instructions it had it answered `AGENTS.md`, but the provider
   configured on this machine is `claude-acp`, which brings context files of its
   own, so that half is not settled.
@@ -94,46 +94,30 @@ The last one reads nothing off the command line because opencode already has the
 prompt; that is the next section.
 
 **The `tools:` line in that header is Claude Code taking tools away, and no other
-tool reads it.** Run from a bare prompt like this, a pass can open everything, and
-what each pass cannot see is the whole value of the split — so it becomes yours to
-keep: `page-look` must not open the Japanese or the notes, and
-`proofread-against-source` must not open `out/`. A proofreader that has seen the
-rendered page has stopped being the one pass that catches a line which is fluent,
-sits well, and says the opposite of the original.
-
-Run each in a session of its own, for the same reason. opencode is the one
-exception to the paragraph above, and the section after next says what it can do
-instead.
+tool reads it.** Run from a bare prompt like this, a pass can open everything, so
+the `Never opens` column of the table in `AGENTS.md` becomes yours to keep. Run
+each in a session of its own, for the same reason. opencode is the one exception,
+two sections down.
 
 **`-p` takes the next word as the prompt, so the flag has to carry it.**
 Written `agy -p --dangerously-skip-permissions "<prompt>"`, agy runs a turn whose
 whole prompt is the word `--dangerously-skip-permissions` and tells you it has
 done so; `-p="<prompt>"` with the other flags elsewhere is the form that works.
 
-**`agy -p` cannot ask, so it denies**, and a run that needs a permission ends
-with a line naming the one it wanted instead of doing the work. All three passes
-need `command`, because every one of them reaches a page through `sheet`. What
-agy runs without asking is a list of allow-rules in
-`~/.gemini/antigravity-cli/settings.json`, which is one person's machine and does
-not travel; `.agents/` registers skills, plugins, rules and hooks and has no
-permissions file, so there is nothing this repository can commit that grants it.
+**`agy -p` cannot ask for a permission, so it denies one**, and the run ends with
+a line naming what it wanted instead of doing the work. All three passes need
+`command`, because each reaches a page through `sheet`.
 
-**Name the permission rather than reaching for the flag.** `--dangerously-skip-permissions`
-approves every tool the pass calls for, and then the prompt is the only thing
-holding it back — survivable for `page-look` and `proofread-against-source`, which
-report and change nothing, and a poor trade for `translate-pages`, which writes,
-and run that way writes unwatched. An allow-rule of `command(uv)` is the whole of
-what the passes actually need, and it is the machine owner's line to add.
+Grant it narrowly and not with `--dangerously-skip-permissions`, which approves
+every tool the pass calls for — survivable for the two that change nothing, a
+poor trade for `translate-pages`, which writes. An allow-rule of `command(uv)` in
+`~/.gemini/antigravity-cli/settings.json` is the whole of what the passes need.
+That file is one machine's, and `.agents/` has no permissions file, so there is
+nothing this repository can commit that grants it: the machine's owner adds the
+line.
 
-**A prompt that stays inside agy's own tools needs no permission at all.** Asked
-to view one image with its file-viewing tool and told not to shell out, agy 1.1.28
-answered correctly on `gemini-3.8-flash-medium`, unprivileged, with clean text on
-stdout. Asked the same question in a way that let it reach for a shell, it stopped
-on `command`. Which way a prompt sends it is a property of the prompt, and worth
-knowing before granting anything.
-
-Print mode also gives up after five minutes; a span long enough to be worth
-batching wants `--print-timeout 20m`.
+Print mode also gives up after five minutes; a span worth batching wants
+`--print-timeout 20m`.
 
 ## opencode is the one tool that can be handed the split
 

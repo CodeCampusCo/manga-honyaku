@@ -241,9 +241,3 @@ work's scans, its translation, and everything derived from them are yours and ar
 not this repository's to carry. Point `raw.txt` at scans you have the right to
 use.
 
-## Design
-
-[`docs/specs/2026-07-26-design.md`](docs/specs/2026-07-26-design.md) is the
-original design — why the work is split this way, and what was tried before what
-is here now. It predates the implementation; where it and the code disagree, the
-code is right, and it says so where it knows it is wrong.
