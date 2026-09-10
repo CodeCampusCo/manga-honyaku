@@ -25,7 +25,7 @@ the unauthenticated-request warning is not about that.
 
 ## Starting a new work
 
-Point Claude Code at the scans and ask:
+Point an agent at the repository and ask:
 
 > Start a new work. The scans are at `/path/to/the/scans`.
 
@@ -33,6 +33,11 @@ It follows the `new-manga-work` skill from there — makes the directory, runs
 detection, and stops to show you what the detector found. It stops twice more,
 for the lettering multiplier and before the first chapter is translated, because
 those are looks at a page rather than numbers. You need no other command to begin.
+
+Claude Code, Codex, opencode, goose and the Antigravity CLI read the same
+instructions and the same method files, and what each one needs is committed
+already — [`docs/agents.md`](docs/agents.md) says which file is for which, and two
+of the five need no file at all.
 
 ## A work on disk
 
@@ -110,6 +115,11 @@ translator knows what it meant and reads its own error as correct. So
 Thai and never opens `out/`; `page-look` has only the rendered page and no
 Japanese at all; `audit` is this program. A line that is fluent, sits well, and
 says the opposite of the original gets past three of the four.
+
+The first three are prompts in `.claude/agents/`. Every agent here can run them;
+[`docs/agents.md`](docs/agents.md) says how, what the split costs to keep in a
+tool that cannot take a pass's tools away, and which one tool can be handed it as
+a rule instead.
 
 ```sh
 uv run python -m manga_honyaku.render series/<work> X0006          # one page

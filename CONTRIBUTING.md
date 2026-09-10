@@ -3,7 +3,9 @@
 Code handles geometry — detection, OCR, text removal, rendering. An LLM agent
 handles comprehension — reading order, speaker attribution, and the translation
 itself. Most of what looks like a missing feature is comprehension, and belongs
-in a skill under `.claude/skills/` rather than in Python.
+in a skill under `.claude/skills/` rather than in Python. That directory is the
+method for every agent that works here, not for one of them — see
+[`docs/agents.md`](docs/agents.md).
 
 ## You cannot run the pipeline, and that is deliberate
 
@@ -48,6 +50,10 @@ number that moves whenever someone new turns up is not measuring anything.
 - **The least code that does the job.** No dependency, abstraction or config
   that is not needed yet. Several things here were deleted for being unread, and
   a smaller change with the same effect wins.
+- **Instructions live in `AGENTS.md`.** `CLAUDE.md` imports it and holds nothing
+  of its own, and any file a tool needs points at `AGENTS.md` or at the pass
+  prompts rather than repeating either. Never a copy: two copies of a rule are two
+  rules, and they will disagree inside a chapter.
 - **Artefacts and code are in English**, including comments, commit messages,
   and the notes a work accumulates.
 - **The stages stay separate.** Editing a translation and re-rendering must not
