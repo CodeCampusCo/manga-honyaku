@@ -40,7 +40,7 @@ detection or OCR.
 
 Artifacts and code are written in English.
 
-**Read every image through `sheet`** — pages, crops, all of it. It caps an image
+**Read every image through `manga_honyaku.sheet`** — pages, crops, all of it. It caps an image
 at the width past which reading stops getting easier and cost goes on rising, and
 it crops, so there is never a reason to write a resize by hand. One page and two
 pages cost the same, so read the spread.
@@ -93,6 +93,32 @@ typo.
 | `title` | display type that is nobody speaking — the work's own chapter titles and scene headers, and the magazine's masthead, promo strips, credits and logos | erases | draws Thai |
 | `image_text` | writing inside the drawing — a sign, a badge, a screen, a spine | **leaves alone** | **draws nothing** |
 | `sfx` | a sound drawn into the artwork | **leaves alone** | **draws nothing** |
+
+**Either of the last two can be moved when the scene needs it drawn**, and the
+value it moves to is the one whose shape `clean` can follow: `dialogue` for a
+sound in an ordinary balloon, `caption` for writing in the artwork — which erases
+as a white plate over the drawing, and is accepted here. There is no third
+option: a region either erases and is drawn into, or it does neither.
+
+## The working file
+
+`pages/<page>.agent.json` is the only artifact that rebuilds from nothing. Each
+region in it carries:
+
+| Field | Written by | What it is |
+| --- | --- | --- |
+| `id` `box` `placement` `score` `bubble` | `detect` | the region and where it sits |
+| `source` | `prepare` | the Japanese, OCR'd |
+| `size` `room` | `prepare` | the size the Japanese was lettered at, and the budget |
+| `role` `status` `reason` | you | above |
+| `order` | you | reading order, `1..N` over every region on the page, declined ones included |
+| `speaker` | you | who says it, by the key `characters.md` uses |
+| `target` | you | the Thai |
+| `utterance` | you | a tag shared by the regions one sentence is cut across |
+| `weight` | you | a named font face, where the work has more than one |
+
+The page itself carries `version`, `page`, `img_width`, `img_height`, `detector`
+and `questions`. Nothing validates any of it.
 
 ## The four passes, and where each one goes
 

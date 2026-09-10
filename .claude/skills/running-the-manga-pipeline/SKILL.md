@@ -20,18 +20,18 @@ for the way it is stored.
 
 ## Reading an image
 
-    sheet a.png b.png -o /tmp/look.png              # two pages, ~2300 tokens
-    sheet page.jpg --crop 640,280,1060,760 -o ...   # one bubble, ~1000
+    uv run python -m manga_honyaku.sheet a.png b.png -o /tmp/look.png
+    uv run python -m manga_honyaku.sheet page.png --crop 640,280,1060,760 -o /tmp/one.png
 
-`sheet` caps each image at the width past which reading stops getting easier and
-cost goes on rising, and `--crop X1,Y1,X2,Y2` takes a box out first. **One page
-and two pages cost the same**, so read the spread. There is never a reason to
-write a resize by hand.
+It caps each image at the width past which reading stops getting easier and cost
+goes on rising, and `--crop X1,Y1,X2,Y2` takes a box out first. A spread costs
+about 2300 tokens and one bubble about 1000 — **one page and two pages cost the
+same**, so read the spread. There is never a reason to write a resize by hand.
 
 ## The two that check
 
-    uv run python -m manga_honyaku.check <work> <pages>
-    uv run python -m manga_honyaku.audit <work> <pages>
+    uv run python -m manga_honyaku.check series/<work> <pages>
+    uv run python -m manga_honyaku.audit series/<work> <pages>
 
 `check` reads every region again and reports any holding a line that belongs to
 another region on the same page — the Thai is plausible where it sits and only
@@ -52,15 +52,18 @@ piece of lettering the detector missed is invisible to them.
 
 None of these is a stage. None of them writes.
 
-    regions <work> 01/ch02        # the working file: boxes, sizes, room, source
-    regions <work> --match 聞け    # every line of the work that ever said this
-    regions <work> 01 --overlaps  # region pairs standing on the same lettering
-    regions <work> 01 --todo      # what the file still leaves unfinished
-    regions <work> 01 --repeats   # lines this chapter says twice, before reading any
-    chapters <work> X0006-X0008   # what the reading found on particular pages
-    tally <work>                  # the counts a finished chapter is read back against
-    fit <work> 01/05 F1 "…"       # what size a candidate line would be drawn at
-    fit <work> --replace ก ข      # what changing a word costs, in every chapter at once
+Every one of them is `uv run python -m manga_honyaku.<tool> series/<work> …` —
+nothing here installs a command, so a bare `regions` is not on anyone's PATH.
+
+    …manga_honyaku.regions series/<work> 01/ch02      # the working file: boxes, sizes, room, source
+    …manga_honyaku.regions series/<work> --match 聞け  # every line of the work that ever said this
+    …manga_honyaku.regions series/<work> 01 --overlaps # region pairs on the same lettering
+    …manga_honyaku.regions series/<work> 01 --todo    # what the file still leaves unfinished
+    …manga_honyaku.regions series/<work> 01 --repeats # lines an earlier chapter already said
+    …manga_honyaku.chapters series/<work> X0006-X0008 # what the reading found on those pages
+    …manga_honyaku.tally    series/<work>             # the counts a chapter is read back against
+    …manga_honyaku.fit      series/<work> 01/05 F1 "…" # what size a candidate line draws at
+    …manga_honyaku.fit      series/<work> --replace ก ข # what changing a word costs, everywhere
 
 **`--repeats` and `--overlaps` are asked before a page is read**, not after.
 `--repeats` lists what an earlier chapter already settled, with the wording it

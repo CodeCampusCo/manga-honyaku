@@ -260,12 +260,18 @@ leaves unfinished and the characters this face cannot draw. Ask the font, never
 a list somebody typed: `render` warns about the same thing, and two sessions in
 a row wrote their own regex against a work's `style.md` before finding that out.
 
-## Reviewing pages that are already rendered
+## Going back over a chapter that is already rendered
 
-Two different jobs are easy to bundle here, because on the first work they fell
-at the same moment — the end of a volume. **One protects the chapters that come
-after it. The other repairs chapters already out.** Their triggers are not the
-same, and only the second one wants to be batched.
+**None of this is `proofread-against-source`.** That pass is not optional and not
+selective: it runs on every chapter, before `clean`, as `AGENTS.md` sets out.
+What follows is the different and rarer question of going back over a chapter
+that is already drawn — a deliberate re-read, days or a volume later, costing
+what translating a chapter costs.
+
+Two such jobs are easy to bundle, because on the first work they fell at the same
+moment — the end of a volume. **One protects the chapters that come after it. The
+other repairs chapters already out.** Their triggers are not the same, and only
+the second one wants to be batched.
 
 ### Review a chapter when what it settles will be inherited
 
