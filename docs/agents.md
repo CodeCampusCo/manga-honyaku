@@ -188,11 +188,16 @@ differently — build the sheet with `sheet` first and hand over the path. `clau
 aim for: the caller does the geometry, the reader only looks. A reader with no
 tools cannot wander.
 
-The difference that decided it here: on `嘘だろオイ`, Claude returned the ruby as
-`嘘(うそ)` and Gemini dropped it. Furigana is the thing OCR loses and the reason
-a page is looked at in the first place, so a reader that keeps it is worth the
-minute. `agy` answered in about a minute, `claude -p` in forty seconds, and
-`agy`'s `-p` needs the form two sections up or it runs the wrong prompt entirely.
+One difference looked decisive and was not. Asked the same question, Claude
+returned the ruby on `嘘だろオイ` as `嘘(うそ)` and Gemini dropped it — but asked
+again with the word *furigana* in the prompt, Gemini returned it too. **Neither
+reader volunteers ruby; one of them happened to.** So name it, every sheet, as
+its own line item, whichever reader is being used. Furigana is what OCR loses and
+the reason a page is looked at at all, and a name that arrives without it goes
+into `characters.md` wrong and stays wrong for the series.
+
+`agy` answered in about a minute, `claude -p` in forty seconds, and `agy`'s `-p`
+needs the form two sections up or it runs the wrong prompt entirely.
 
 **Ask for what the OCR could not give.** `prepare` has already transcribed every
 box, so a reader asked to transcribe returns what the working file holds and
