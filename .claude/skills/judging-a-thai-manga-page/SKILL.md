@@ -62,6 +62,20 @@ and continuing on bare paper are the same device. **Never report missing or
 broken balloon outlines**; the artist drew it that way and the original does the
 same thing in the same place.
 
+### Japanese still standing in a balloon the page edge cuts is not a miss
+
+A balloon the page or panel edge slices through, holding a scrap of kana rather
+than a line, is a remembered one — the artist's device for a voice in a
+character's head, drawn as a fragment because that is how it is being
+remembered. **The lettering itself is incomplete, so there is no whole line to
+carry**, and a translation would have to invent one. The detector is right to
+pass it and `clean` is right to leave it.
+
+`06/14` of `tamagawa` is the case: `ん` alone, in a balloon cut off by the top of
+the page, over a flashback panel. It was reported, chased, and ruled correct.
+Report Japanese left standing anywhere else — that is a real and known failure —
+but not here.
+
 ### A balloon can be mostly empty and still be right
 
 Thai is set horizontally into balloons drawn for vertical Japanese, so the shapes

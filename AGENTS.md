@@ -168,7 +168,7 @@ three are prompt files:
 | Pass | Has | Never opens | Runs |
 | --- | --- | --- | --- |
 | `.claude/agents/translate-pages.md` | the Japanese and the notes; it writes | — | the translation |
-| `.claude/agents/proofread-against-source.md` | the Japanese and the Thai | `out/` | **before `clean`** |
+| `.claude/agents/proofread-against-source.md` | the Japanese — **the scans included** — the Thai, and the notes | `out/` | **before `clean`** |
 | `.claude/agents/page-look.md` | the rendered page | the Japanese, the notes | after `render` |
 
 Run each in a session of its own. If your tool cannot take away the tools their
@@ -187,3 +187,13 @@ the working file, before a single pixel is erased.
 
 `page-look` is the one that genuinely cannot move: it judges the page that came
 out, so there has to be one.
+
+**The proofreader opens the artwork, and has to.** Its blindness is to the
+*result*, not to the source: `out/` is withheld because a line that has been seen
+sitting well on a finished page stops looking suspicious, and nothing about the
+scan does that. Reading chapter 6 it opened nine pages at full size and cropped
+five balloons — and that is where its two heaviest findings came from, neither of
+which is visible in the text at all. A censoring maru had been read as katakana
+`ロ` and written into `glossary.md` as a term; and a balloon the file gave to
+敷島 has its tail drawn to somebody else. A proofreader working from the working
+file alone would have passed both.
