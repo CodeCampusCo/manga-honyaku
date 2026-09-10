@@ -14,7 +14,10 @@ description: Use when running any stage of the manga pipeline or asking a work w
     uv run python -m manga_honyaku.render series/<work> 01/ch02    # a directory
 
 `detect`, `annotate`, `prepare`, `clean`, `render` and `audit` all read their
-arguments that way. Nothing named is every page; a name that is a page is that
+arguments that way. **`annotate` depends on `detect` and on nothing else**, so it
+runs any time after it — before `prepare` or after, whichever a work's handoff
+says. What it draws is what makes a page readable region by region, so it has to
+have run before anybody opens one. Nothing named is every page; a name that is a page is that
 page; a name that is a directory is every page under it, so a chapter is asked
 for the way it is stored.
 

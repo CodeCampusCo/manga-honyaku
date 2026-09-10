@@ -1,5 +1,10 @@
 # Working a chapter: the record, the roles, and when to review
 
+Tool names here are written short — `regions --todo`, `check`, `fit`. Nothing
+installs a command, so each is `uv run python -m manga_honyaku.<tool>
+series/<work> …`; the full forms are in
+[`../running-the-manga-pipeline/SKILL.md`](../running-the-manga-pipeline/SKILL.md).
+
 Everything here is about the chapter rather than the line. The craft of composing
 the Thai is in [`SKILL.md`](SKILL.md); this is what surrounds it — which value a
 region takes, which file a decision belongs in, what to write down as you read,
@@ -248,25 +253,25 @@ and they are not the part being declined.
 
 ## Verify the record before rendering
 
-**Run `python -m manga_honyaku.check <work> <pages>`.** It reads every region
+**Run `uv run python -m manga_honyaku.check series/<work> <pages>`.** It reads every region
 again and reports any holding a line that belongs to another region on the same
 page — the one failure that re-reading the page will not show. Three bubbles on
 one page held each other's lines and read perfectly as a conversation; only this
 found them. Readings you corrected by hand are counted and not listed, because
 that list is the same every run.
 
-**Then `regions <work> <pages> --todo`**, which reports what the file still
+**Then `regions --todo`**, which reports what the file still
 leaves unfinished and the characters this face cannot draw. Ask the font, never
 a list somebody typed: `render` warns about the same thing, and two sessions in
 a row wrote their own regex against a work's `style.md` before finding that out.
 
 ## Going back over a chapter that is already rendered
 
-**None of this is `proofread-against-source`.** That pass is not optional and not
-selective: it runs on every chapter, before `clean`, as `AGENTS.md` sets out.
-What follows is the different and rarer question of going back over a chapter
-that is already drawn — a deliberate re-read, days or a volume later, costing
-what translating a chapter costs.
+**This is not about where `proofread-against-source` sits in the sequence.** That
+is settled in `AGENTS.md`: it runs before `clean`, on the working file, because it
+needs no rendered page. What follows is the different question of *which* chapters
+are worth spending a restricted pass on at all — a decision that applies to the
+review passes both, and that has been answered "not this one" before.
 
 Two such jobs are easy to bundle, because on the first work they fell at the same
 moment — the end of a volume. **One protects the chapters that come after it. The
@@ -306,7 +311,7 @@ work has volumes, and simply a span where it does not.
 
 The sweeps are grep-shaped: the decision names the Japanese it applies to, so
 search the recorded `source` fields for it rather than re-reading —
-`regions <work> --match <japanese>` is that search, over `source`, `target` and
+`regions --match <japanese>` is that search, over `source`, `target` and
 `reason` across every chapter. **A sweep that cannot be expressed as a search
 is usually a rule that has not been stated clearly enough yet.**
 

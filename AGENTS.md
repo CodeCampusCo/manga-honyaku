@@ -70,7 +70,9 @@ before any page is read: what an earlier chapter already settled, and which boxe
 stand on the same lettering.
 
 A region's `status` says what happens to it, and the three values answer
-different questions: **`ok`** takes the Japanese out and puts Thai in its place,
+different questions: **`ok`** takes the Japanese out and puts Thai in its place —
+except on `image_text` and `sfx`, where the role wins and `ok` means only that the
+Thai is on record —
 **`declined`** leaves the artwork alone and says why in `reason`, **`erase`**
 takes the Japanese out and puts nothing back — furigana the detector boxed on
 its own, a glyph the interior fill could not reach.
@@ -82,7 +84,7 @@ here; that is why the third value exists.
 
 **`role` says what the region *is*, and the stages read it before they read
 `status`.** These five are the whole vocabulary. Nothing validates the field, so
-a sixth value invented in good faith fails quietly — `tally <work>` prints every
+a sixth value invented in good faith fails quietly — `tally` prints every
 value a work is using, and a count of 1 beside one is either something new or a
 typo.
 

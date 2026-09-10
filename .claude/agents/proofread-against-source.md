@@ -41,7 +41,7 @@ became `ฉันก็เห็นด้วย`, which is *I agree* and not *I 
    accurate line still reads stiff* lists these; you are checking that pass's
    work.
 5. **A line in the wrong bubble.** You will not usually find these — run
-   `python -m manga_honyaku.check <work> <pages>` instead, which is built for it.
+   `uv run python -m manga_honyaku.check series/<work> <pages>` instead, which is built for it.
 
 ## Rules
 

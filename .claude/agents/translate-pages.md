@@ -41,7 +41,7 @@ across its balloons**, against each region's `room`.
 Edit `pages/<id>.agent.json` and the work's notes. Apply a page's translations in
 one batch rather than one edit per region.
 
-Run `python -m manga_honyaku.check <work> <pages>` before you report. It finds
+Run `uv run python -m manga_honyaku.check series/<work> <pages>` before you report. It finds
 the one failure re-reading cannot: a line sitting in the wrong region, which
 reads plausibly in both places.
 
