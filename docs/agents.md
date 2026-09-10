@@ -167,48 +167,6 @@ shell out, because `page-look` views pages through `sheet`. The rules stop the
 accidental `read`, which is how the split actually gets broken; the prompt is
 still where the discipline lives.
 
-## Reading a page on a model that cannot see
-
-`AGENTS.md` says to stop and ask rather than route around it. This is what to
-offer. Two readers were measured on the same spread, with the same prompt, and
-both transcribed all ten balloons correctly:
-
-```sh
-# A — Antigravity CLI, so the page goes to Google
-agy --print-timeout 4m --model gemini-3.8-flash-medium \
-    -p="Using your own file-viewing tool and no shell commands, open <sheet> and ..."
-
-# B — a one-shot Claude session, so the page goes to Anthropic
-claude -p "Read the image at <sheet> and ..."
-```
-
-**Neither needs a permission granted**, and neither needs the page prepared any
-differently — build the sheet with `sheet` first and hand over the path. `claude
--p` reported that it had no Bash and so could not crop, which is the shape to
-aim for: the caller does the geometry, the reader only looks. A reader with no
-tools cannot wander.
-
-One difference looked decisive and was not. Asked the same question, Claude
-returned the ruby on `嘘だろオイ` as `嘘(うそ)` and Gemini dropped it — but asked
-again with the word *furigana* in the prompt, Gemini returned it too. **Neither
-reader volunteers ruby; one of them happened to.** So name it, every sheet, as
-its own line item, whichever reader is being used. Furigana is what OCR loses and
-the reason a page is looked at at all, and a name that arrives without it goes
-into `characters.md` wrong and stays wrong for the series.
-
-`agy` answered in about a minute, `claude -p` in forty seconds, and `agy`'s `-p`
-needs the form two sections up or it runs the wrong prompt entirely.
-
-**Ask for what the OCR could not give.** `prepare` has already transcribed every
-box, so a reader asked to transcribe returns what the working file holds and
-proves nothing. Ask instead for **who speaks which region id**, **the order the
-panels and the boxes in them are read**, and **any lettering outside a box** —
-furigana on a name above all, which is what puts a character's name into Thai
-wrongly for a whole series.
-
-And say plainly what each option costs the person, including the third one: a
-page not sent anywhere, read aloud to you by whoever asked for the chapter.
-
 ## Adding a tool
 
 One rule: **its instruction file points at `AGENTS.md` and never holds a copy of
@@ -222,3 +180,8 @@ the fallback, and it is the part that has to keep working.
 If it can be told what a named agent may read, it can also be handed the pass
 prompts and their limits, the way `opencode.json` is. That is worth doing and it
 is never the fallback: the passes have to work in a tool that offers none of it.
+
+**A model that cannot see a page cannot do this work**, and no arrangement of
+readers fixes that — it was tried, and what came back was a chapter translated
+from somebody else's description of the artwork. Reading the page is the
+translator's own job. Give the work to a tool whose model has eyes.

@@ -59,13 +59,11 @@ there is never a reason to write a resize by hand.
 
 One page and two pages cost the same, so read the spread.
 
-**If your model cannot see the sheet, stop and ask. Do not route around it.**
-Not every model that runs here has eyes, and a harness will quietly hand the
-image to something that does: fourteen pages of one chapter were uploaded to a
-third party's bucket before anybody knew images were leaving the machine at all.
-[`docs/agents.md`](docs/agents.md) lists the readers that exist and what each one
-costs. Which to use is the person's call, and one of the answers is to send the
-page nowhere and have them read it to you.
+**If you cannot see the sheet, stop. You cannot do this work.** Reading the page
+is not a step that can be handed to something else and reported back — it was
+tried, and the chapter that came out had been translated from a description of
+the artwork. A harness will quietly send the image somewhere that can look, so
+the first sign of it is often a page you never saw. Say so and stop.
 
 ## Translating
 
