@@ -79,7 +79,7 @@ opencode run "$(cat .claude/agents/page-look.md)
 
 series/<work>, pages X0006-X0012."
 
-agy -p --dangerously-skip-permissions "$(cat .claude/agents/page-look.md)
+agy --dangerously-skip-permissions -p="$(cat .claude/agents/page-look.md)
 
 series/<work>, pages X0006-X0012."
 
@@ -105,8 +105,14 @@ Run each in a session of its own, for the same reason. opencode is the one
 exception to the paragraph above, and the section after next says what it can do
 instead.
 
+**`-p` takes the next word as the prompt, so the flag has to carry it.**
+Written `agy -p --dangerously-skip-permissions "<prompt>"`, agy runs a turn whose
+whole prompt is the word `--dangerously-skip-permissions` and tells you it has
+done so; `-p="<prompt>"` with the other flags elsewhere is the form that works.
+
 **`agy -p` cannot ask, so it denies**, and a pass run without that flag ends
-with a line naming the permission it wanted instead of doing the work. What agy
+with a line naming the permission it wanted instead of doing the work — asked
+here to read one image, it stopped on `command` and said so. What agy
 runs without asking otherwise is a list of allow-rules in
 `~/.gemini/antigravity-cli/settings.json` — one person's machine, and it does
 not travel. `.agents/` registers skills, plugins, rules and hooks, and has no
