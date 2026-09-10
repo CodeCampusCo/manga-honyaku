@@ -11,6 +11,25 @@ file already holds is. Each line reports the box, the size the Japanese was
 lettered at, the size the Thai would be drawn at, how much of the box that fills,
 and the lines it breaks into.
 
+It also prices a change to a word **before** the change is made, across every
+chapter at once:
+
+    uv run python -m manga_honyaku.fit series/<work> --replace "เมชิเบะ" "เกสรตัวเมีย"
+    uv run python -m manga_honyaku.fit series/<work> --word ชิกุระ --add
+    uv run python -m manga_honyaku.fit series/<work> --word โยโระ --drop
+
+A term settled once is a term every later chapter inherits, so changing one is a
+work-wide edit and not a page-wide one. `--replace` swaps the wording (and swaps
+it in `words.txt` too, where the old word was listed); `--word` leaves every
+target alone and changes only what the segmenter treats as unsplittable.
+
+**Both directions can cost a size, and the second one silently.** A word in
+`words.txt` cannot be broken across lines, so making one unsplittable is the way
+a long token comes to overflow a narrow box — and a token that will not fit its
+box brings the whole region's size down with it. What each report ends with is
+the list of pages whose rendering would change, which is the set to re-render and
+nothing more.
+
 In a box drawn for vertical Japanese the size is set by the **longest token**,
 not by the length of the line, so the fix for a caption lettered half-size is
 usually a different word of the same meaning rather than a shorter sentence — and
@@ -23,6 +42,9 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+
+from pythainlp.corpus.common import thai_words
+from pythainlp.util import Trie
 
 from manga_honyaku.page import Series
 from manga_honyaku.render import FONT, LINE_SPACING, lay_out, lexicon, settings
@@ -46,10 +68,75 @@ def measure(region: dict, text: str, font: str, custom, spacing: float):
     return font_used.size, line_height * len(lines) / height, lines
 
 
+def terms(series: Path) -> set[str]:
+    """What `words.txt` lists, as a set. Absent or empty is an empty set."""
+    path = series / "words.txt"
+    if not path.exists():
+        return set()
+    return {word.strip() for word in path.read_text().splitlines() if word.strip()}
+
+
+def trie(words: set[str]):
+    """A segmenter dictionary for a `words.txt` that is not on disk yet."""
+    return Trie(set(thai_words()) | words) if words else None
+
+
+def sweep(work: Series, word: str, swap, after_terms: set[str], font, spacing) -> None:
+    """Every region the change touches, what it costs, and what to re-render."""
+    before = trie(terms(work.root))
+    after = trie(after_terms)
+    rows, pages = [], []
+
+    for page in work.ids([]):
+        data = json.loads(work.agent(page).read_text())
+        for region in data["regions"]:
+            text = region.get("target") or ""
+            if word not in text:
+                continue
+            was = measure(region, text, font, before, spacing)
+            now = measure(region, swap(text), font, after, spacing)
+            rows.append((page, region, text, was, now))
+            if (was and was[0]) != (now and now[0]):
+                pages.append(page)
+
+    if not rows:
+        print(f"no target holds {word!r} — nothing to re-render")
+        return
+
+    def step(row) -> int:
+        _, _, _, was, now = row
+        if was is None or now is None:
+            return -99
+        return now[0] - was[0]
+
+    for page, region, text, was, now in sorted(rows, key=step):
+        x1, y1, x2, y2 = region["box"]
+        shape = f"{x2 - x1:.0f}x{y2 - y1:.0f}"
+        head = f"{page} {region['id']:>4}  {shape}  jp={region.get('size')}"
+        if was is None or now is None:
+            gone = "does not fit" if now is None else "fits again"
+            print(f"{head}  {gone}  {text}")
+            continue
+        move = now[0] - was[0]
+        arrow = f"{was[0]} → {now[0]}" if move else f"{now[0]} unchanged"
+        print(f"{head}  {arrow:>16}  fills {now[1]:.0%}  {now[2]}")
+
+    touched = sorted(set(pages))
+    held = f"{len(rows)} region{' holds' if len(rows) == 1 else 's hold'} it"
+    moved = f"{len(touched)} page{'' if len(touched) == 1 else 's'} would render differently"
+    print(f"\n{held}; {moved}")
+    if touched:
+        print("re-render: " + " ".join(touched))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("series", type=Path, help="a work's directory under series/")
-    ap.add_argument("page", help="one page id")
+    ap.add_argument("page", nargs="?", help="one page id")
+    ap.add_argument("--replace", nargs=2, metavar=("OLD", "NEW"), help="price a wording change")
+    ap.add_argument("--word", help="a term in words.txt to price adding or dropping")
+    ap.add_argument("--add", action="store_true", help="with --word: price listing it")
+    ap.add_argument("--drop", action="store_true", help="with --word: price unlisting it")
     ap.add_argument(
         "pairs",
         nargs="*",
@@ -66,6 +153,22 @@ def main() -> None:
     font = values.get("font") or FONT
     spacing = values.get("line_spacing", LINE_SPACING)
     custom = lexicon(args.series)
+
+    if args.replace or args.word:
+        listed = terms(args.series)
+        if args.replace:
+            old, new = args.replace
+            after = (listed - {old}) | {new} if old in listed else listed
+            sweep(work, old, lambda t: t.replace(old, new), after, font, spacing)
+        else:
+            if args.add == args.drop:
+                raise SystemExit("--word takes one of --add or --drop")
+            after = listed | {args.word} if args.add else listed - {args.word}
+            sweep(work, args.word, lambda t: t, after, font, spacing)
+        return
+
+    if not args.page:
+        raise SystemExit("name a page, or price a change with --replace or --word")
 
     data = json.loads(work.agent(args.page).read_text())
     regions = {r["id"]: r for r in data["regions"]}

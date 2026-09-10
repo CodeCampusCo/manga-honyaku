@@ -16,7 +16,7 @@ import pytest
 from PIL import ImageFont
 
 from manga_honyaku.chapters import chosen, entries
-from manga_honyaku.fit import measure
+from manga_honyaku.fit import measure, terms, trie
 from manga_honyaku.check import settle, says_something
 from manga_honyaku.audit import split_words
 from manga_honyaku.prepare import (cells, lettered_at, overlapping, tag,
@@ -520,3 +520,34 @@ def test_a_declined_box_a_lettered_part_barely_covers_is_reported():
     part = {"id": "F4", "box": [0, 0, 100, 150], "status": "ok"}
     (_, inside, share), = uncovered([whole, part])
     assert [r["id"] for r in inside] == ["F4"] and share < 0.4
+
+
+def test_terms_reads_words_txt(tmp_path):
+    """`words.txt` is one term per line, and blank lines are not terms."""
+    (tmp_path / "words.txt").write_text("ฮารุกะ\n\n  ชิกุระ  \n")
+    assert terms(tmp_path) == {"ฮารุกะ", "ชิกุระ"}
+
+
+def test_terms_without_the_file(tmp_path):
+    """A work that has settled no term of its own is not an error."""
+    assert terms(tmp_path) == set()
+
+
+def test_trie_of_nothing_is_nothing():
+    """`render` takes None for "no custom dictionary", so this must agree."""
+    assert trie(set()) is None
+    assert trie({"ฮารุกะ"}) is not None
+
+
+def test_a_listed_term_stops_the_segmenter_splitting_it():
+    """Why `words.txt` exists: unlisted, a transliteration falls apart.
+
+    This is also why listing one costs something — an unsplittable token cannot
+    wrap, so it is the token that overflows a narrow box.
+    """
+    from manga_honyaku.render import tokenise
+
+    loose = [token for token, _ in tokenise("ฮารุกะ", trie(set()))]
+    held = [token for token, _ in tokenise("ฮารุกะ", trie({"ฮารุกะ"}))]
+    assert len(loose) > 1
+    assert held == ["ฮารุกะ"]

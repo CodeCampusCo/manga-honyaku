@@ -102,6 +102,7 @@ it, and none of them is a stage:
     regions <work> 01 --repeats   # lines this chapter says twice, before reading any
     tally <work>                  # the counts a finished chapter is read back against
     fit <work> 01/05 F1 "…"       # what size a candidate line would be drawn at
+    fit <work> --replace ก ข      # what changing a word costs, in every chapter at once
 
 **`regions` is what to open a chapter with.** `chapters` holds what somebody
 wrote *about* a page; `regions` holds the file being worked on, which on a fresh
