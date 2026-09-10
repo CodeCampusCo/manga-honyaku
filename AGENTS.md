@@ -67,6 +67,78 @@ third party's bucket before anybody knew images were leaving the machine at all.
 costs. Which to use is the person's call, and one of the answers is to send the
 page nowhere and have them read it to you.
 
+## A chapter, in order
+
+**This list is the only copy.** A work's `handoff.md` says where that work stands
+and what it decided; it does not say how the work is done. Change the sequence
+here, then test the change by translating a chapter with it — not by patching the
+chapter that ran under the old one.
+
+**And the pages in `out/` are not the thing being built.** They are what this
+month's version of the method produces, and they can be deleted and made again.
+The method is the artefact. So when something reaches a rendered page that should
+not have, the first question is which step let it through, and only the second is
+how to patch the page.
+
+Every step takes the work's directory first, and `<ch>` is one chapter.
+
+**Bring the pages in** — code only, nothing to decide.
+
+1. `detect <work> <ch>` — this chapter, never a page that already has a
+   `build/<ch>/<page>.detector.json`: re-detecting replaces the regions and
+   discards the reading attached to them.
+2. `annotate <work> <ch>` — draws the region ids onto a copy, which is what makes
+   a page readable region by region.
+3. `prepare <work> <ch>` — OCR, and it measures `size` and `room` from the box
+   and the characters in it. It never overwrites a working file that exists.
+
+**Ask what is already settled** — before reading a page, not after.
+
+4. `regions <work> <ch> --repeats` — lines an earlier chapter already translated,
+   with the wording it used. These are decisions, not suggestions.
+5. `regions <work> <ch> --overlaps` — region pairs standing on one piece of
+   lettering. Half of them are invisible to the eye.
+
+**Read** — this is the expensive step and the one that cannot be redone cheaply.
+
+6. Read the chapter through `sheet`, two pages at a time, right to left. Reading
+   order, who speaks which region, and the lettering OCR drops — furigana on a
+   name above all.
+7. **Write `chapters/<n>.md` as each sheet is read, not at the end.** A session
+   that dies loses only what it has not written, and sessions die.
+
+**Translate.**
+
+8. Fill `role`, `status`, `speaker`, `order` and `target` in the working file, in
+   batches — one script per batch, never one edit per region.
+9. `fit <work> <page>` before applying, not after rendering. It prices a line and
+   shows the breaker's output; a Thai word broken in the wrong place is a defect
+   only that list shows.
+10. Keep `characters.md` and `glossary.md` current as you go. A term settled here
+    is inherited by every chapter after it — `fit --replace` prices changing one.
+
+**Check, while it is still cheap.**
+
+11. `regions <work> <ch> --todo` — what the file still leaves unfinished.
+12. `check <work> <ch>` — a line sitting in the wrong region, which is the one
+    failure re-reading the page will not show.
+13. `proofread-against-source`, in a session of its own, and apply what it
+    returns. **Once** — see the section below on why not twice.
+
+**Draw.**
+
+14. `clean <work> <ch>` → `render <work> <ch>` → `audit <work> <ch>`.
+15. `page-look`, in a session of its own.
+16. **A person reads the chapter.** What they catch is fixed a point at a time;
+    what they rule too small to be worth a re-render is finished, not skipped.
+
+**Close.**
+
+17. `tally <work>` — read the chapter back against the numbers a finished chapter
+    is read against.
+18. Rewrite `handoff.md` — not append. Where things stand, what was decided late,
+    what not to re-run.
+
 ## Translating
 
 Read the whole page before translating any of it, and keep the work's own notes
