@@ -4,7 +4,7 @@ A manga translation workflow. Code handles geometry — detection, OCR, text rem
 rendering. You handle comprehension — reading order, speaker attribution, and the
 translation itself.
 
-The method is six files, and they are the same six whichever agent is reading
+The method is seven files, and they are the same six whichever agent is reading
 them. Read the one whose row matches before you do the thing, not after:
 
 | Before you | Read |
@@ -15,6 +15,7 @@ them. Read the one whose row matches before you do the thing, not after:
 | choose a lettering size or a line break | `.claude/skills/thai-manga-lettering/SKILL.md` |
 | say what is wrong with a rendered page | `.claude/skills/judging-a-thai-manga-page/SKILL.md` |
 | run a stage, or ask a work what its files hold | `.claude/skills/running-the-manga-pipeline/SKILL.md` |
+| get another read on one line or one term | `.claude/skills/asking-a-second-opinion/SKILL.md` |
 
 If your tool discovers skills on its own it has these already, and if it does not,
 the paths above are the whole of it — nothing here has to fire by name. The
