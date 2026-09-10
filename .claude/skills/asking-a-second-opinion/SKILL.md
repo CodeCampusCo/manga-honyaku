@@ -79,9 +79,14 @@ you judge it the way you would judge anything you read.
 judgement rather than fact: which of two renderings holds the register, whether
 the joke survives, what a Thai speaker hears first. A different model is a
 different set of priors, and that is the only thing that makes this worth more
-than talking to yourself. It will go and look things up on its own if it needs
-to; you do not have to arrange that. The invocations are in
-[`../../../docs/agents.md`](../../../docs/agents.md).
+than talking to yourself. It goes and looks things up on its own if it needs to.
+
+    uv run python -m manga_honyaku.ask "<question>"
+    uv run python -m manga_honyaku.ask --all "<question>"
+    uv run python -m manga_honyaku.ask --list
+
+`ask` knows how each CLI takes a prompt, so there is nothing to get right by
+hand. **`--all` is the shape this is worth most in**, for the reason below.
 
 Asking the same model you are already running is close to asking yourself twice —
 it will usually hand back the answer you already have, and agreement obtained

@@ -36,8 +36,8 @@ those are looks at a page rather than numbers. You need no other command to begi
 
 Claude Code, Codex, opencode, goose and the Antigravity CLI read the same
 instructions and the same method files, and what each one needs is committed
-already — [`docs/agents.md`](docs/agents.md) lists the three files this
-repository commits for them and how to put a prompt in front of each.
+already — `CONTRIBUTING.md` lists the three files this repository commits for
+them, and `manga_honyaku.ask` puts a question in front of any of them.
 
 ## A work on disk
 
@@ -117,9 +117,8 @@ Japanese at all; `audit` is this program. A line that is fluent, sits well, and
 says the opposite of the original gets past three of the four.
 
 The first three are prompts in `.claude/agents/`. Every agent here can run them;
-[`docs/agents.md`](docs/agents.md) says how, what the split costs to keep in a
-tool that cannot take a pass's tools away, and which one tool can be handed it as
-a rule instead.
+`CONTRIBUTING.md` says how, and what the split costs to keep in a tool that
+cannot take a pass's tools away.
 
 ```sh
 uv run python -m manga_honyaku.render series/<work> X0006          # one page

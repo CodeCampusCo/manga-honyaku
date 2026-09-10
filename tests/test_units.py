@@ -16,6 +16,7 @@ import pytest
 from PIL import ImageFont
 
 from manga_honyaku.chapters import chosen, entries
+from manga_honyaku.ask import TOOLS
 from manga_honyaku.fit import measure, terms, trie
 from manga_honyaku.check import settle, says_something
 from manga_honyaku.audit import split_words
@@ -551,3 +552,17 @@ def test_a_listed_term_stops_the_segmenter_splitting_it():
     held = [token for token, _ in tokenise("ฮารุกะ", trie({"ฮารุกะ"}))]
     assert len(loose) > 1
     assert held == ["ฮารุกะ"]
+
+
+def test_every_tool_puts_the_question_in_its_argv():
+    """The whole reason `ask` exists: each CLI takes a prompt differently.
+
+    `agy`'s `-p` swallows the next word, so its prompt has to be attached to the
+    flag — written apart it runs a turn against a flag name and says so.
+    """
+    question = "which Thai word carries this"
+    for name, build in TOOLS.items():
+        argv = build(question)
+        assert argv[0] == name
+        assert any(question in part for part in argv), name
+    assert f"-p={question}" in TOOLS["agy"](question)

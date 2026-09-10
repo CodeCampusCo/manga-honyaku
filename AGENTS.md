@@ -60,6 +60,10 @@ chapters consistent.
 
 Record uncertainty in `questions` only when being wrong would change the output.
 
+**One question, put to a model that is not this one**, is
+`manga_honyaku.ask` — the skill above says what to do with the answer, which is
+weigh it, not take it.
+
 **Before rendering, `check`. After rendering, `audit`.** They do not overlap: one
 re-reads the Japanese and finds a line sitting in a region it does not belong to,
 which is the failure a re-read of the page will not show; the other looks at what

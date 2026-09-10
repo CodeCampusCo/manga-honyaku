@@ -77,6 +77,10 @@ them — nothing writes it to disk, so a compaction loses it.
 **`--todo` is a worklist, not a defect list.** It asks about boxes standing
 inside other boxes, which is a decision, not a fault.
 
+`ask` is beside them and is not about the work at all — it puts one question to a
+CLI running a different model, and knows how each of them takes a prompt.
+`…manga_honyaku.ask --list` says which are installed, `--all` asks every one.
+
 **`chapters` holds what somebody wrote *about* a page; `regions` holds the file
 being worked on.** On a fresh chapter `regions` is the only one of the two that
 exists, which is why it is what to open a chapter with.
