@@ -1,0 +1,33 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "translate-pages": {
+      "description": "Translates a span of manga pages into Thai — reading order, speaker attribution, roles, the translation itself, and the work's notes. Give it a work and a page range.",
+      "mode": "all",
+      "prompt": "{file:./.claude/agents/translate-pages.md}"
+    },
+    "proofread-against-source": {
+      "description": "Reads a span of translated pages against the Japanese and reports where the Thai says the wrong thing. It never sees the rendered pages and changes nothing.",
+      "mode": "all",
+      "prompt": "{file:./.claude/agents/proofread-against-source.md}",
+      "permission": {
+        "edit": "deny",
+        "read": {
+          "series/*/out/**": "deny"
+        }
+      }
+    },
+    "page-look": {
+      "description": "Looks at finished pages and reports only how they look. It opens no source and no notes, and changes nothing.",
+      "mode": "all",
+      "prompt": "{file:./.claude/agents/page-look.md}",
+      "permission": {
+        "edit": "deny",
+        "read": {
+          "series/**": "deny",
+          "series/*/out/**": "allow"
+        }
+      }
+    }
+  }
+}
