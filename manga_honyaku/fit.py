@@ -1,40 +1,15 @@
 """Tool `fit`: what size a candidate line would be lettered at, before it is set.
 
 Not a stage — it draws nothing and writes nothing, so it is safe to run on a page
-mid-edit. It answers the question the wording pass keeps asking:
+mid-edit.
 
-    uv run python -m manga_honyaku.fit series/<work> 01/05 F1 "เธอนำแสง"
-    uv run python -m manga_honyaku.fit series/<work> 01/05
+Each line reports the box, the size the Japanese was lettered at, the size the
+Thai would be drawn at, how much of the box that fills, and the lines the breaker
+produced. `--replace` and `--word` report instead every region a change touches,
+worst first, and end with the pages whose rendering would differ.
 
-Named region/text pairs are measured; with none, every target the page's working
-file already holds is. Each line reports the box, the size the Japanese was
-lettered at, the size the Thai would be drawn at, how much of the box that fills,
-and the lines it breaks into.
-
-It also prices a change to a word **before** the change is made, across every
-chapter at once:
-
-    uv run python -m manga_honyaku.fit series/<work> --replace "เมชิเบะ" "เกสรตัวเมีย"
-    uv run python -m manga_honyaku.fit series/<work> --word ชิกุระ --add
-    uv run python -m manga_honyaku.fit series/<work> --word โยโระ --drop
-
-A term settled once is a term every later chapter inherits, so changing one is a
-work-wide edit and not a page-wide one. `--replace` swaps the wording (and swaps
-it in `words.txt` too, where the old word was listed); `--word` leaves every
-target alone and changes only what the segmenter treats as unsplittable.
-
-**Both directions can cost a size, and the second one silently.** A word in
-`words.txt` cannot be broken across lines, so making one unsplittable is the way
-a long token comes to overflow a narrow box — and a token that will not fit its
-box brings the whole region's size down with it. What each report ends with is
-the list of pages whose rendering would change, which is the set to re-render and
-nothing more.
-
-In a box drawn for vertical Japanese the size is set by the **longest token**,
-not by the length of the line, so the fix for a caption lettered half-size is
-usually a different word of the same meaning rather than a shorter sentence — and
-the difference is large enough to be worth asking about rather than discovering
-at render.
+When to reach for which, and what the numbers mean, is
+`.claude/skills/running-the-manga-pipeline/`.
 """
 
 from __future__ import annotations

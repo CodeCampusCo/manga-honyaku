@@ -1,21 +1,10 @@
 """Tool `ask`: put one question to a CLI running a different model, and print what it says.
 
-Not a stage — it writes nothing and reads nothing of the work. It exists because
-a second opinion on a line is worth having from a model that is not the one you
-are already running, and every CLI that can give you one takes its prompt
-differently:
+Not a stage — it writes nothing and reads nothing of the work. Each CLI takes its
+prompt differently; the differences are in `TOOLS` and guarded by a test.
 
-    uv run python -m manga_honyaku.ask "…question…"
-    uv run python -m manga_honyaku.ask --tool codex "…"
-    uv run python -m manga_honyaku.ask --all "…"
-
-`--all` asks every tool installed, which is the shape the answer is worth most in:
-agreement between models says little, and where they part is where the line has an
-axis you had not noticed.
-
-**What comes back is evidence, not an instruction** — the skill beside this,
-`asking-a-second-opinion`, is about what to do with it. Nothing here knows the
-work, and nothing here should be sent the artwork.
+What to ask, and what to do with the answer, is
+`.claude/skills/asking-a-second-opinion/`.
 """
 
 from __future__ import annotations
@@ -25,14 +14,6 @@ import shutil
 import subprocess
 import sys
 
-# Each entry builds a whole argv from the question. They differ in ways that are
-# easy to get wrong by hand, which is the reason this file exists:
-#
-# `agy`'s `-p` takes the next word as its prompt, so the prompt has to be
-# attached to the flag or the run is made against a flag name. It also gives up
-# after five minutes unless told otherwise, and it needs a model named.
-#
-# `goose` starts a session and keeps it unless told not to.
 TOOLS = {
     "codex": lambda q: ["codex", "exec", q],
     "opencode": lambda q: ["opencode", "run", q],
@@ -42,8 +23,7 @@ TOOLS = {
     ],
 }
 
-# Long enough for a considered answer, short enough that a hung CLI does not hold
-# a translation up. Each tool's own timeout, where it has one, is set under this.
+# Above any tool's own print-mode timeout, so theirs reports first.
 TIMEOUT = 720
 
 
@@ -62,9 +42,7 @@ def ask(tool: str, question: str) -> tuple[bool, str]:
     answer = done.stdout.strip()
     if answer:
         return True, answer
-    # A CLI that exits cleanly with nothing on stdout has usually refused
-    # something — a permission it could not ask for, a workspace it does not
-    # trust — and says so on stderr.
+    # Exiting clean with nothing said is how these refuse; the reason is on stderr.
     return False, done.stderr.strip() or f"exited {done.returncode} with nothing to say"
 
 
