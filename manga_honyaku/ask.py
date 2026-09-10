@@ -35,7 +35,12 @@ def ask(tool: str, question: str) -> tuple[bool, str]:
     """What the tool said, or why it said nothing."""
     try:
         done = subprocess.run(
-            TOOLS[tool](question), capture_output=True, text=True, timeout=TIMEOUT
+            TOOLS[tool](question),
+            capture_output=True,
+            text=True,
+            timeout=TIMEOUT,
+            # Some of them append stdin to the prompt and wait for it to close.
+            stdin=subprocess.DEVNULL,
         )
     except subprocess.TimeoutExpired:
         return False, f"gave up after {TIMEOUT // 60} minutes"
