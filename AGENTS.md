@@ -67,78 +67,6 @@ third party's bucket before anybody knew images were leaving the machine at all.
 costs. Which to use is the person's call, and one of the answers is to send the
 page nowhere and have them read it to you.
 
-## A chapter, in order
-
-**This list is the only copy.** A work's `handoff.md` says where that work stands
-and what it decided; it does not say how the work is done. Change the sequence
-here, then test the change by translating a chapter with it — not by patching the
-chapter that ran under the old one.
-
-**And the pages in `out/` are not the thing being built.** They are what this
-month's version of the method produces, and they can be deleted and made again.
-The method is the artefact. So when something reaches a rendered page that should
-not have, the first question is which step let it through, and only the second is
-how to patch the page.
-
-Every step takes the work's directory first, and `<ch>` is one chapter.
-
-**Bring the pages in** — code only, nothing to decide.
-
-1. `detect <work> <ch>` — this chapter, never a page that already has a
-   `build/<ch>/<page>.detector.json`: re-detecting replaces the regions and
-   discards the reading attached to them.
-2. `annotate <work> <ch>` — draws the region ids onto a copy, which is what makes
-   a page readable region by region.
-3. `prepare <work> <ch>` — OCR, and it measures `size` and `room` from the box
-   and the characters in it. It never overwrites a working file that exists.
-
-**Ask what is already settled** — before reading a page, not after.
-
-4. `regions <work> <ch> --repeats` — lines an earlier chapter already translated,
-   with the wording it used. These are decisions, not suggestions.
-5. `regions <work> <ch> --overlaps` — region pairs standing on one piece of
-   lettering. Half of them are invisible to the eye.
-
-**Read** — this is the expensive step and the one that cannot be redone cheaply.
-
-6. Read the chapter through `sheet`, two pages at a time, right to left. Reading
-   order, who speaks which region, and the lettering OCR drops — furigana on a
-   name above all.
-7. **Write `chapters/<n>.md` as each sheet is read, not at the end.** A session
-   that dies loses only what it has not written, and sessions die.
-
-**Translate.**
-
-8. Fill `role`, `status`, `speaker`, `order` and `target` in the working file, in
-   batches — one script per batch, never one edit per region.
-9. `fit <work> <page>` before applying, not after rendering. It prices a line and
-   shows the breaker's output; a Thai word broken in the wrong place is a defect
-   only that list shows.
-10. Keep `characters.md` and `glossary.md` current as you go. A term settled here
-    is inherited by every chapter after it — `fit --replace` prices changing one.
-
-**Check, while it is still cheap.**
-
-11. `regions <work> <ch> --todo` — what the file still leaves unfinished.
-12. `check <work> <ch>` — a line sitting in the wrong region, which is the one
-    failure re-reading the page will not show.
-13. `proofread-against-source`, in a session of its own, and apply what it
-    returns. **Once** — see the section below on why not twice.
-
-**Draw.**
-
-14. `clean <work> <ch>` → `render <work> <ch>` → `audit <work> <ch>`.
-15. `page-look`, in a session of its own.
-16. **A person reads the chapter.** What they catch is fixed a point at a time;
-    what they rule too small to be worth a re-render is finished, not skipped.
-
-**Close.**
-
-17. `tally <work>` — read the chapter back against the numbers a finished chapter
-    is read against.
-18. Rewrite `handoff.md` — not append. Where things stand, what was decided late,
-    what not to re-run.
-
 ## Translating
 
 Read the whole page before translating any of it, and keep the work's own notes
@@ -248,38 +176,9 @@ frontmatter names, the third column is yours to keep: a proofreader that has
 opened `out/` has stopped being the one pass that catches a line which is fluent,
 sits well, and says the opposite of the original.
 
-**The fourth column is not a preference.** `proofread-against-source` wants the
-Japanese and the Thai and nothing else — it never needed a rendered page, and
-putting it after `render` only means its findings arrive priced in re-renders.
-Chapter 6 of `tamagawa` was cleaned, rendered and audited across 22 pages before
-anybody asked whether the Thai said what the Japanese said; the answer was 22
-findings, seven of them the Thai saying something the original does not, and
-every one of them then cost a page back through `clean` and `render`. Run it on
-the working file, before a single pixel is erased.
+The fourth column is a fact, not a preference. The proofreader needs no rendered
+page, so running it before `clean` costs a finding instead of a re-render;
+`page-look` judges the page that came out, so there has to be one.
 
-`page-look` is the one that genuinely cannot move: it judges the page that came
-out, so there has to be one.
-
-**The passes do not converge, and are not meant to.** Chapter 6 of `tamagawa`
-was proofread twice: 22 findings, then 14, and 13 of the 14 were on regions the
-first pass never mentioned. That is not the first pass failing — it is what a
-check with a long tail looks like, and the tail has no end. Run it once, apply
-what it returns, and move. A chapter re-proofread until it comes back empty is a
-chapter nobody is reading.
-
-**The last reader is a person.** After `page-look`, whoever asked for the chapter
-reads it, and what they catch is fixed a point at a time as finishing work. That
-is the threshold: above it the passes are cheap and worth running, below it the
-right move is to let a thing slip and let the reader rule on it. Deciding that a
-finding is too small to be worth a re-render is their call, and it is a real
-answer — not a failure to fix something.
-
-**The proofreader opens the artwork, and has to.** Its blindness is to the
-*result*, not to the source: `out/` is withheld because a line that has been seen
-sitting well on a finished page stops looking suspicious, and nothing about the
-scan does that. Reading chapter 6 it opened nine pages at full size and cropped
-five balloons — and that is where its two heaviest findings came from, neither of
-which is visible in the text at all. A censoring maru had been read as katakana
-`ロ` and written into `glossary.md` as a term; and a balloon the file gave to
-敷島 has its tail drawn to somebody else. A proofreader working from the working
-file alone would have passed both.
+**Run each pass once**, apply what it returns, and go on. Their own files say
+why, and what each one is looking at.
