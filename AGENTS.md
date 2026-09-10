@@ -158,20 +158,32 @@ and what `characters.md` tracks across chapters. A chapter that files a
 narrator's interior voice as `dialogue` reports them as having spoken every line
 of it, and that number then joins a column counting something else.
 
-## The four passes over a finished chapter
+## The four passes, and where each one goes
 
 **The split is by what each is allowed to see.** A pass that can see everything
 checks nothing, because whoever translated the page knows what it was meant to say
 and reads their own error as correct. `audit` is the program above; the other
 three are prompt files:
 
-| Pass | Has | Never opens |
-| --- | --- | --- |
-| `.claude/agents/translate-pages.md` | the Japanese and the notes; it writes | — |
-| `.claude/agents/proofread-against-source.md` | the Japanese and the Thai | `out/` |
-| `.claude/agents/page-look.md` | the rendered page | the Japanese, the notes |
+| Pass | Has | Never opens | Runs |
+| --- | --- | --- | --- |
+| `.claude/agents/translate-pages.md` | the Japanese and the notes; it writes | — | the translation |
+| `.claude/agents/proofread-against-source.md` | the Japanese and the Thai | `out/` | **before `clean`** |
+| `.claude/agents/page-look.md` | the rendered page | the Japanese, the notes | after `render` |
 
 Run each in a session of its own. If your tool cannot take away the tools their
-frontmatter names, the last column is yours to keep: a proofreader that has opened
-`out/` has stopped being the one pass that catches a line which is fluent, sits
-well, and says the opposite of the original.
+frontmatter names, the third column is yours to keep: a proofreader that has
+opened `out/` has stopped being the one pass that catches a line which is fluent,
+sits well, and says the opposite of the original.
+
+**The fourth column is not a preference.** `proofread-against-source` wants the
+Japanese and the Thai and nothing else — it never needed a rendered page, and
+putting it after `render` only means its findings arrive priced in re-renders.
+Chapter 6 of `tamagawa` was cleaned, rendered and audited across 22 pages before
+anybody asked whether the Thai said what the Japanese said; the answer was 22
+findings, seven of them the Thai saying something the original does not, and
+every one of them then cost a page back through `clean` and `render`. Run it on
+the working file, before a single pixel is erased.
+
+`page-look` is the one that genuinely cannot move: it judges the page that came
+out, so there has to be one.
