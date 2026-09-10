@@ -36,8 +36,8 @@ those are looks at a page rather than numbers. You need no other command to begi
 
 Claude Code, Codex, opencode, goose and the Antigravity CLI read the same
 instructions and the same method files, and what each one needs is committed
-already — [`docs/agents.md`](docs/agents.md) says which file is for which, and two
-of the five need no file at all.
+already — [`docs/agents.md`](docs/agents.md) lists the three files this
+repository commits for them and how to put a prompt in front of each.
 
 ## A work on disk
 
