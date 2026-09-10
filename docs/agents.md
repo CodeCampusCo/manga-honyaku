@@ -110,20 +110,27 @@ Written `agy -p --dangerously-skip-permissions "<prompt>"`, agy runs a turn whos
 whole prompt is the word `--dangerously-skip-permissions` and tells you it has
 done so; `-p="<prompt>"` with the other flags elsewhere is the form that works.
 
-**`agy -p` cannot ask, so it denies**, and a pass run without that flag ends
-with a line naming the permission it wanted instead of doing the work — asked
-here to read one image, it stopped on `command` and said so. What agy
-runs without asking otherwise is a list of allow-rules in
-`~/.gemini/antigravity-cli/settings.json` — one person's machine, and it does
-not travel. `.agents/` registers skills, plugins, rules and hooks, and has no
-permissions file, so the grant goes in the invocation, which is the only part
-of it this repository owns.
+**`agy -p` cannot ask, so it denies**, and a run that needs a permission ends
+with a line naming the one it wanted instead of doing the work. All three passes
+need `command`, because every one of them reaches a page through `sheet`. What
+agy runs without asking is a list of allow-rules in
+`~/.gemini/antigravity-cli/settings.json`, which is one person's machine and does
+not travel; `.agents/` registers skills, plugins, rules and hooks and has no
+permissions file, so there is nothing this repository can commit that grants it.
 
-It approves every tool the pass calls for, so **the prompt is the only thing
-holding it back**. `page-look` and `proofread-against-source` report and change
-nothing, which is what makes that survivable for them. `translate-pages` writes,
-and run this way it writes unwatched — give it a work whose `pages/` you can
-rebuild.
+**Name the permission rather than reaching for the flag.** `--dangerously-skip-permissions`
+approves every tool the pass calls for, and then the prompt is the only thing
+holding it back — survivable for `page-look` and `proofread-against-source`, which
+report and change nothing, and a poor trade for `translate-pages`, which writes,
+and run that way writes unwatched. An allow-rule of `command(uv)` is the whole of
+what the passes actually need, and it is the machine owner's line to add.
+
+**A prompt that stays inside agy's own tools needs no permission at all.** Asked
+to view one image with its file-viewing tool and told not to shell out, agy 1.1.28
+answered correctly on `gemini-3.8-flash-medium`, unprivileged, with clean text on
+stdout. Asked the same question in a way that let it reach for a shell, it stopped
+on `command`. Which way a prompt sends it is a property of the prompt, and worth
+knowing before granting anything.
 
 Print mode also gives up after five minutes; a span long enough to be worth
 batching wants `--print-timeout 20m`.
