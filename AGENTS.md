@@ -188,6 +188,20 @@ the working file, before a single pixel is erased.
 `page-look` is the one that genuinely cannot move: it judges the page that came
 out, so there has to be one.
 
+**The passes do not converge, and are not meant to.** Chapter 6 of `tamagawa`
+was proofread twice: 22 findings, then 14, and 13 of the 14 were on regions the
+first pass never mentioned. That is not the first pass failing — it is what a
+check with a long tail looks like, and the tail has no end. Run it once, apply
+what it returns, and move. A chapter re-proofread until it comes back empty is a
+chapter nobody is reading.
+
+**The last reader is a person.** After `page-look`, whoever asked for the chapter
+reads it, and what they catch is fixed a point at a time as finishing work. That
+is the threshold: above it the passes are cheap and worth running, below it the
+right move is to let a thing slip and let the reader rule on it. Deciding that a
+finding is too small to be worth a re-render is their call, and it is a real
+answer — not a failure to fix something.
+
 **The proofreader opens the artwork, and has to.** Its blindness is to the
 *result*, not to the source: `out/` is withheld because a line that has been seen
 sitting well on a finished page stops looking suspicious, and nothing about the
