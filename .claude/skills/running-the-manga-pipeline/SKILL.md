@@ -36,6 +36,9 @@ same**, so read the spread. There is never a reason to write a resize by hand.
     uv run python -m manga_honyaku.check series/<work> <pages>
     uv run python -m manga_honyaku.audit series/<work> <pages>
 
+Both read their pages the way a stage does: nothing named is the whole work, a
+page id is that page, a directory is every page under it.
+
 `check` reads every region again and reports any holding a line that belongs to
 another region on the same page — the Thai is plausible where it sits and only
 the boxes disagree, which is why a re-read of the page will not find it. Three
@@ -62,16 +65,17 @@ nothing here installs a command, so a bare `regions` is not on anyone's PATH.
     …manga_honyaku.regions series/<work> --match 聞け  # every line of the work that ever said this
     …manga_honyaku.regions series/<work> 01 --overlaps # region pairs on the same lettering
     …manga_honyaku.regions series/<work> 01 --todo    # what the file still leaves unfinished
-    …manga_honyaku.regions series/<work> 01 --repeats # lines an earlier chapter already said
+    …manga_honyaku.regions series/<work> 01 --repeats # what is already answered, in two lists
     …manga_honyaku.chapters series/<work> X0006-X0008 # what the reading found on those pages
     …manga_honyaku.tally    series/<work>             # the counts a chapter is read back against
     …manga_honyaku.fit      series/<work> 01/05 F1 "…" # what size a candidate line draws at
     …manga_honyaku.fit      series/<work> --replace ก ข # what changing a word costs, everywhere
 
 **`--repeats` and `--overlaps` are asked before a page is read**, not after.
-`--repeats` lists what an earlier chapter already settled, with the wording it
-used; `--overlaps` lists the pairs standing on one piece of lettering, half of
-which the eye does not find. Their output lives only in the session that ran
+`--repeats` answers in two parts, read at two different moments: what an earlier
+chapter already settled, with the wording it used, and what these pages
+themselves say twice. `--overlaps` lists the pairs standing on one piece of
+lettering, half of which the eye does not find. Their output lives only in the session that ran
 them — nothing writes it to disk, so a compaction loses it.
 
 **`--todo` is a worklist, not a defect list.** It asks about boxes standing

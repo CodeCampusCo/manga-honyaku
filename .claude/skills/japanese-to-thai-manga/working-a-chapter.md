@@ -32,7 +32,9 @@ Nearly everything in a panel is writing inside the drawing, so that description
 chooses nothing. Ask instead what the reader loses: it is right when the content
 reaches them another way — a chyron whose story is in the lettered post beside it
 — or when losing it costs nothing. **When the scene does not work without it, it
-is not furniture. Draw it.** Filed wrongly it is the quiet failure: recorded, so
+is not furniture. Draw it**, which means moving the role: `caption` for writing
+in the artwork, `dialogue` for a sound in a balloon `clean` can follow. There is
+no third value; a region either erases and is drawn into or it does neither. Filed wrongly it is the quiet failure: recorded, so
 it looks handled, and Japanese on the page at the one place that mattered.
 
 **`caption` against `dialogue` is not a formatting choice.** It is the difference
@@ -341,7 +343,12 @@ more than leaving them:
   Chasing the rest means hand-editing boxes or masks, which breaks more than it
   repairs.
 
-**2. The read, which is the only part that needs a person.** Open the rendered
+**2. The read — a person, or a session with no restriction on it.** No pass can
+do this one: `proofread-against-source` never opens `out/` and `page-look` never
+opens the Japanese, and this step wants both at once. That is why it is here and
+not in the passes table.
+
+**It is the only part that needs a person.** Open the rendered
 pages and the originals together and ask of each line: does this read like
 something a Thai speaker would say, in this character's voice, at this moment?
 

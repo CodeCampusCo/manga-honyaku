@@ -204,12 +204,11 @@ work through. `room` is itself about 15% optimistic — the breaker leaves slack
 on most lines and a word cannot be split — so a line written to exactly `room`
 already costs its bubble a step.
 
-**Pay the step.** A six-page rerun composed 31% longer, dropped the share of
-bubbles keeping their asked-for size from 71% to 59%, and was the better
-translation: it was ruled *"อ่านลื่นขึ้นและดูเป็นการพูดคุยที่เป็นธรรมชาติขึ้น"*,
-with the single longest line on the page named as the best one on it. The size
-step is cheap and the dropped nuance is not — an aspect marker, a hedge, whose
-face is red. Nothing downstream puts those back.
+**Pay the step.** The size step is cheap and the dropped nuance is not — an
+aspect marker, a hedge, whose face is red. Nothing downstream puts those back.
+This was measured over six pages and ruled on; the numbers are in
+[`../thai-manga-lettering/SKILL.md`](../thai-manga-lettering/SKILL.md), which is
+where a size argument belongs.
 
 So when a line will not fit, **cut padding you added, never content the original
 has.** A phrase repeated for emphasis in Japanese that Thai does not need, a

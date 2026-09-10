@@ -4,7 +4,7 @@ A manga translation workflow. Code handles geometry — detection, OCR, text rem
 rendering. You handle comprehension — reading order, speaker attribution, and the
 translation itself.
 
-The method is seven files, and they are the same six whichever agent is reading
+The method is these files, and they are the same ones whichever agent is reading
 them. Read the one whose row matches before you do the thing, not after:
 
 | Before you | Read |
