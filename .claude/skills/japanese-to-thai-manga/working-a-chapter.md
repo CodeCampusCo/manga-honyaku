@@ -208,8 +208,7 @@ Art — the panels: how many, how they read, which are cuts to somewhere else.
   artist gave it — a full-page panel earns a paragraph, a row of talking heads
   earns a line. Say what changed from the last page; unchanged needs no words.
 What happens — the action.
-Who speaks — who says each line, and what settled it: tail direction, where a
-  tail crosses a panel border, who is off-panel.
+Who speaks — who says each line, and what settled it.
 ? — what you could not read, and why you could not. Resolved later, in place,
   saying where the answer came from.
 ```
@@ -231,10 +230,9 @@ Head every one of these files with the rule that makes them safe:
 
 Because that is the failure this exists to stop. A page with two bubbles and no
 entry got both speakers wrong — assigned from the Japanese alone, `わたし` being
-feminine, without looking at the tails, which were round and both pointed at a
-third character. The Thai was identical either way, so nothing downstream caught
-it. **Structure is what gets misread, not content**: a cut between two places
-read as two people in one place.
+feminine, without reading the page around it. The Thai was identical either way,
+so nothing downstream caught it. **Structure is what gets misread, not content**:
+a cut between two places read as two people in one place.
 
 Read as a reader does. Where you already know something the page has not said
 yet, write that the page does not say it and where it arrives — not the answer
