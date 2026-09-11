@@ -12,6 +12,10 @@ same price, which makes reading a spread free next to reading a page.
 
 `--crop` takes a box out before the sheet is built, so reading one bubble never
 means writing a resize by hand and guessing at the size.
+
+`--rtl` puts the first image named on the right. Without it a spread comes out
+mirrored and nothing says so, because the panels still make sense one at a time —
+so which way round a sheet was built is printed either way.
 """
 
 from __future__ import annotations
@@ -39,6 +43,7 @@ def build(
     columns: int | None = None,
     width: int | None = None,
     crop: tuple[int, int, int, int] | None = None,
+    rtl: bool = False,
 ):
     images = [Image.open(p).convert("RGB") for p in paths]
     if crop:
@@ -54,7 +59,10 @@ def build(
     sheet = Image.new("RGB", (columns * width, rows * cell_h), "white")
     for index, image in enumerate(images):
         scaled = image.resize((width, round(image.height * width / image.width)))
-        sheet.paste(scaled, ((index % columns) * width, (index // columns) * cell_h))
+        column = index % columns
+        if rtl:
+            column = columns - 1 - column
+        sheet.paste(scaled, (column * width, (index // columns) * cell_h))
     return sheet, width
 
 
@@ -69,6 +77,11 @@ def main() -> None:
         metavar="X1,Y1,X2,Y2",
         help="take this box out of every image first, in the images' own pixels",
     )
+    ap.add_argument(
+        "--rtl",
+        action="store_true",
+        help="lay them out right to left, so the first one named is on the right",
+    )
     args = ap.parse_args()
 
     crop = None
@@ -78,12 +91,18 @@ def main() -> None:
             raise SystemExit("--crop wants four numbers: X1,Y1,X2,Y2")
         crop = tuple(got)
 
-    sheet, width = build(args.images, args.columns, args.width, crop)
+    sheet, width = build(args.images, args.columns, args.width, crop, args.rtl)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(args.out)
     note = "" if width >= LEGIBLE else "  (too small to read lettering)"
     cost = round(sheet.width * sheet.height / 750)
-    print(f"{args.out}  {sheet.width}x{sheet.height}  {width}px each  ~{cost} tokens{note}")
+    order = ""
+    if len(args.images) > 1:
+        order = "  right to left" if args.rtl else "  left to right"
+    print(
+        f"{args.out}  {sheet.width}x{sheet.height}  {width}px each"
+        f"  ~{cost} tokens{order}{note}"
+    )
 
 
 if __name__ == "__main__":

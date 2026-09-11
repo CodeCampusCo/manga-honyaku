@@ -32,6 +32,10 @@ SPECIAL = {"[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"}
 # crop costs nothing here.
 MARGIN = 0.05
 
+# Below this, open the box on the scan. Measured over one chapter: 65 of the 66
+# regions at or above it needed no correction, and 52 of the 96 below did.
+SURE = 0.8
+
 
 def load_reader():
     model = VisionEncoderDecoderModel.from_pretrained(READER).to(DEVICE).eval()
@@ -40,7 +44,12 @@ def load_reader():
     return model, processor, vocab
 
 
-def read(image: Image.Image, box: list[float], reader) -> str:
+def read(image: Image.Image, box: list[float], reader) -> tuple[str, float]:
+    """The Japanese in this box, and how sure the reader was of its worst character.
+
+    The worst rather than the mean: the failure is one character read as another,
+    and a mean over a dozen confident ones buries it.
+    """
     model, processor, vocab = reader
     x1, y1, x2, y2 = box
     pad = MARGIN * min(x2 - x1, y2 - y1)
@@ -54,5 +63,16 @@ def read(image: Image.Image, box: list[float], reader) -> str:
     )
     pixels = processor(crop, return_tensors="pt").pixel_values.to(DEVICE)
     with torch.inference_mode():
-        ids = model.generate(pixels, max_length=64)[0].tolist()
-    return "".join(vocab[i] for i in ids if vocab[i] not in SPECIAL)
+        got = model.generate(
+            pixels, max_length=64, output_scores=True, return_dict_in_generate=True
+        )
+    ids = got.sequences[0].tolist()
+    # `scores[i]` is the distribution `ids[i + 1]` was drawn from: the first id is
+    # the decoder's start token and was never chosen.
+    chosen = [
+        torch.softmax(step[0], -1)[token].item()
+        for step, token in zip(got.scores, ids[1:])
+        if vocab[token] not in SPECIAL
+    ]
+    text = "".join(vocab[i] for i in ids if vocab[i] not in SPECIAL)
+    return text, round(min(chosen), 3) if chosen else 0.0

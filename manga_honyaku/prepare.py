@@ -30,7 +30,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from manga_honyaku.ocr import load_reader, read
+from manga_honyaku.ocr import SURE, load_reader, read
 from manga_honyaku.page import Series
 from manga_honyaku.render import (
     FONT,
@@ -234,9 +234,20 @@ def reading(
     for region in detected["regions"]:
         entry = {**region, **SLOTS}
         if reader is not None:
-            entry["source"] = read(image, region["box"], reader)
+            entry["source"], entry["source_score"] = read(image, region["box"], reader)
         regions.append(entry)
     tag_page(regions, detected["img_height"], style)
+
+    # Read here because this is the stage holding the scan and the reader. A
+    # coordinate alone cannot be judged without building a crop first.
+    candidates = []
+    for candidate in detected.get("candidates", []):
+        entry = dict(candidate)
+        if reader is not None:
+            entry["source"], entry["source_score"] = read(
+                image, candidate["box"], reader
+            )
+        candidates.append(entry)
 
     return {
         "version": detected["version"],
@@ -245,6 +256,7 @@ def reading(
         "img_height": detected["img_height"],
         "detector": detected["detector"],
         "regions": regions,
+        "candidates": candidates,
         "questions": [],
     }
 
@@ -305,7 +317,14 @@ def main() -> None:
         scan = None if reader is None else Image.open(work.scan(page)).convert("RGB")
         data = reading(detected, scan, reader, values)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
-        print(f"{page}  {out}  {len(data['regions'])} regions")
+        doubtful = [
+            r for r in data["regions"]
+            if r.get("source_score") is not None and r["source_score"] < SURE
+        ]
+        print(f"{page}  {out}  {len(data['regions'])} regions", end="")
+        print(f", {len(doubtful)} to check" if doubtful else "")
+        for region in doubtful:
+            print(f"    {region['id']:<4} {region['source_score']:.2f}  {region['source']}")
         for a, b, cover in overlapping(data["regions"]):
             warn(
                 f"{page} {a['id']} and {b['id']}: one covers {cover:.0%} of the "

@@ -115,7 +115,7 @@ region in it carries:
 | Field | Written by | What it is |
 | --- | --- | --- |
 | `id` `box` `placement` `score` `bubble` | `detect` | the region and where it sits |
-| `source` | `prepare` | the Japanese, OCR'd |
+| `source` `source_score` | `prepare` | the Japanese, OCR'd, and how sure the reader was of its worst character |
 | `size` `room` | `prepare` | the size the Japanese was lettered at, and the budget |
 | `role` `status` `reason` | you | above |
 | `order` | you | reading order, `1..N` over every region on the page, declined ones included |
@@ -124,8 +124,9 @@ region in it carries:
 | `utterance` | you | a tag shared by the regions one sentence is cut across |
 | `weight` | you | a named font face, where the work has more than one |
 
-The page itself carries `version`, `page`, `img_width`, `img_height`, `detector`
-and `questions`. Nothing validates any of it.
+The page itself carries `version`, `page`, `img_width`, `img_height`, `detector`,
+`questions`, and `candidates` — boxes the detector nearly drew, which are not
+regions and which no stage reads. Nothing validates any of it.
 
 ## The four passes, and where each one goes
 

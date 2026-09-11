@@ -9,6 +9,7 @@ on a page that is being edited.
     uv run python -m manga_honyaku.regions series/<work> 03 --overlaps
     uv run python -m manga_honyaku.regions series/<work> 03 --todo
     uv run python -m manga_honyaku.regions series/<work> 03 --repeats
+    uv run python -m manga_honyaku.regions series/<work> 03/05 --order
 
 The default view is the one a chapter cannot be read without: every region with
 its box, the size the Japanese was lettered at, the `room` that follows from it,
@@ -60,11 +61,23 @@ is for is the repeat that must not drift, not the reading.
 
 `--overlaps` is a worklist, not a check: see `prepare.overlapping`.
 
-`--todo` is `audit`'s bookkeeping asked early, plus the one check the skill asks
-for *before* a page is rendered rather than after: the characters this face
-cannot draw. `render` warns about those too, and asking the font is the only way
+`--order` proposes a reading order from the boxes and says nothing about whether
+the file agrees; `--todo` says where it does not, pair by pair. Which of the two
+to reach for depends on whether the page has been numbered yet, and neither is
+an authority — see `order.py` for what the proposal is and is not.
+
+`--todo` is `audit`'s bookkeeping asked early, plus the two checks the skill asks
+for *before* a page is rendered rather than after. One is the characters this face
+cannot draw: `render` warns about those too, and asking the font is the only way
 to know — the list in a work's `style.md` was written by hand and will drift from
 the font it describes.
+
+The other is the boxes the detector nearly drew and nothing has covered since.
+**It is the only report in the pipeline that can see text which is not in the
+working file**, because every other one walks the regions and a sound that was
+never boxed has no region to walk. Most of them are nothing. Look at each once:
+adding a region over it, or deciding it is artwork, takes it off the list either
+way, and a list that clears is a list that goes on being read.
 """
 
 from __future__ import annotations
@@ -77,18 +90,38 @@ from pathlib import Path
 from PIL import ImageFont
 
 from manga_honyaku.audit import record
+from manga_honyaku.detect import ALREADY, covered
+from manga_honyaku.order import disagreements, propose
 from manga_honyaku.check import settle, says_something
+from manga_honyaku.ocr import SURE
 from manga_honyaku.page import Series
 from manga_honyaku.prepare import overlapping, uncovered
-from manga_honyaku.render import FONT, missing_glyphs, settings
+from manga_honyaku.render import FONT, LINE_SPACING, missing_glyphs, settings
 
 
-def summarise(region: dict) -> str:
+def widest(region: dict, spacing: float) -> int | None:
+    """The longest unbreakable run the box holds on one line, in characters.
+
+    The size is set by the longest token, so a wording proposed against `room`
+    alone is a guess. `room` was already this number times the lines.
+    """
+    size = region.get("size")
+    room = region.get("room")
+    if not size or not room:
+        return None
+    _, y1, _, y2 = region["box"]
+    lines = int((y2 - y1) // (size * spacing))
+    return round(room / lines) if lines else None
+
+
+def summarise(region: dict, spacing: float = LINE_SPACING) -> str:
     """One region as one line: where it is, how big, and what it is for."""
     x1, y1, x2, y2 = region["box"]
     who = "/".join(
         part for part in (region.get("role"), region.get("speaker")) if part
     )
+    run = widest(region, spacing)
+    score = region.get("source_score")
     fields = [
         f"{region.get('order') or '-':>3}",
         f"{region['id']:<4}",
@@ -96,10 +129,33 @@ def summarise(region: dict) -> str:
         f"{x2 - x1:.0f}x{y2 - y1:.0f}".rjust(9),
         f"size={region.get('size')}".ljust(9),
         f"room={region['room']}".ljust(9) if region.get("room") else " " * 9,
+        f"line={run}".ljust(8) if run else " " * 8,
         (who or "—").ljust(22),
         (region.get("status") or "—").ljust(9),
     ]
-    return "  ".join(fields).rstrip() + "  " + (region.get("source") or "")
+    doubt = "? " if score is not None and score < SURE else ""
+    return "  ".join(fields).rstrip() + "  " + doubt + (region.get("source") or "")
+
+
+def unclaimed(work: Series, page: str, data: dict) -> list[dict]:
+    """The detector's near misses that no region in the working file covers.
+
+    Re-checked rather than taken as written: one is answered by adding a region
+    over it, and a worklist that does not clear stops being read. A page prepared
+    before `prepare` copied them still has them on the detector's file, unread.
+    """
+    candidates = data.get("candidates")
+    if candidates is None:
+        found = work.derived(page, "detector.json")
+        candidates = (
+            json.loads(found.read_text()).get("candidates", [])
+            if found.exists() else []
+        )
+    return [
+        candidate
+        for candidate in candidates
+        if covered(candidate["box"], data["regions"]) <= ALREADY
+    ]
 
 
 def hits(region: dict, needle: str) -> list[str]:
@@ -111,7 +167,7 @@ def hits(region: dict, needle: str) -> list[str]:
     ]
 
 
-def show(work: Series, ids: list[str]) -> None:
+def show(work: Series, ids: list[str], spacing: float = LINE_SPACING) -> None:
     for page in ids:
         data = json.loads(work.agent(page).read_text())
         print(f"{page}  {data['img_width']}x{data['img_height']}"
@@ -119,7 +175,7 @@ def show(work: Series, ids: list[str]) -> None:
         for region in sorted(
             data["regions"], key=lambda r: (r.get("order") is None, r.get("order") or 0)
         ):
-            print("  " + summarise(region))
+            print("  " + summarise(region, spacing))
             if region.get("target"):
                 print(f"       → {region['target']}")
             if region.get("reason"):
@@ -200,6 +256,11 @@ def main() -> None:
         "--todo", action="store_true", help="regions the working file leaves unfinished"
     )
     ap.add_argument(
+        "--order",
+        action="store_true",
+        help="a reading order proposed from the boxes, for you to correct",
+    )
+    ap.add_argument(
         "--repeats",
         action="store_true",
         help="lines these pages say twice, and what the rest of the work said",
@@ -212,6 +273,18 @@ def main() -> None:
         return
 
     ids = work.ids(args.pages)
+    if args.order:
+        for page in ids:
+            data = json.loads(work.agent(page).read_text())
+            regions = {r["id"]: r for r in data["regions"]}
+            print(f"{page}  {len(data['regions'])} regions")
+            for at, rid in enumerate(propose(data["regions"]), 1):
+                region = regions[rid]
+                was = region.get("order")
+                moved = "" if was == at else f"  (file says {was or '-'})"
+                print(f"  {at:>3}  {rid:<4}{moved}  {(region.get('source') or '')[:44]}")
+        return
+
     probe = ImageFont.truetype(
         settings(args.series).get("font") or FONT, 40
     ) if args.todo else None
@@ -250,11 +323,38 @@ def main() -> None:
             if args.todo:
                 said += record(data)
                 said += [
+                    f"nothing covers {[int(v) for v in c['box']]}, which the "
+                    f"detector nearly drew" + (
+                        f" and the reader makes {c['source']!r} of"
+                        if c.get("source") else ""
+                    ) + " — look at it once"
+                    for c in unclaimed(work, page, data)
+                ]
+                said += [
                     f"{big['id']} is declined and holds "
                     f"{', '.join(r['id'] for r in inside)}, which cover "
                     f"{share:.0%} of it — is the rest meant to stay Japanese?"
                     for big, inside, share in uncovered(data["regions"])
                     if share < 0.85
+                ]
+                # Not reported twice: `--overlaps` owns the pair, and a list
+                # repeating another one is where skipping is learned.
+                twinned = {
+                    frozenset((a["id"], b["id"]))
+                    for a, b, _ in overlapping(data["regions"])
+                }
+                said += [
+                    f"{a} is read before {b} and the boxes say the other way "
+                    f"round — " + (
+                        "a line separates them either way, so the boxes cannot "
+                        "say which; the border in the artwork decides"
+                        if both else
+                        "the boxes separate them one way only, so this is a "
+                        "real disagreement unless a balloon here hangs across a "
+                        "panel border"
+                    )
+                    for a, b, both in disagreements(data["regions"])
+                    if frozenset((a, b)) not in twinned
                 ]
                 absent = missing_glyphs(
                     probe, "".join(r.get("target") or "" for r in data["regions"])
@@ -265,7 +365,7 @@ def main() -> None:
                 print(f"{page}  {line}")
         return
 
-    show(work, ids)
+    show(work, ids, settings(args.series).get("line_spacing", LINE_SPACING))
 
 
 if __name__ == "__main__":

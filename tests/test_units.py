@@ -16,16 +16,19 @@ import pytest
 from PIL import ImageFont
 
 from manga_honyaku.chapters import chosen, entries
+from manga_honyaku.detect import nearly
 from manga_honyaku.ask import TOOLS
 from manga_honyaku.fit import measure, terms, trie
 from manga_honyaku.check import settle, says_something
 from manga_honyaku.audit import split_words
 from manga_honyaku.prepare import (cells, lettered_at, overlapping, tag,
                                    tag_page, uncovered)
+from manga_honyaku.order import disagreements, propose
 from manga_honyaku.page import Series
-from manga_honyaku.regions import drifted, repeated
+from manga_honyaku.regions import drifted, repeated, widest
 from manga_honyaku.tally import chapter_of, polite_jp, polite_th
 from manga_honyaku.render import FONT, LINE_SPACING, lay_out, room_for, widths
+from manga_honyaku.sheet import build
 
 
 # --- what a character costs -------------------------------------------------
@@ -566,3 +569,134 @@ def test_every_tool_puts_the_question_in_its_argv():
         assert argv[0] == name
         assert any(question in part for part in argv), name
     assert f"-p={question}" in TOOLS["agy"](question)
+
+
+# --- the boxes the detector nearly drew --------------------------------------
+
+def weak(box, score=0.2):
+    return ("text_free", box, score)
+
+
+def test_a_weak_box_on_text_already_boxed_is_not_a_loss():
+    """Most near misses are the parts of a region the detector also found whole.
+
+    Reported, they would bury the one case worth having: a drawn sound nothing
+    covers at all.
+    """
+    regions = [{"box": [100, 100, 300, 400]}]
+    assert nearly([weak([120, 120, 280, 380])], regions, 1180, 0.35) == []
+
+
+def test_a_weak_box_nothing_covers_is_kept():
+    """`07/19`: one ぽにょん scored 0.38 and its mirror 0.15, so the page was
+    lettered with half a symmetrical gag and nothing could say so."""
+    got = nearly([weak([113, 581, 249, 804], 0.17)], [{"box": [709, 567, 829, 760]}], 1180, 0.35)
+    assert [c["score"] for c in got] == [0.17]
+
+
+def test_a_sliver_is_not_lettering():
+    """Under the threshold the model returns strokes and screentone, not text."""
+    assert nearly([weak([500, 600, 508, 800])], [], 1180, 0.35) == []
+
+
+def test_a_confident_detection_is_a_region_and_never_a_candidate():
+    assert nearly([weak([0, 0, 200, 300], 0.9)], [], 1180, 0.35) == []
+
+
+# --- the half of the budget room does not state ------------------------------
+
+def test_the_longest_run_is_the_budget_for_one_line():
+    """`room` is the whole box; a token wider than one line brings the size down
+    however short the line is, which is what `room` alone cannot say."""
+    region = {"box": [0, 0, 120, 300], "size": 30, "room": 24}
+    assert widest(region, LINE_SPACING) == 24 // int(300 // (30 * LINE_SPACING))
+
+
+def test_a_region_with_no_budget_has_no_run():
+    assert widest({"box": [0, 0, 120, 300], "size": 30}, LINE_SPACING) is None
+    assert widest({"box": [0, 0, 120, 300], "room": 24}, LINE_SPACING) is None
+
+
+# --- which way round a sheet is read -----------------------------------------
+
+def pages(tmp_path):
+    from PIL import Image
+
+    made = []
+    for shade in (0, 255):
+        path = tmp_path / f"{shade}.png"
+        Image.new("RGB", (100, 140), (shade, shade, shade)).save(path)
+        made.append(path)
+    return made
+
+
+def test_the_first_page_named_is_on_the_left_by_default(tmp_path):
+    sheet, width = build(pages(tmp_path))
+    assert sheet.getpixel((width // 2, 10)) == (0, 0, 0)
+
+
+def test_rtl_puts_the_first_page_named_on_the_right(tmp_path):
+    """A spread laid out the other way still reads panel by panel, so nothing
+    about the sheet itself says it is mirrored."""
+    sheet, width = build(pages(tmp_path), rtl=True)
+    assert sheet.getpixel((width + width // 2, 10)) == (0, 0, 0)
+
+
+# --- the order nothing else checks -------------------------------------------
+
+def boxes(**named):
+    return [{"id": rid, "box": box} for rid, box in named.items()]
+
+
+def test_a_tier_is_read_right_to_left_and_tiers_top_to_bottom():
+    page = boxes(
+        A=[500, 0, 700, 200], B=[100, 0, 300, 200],
+        C=[500, 300, 700, 500], D=[100, 300, 300, 500],
+    )
+    assert propose(page) == ["A", "B", "C", "D"]
+
+
+def test_a_tall_panel_on_the_right_is_read_before_both_beside_it():
+    """No horizontal line crosses the page, so the cut has to go the other way
+    first — which is the layout a naive sort by row gets wrong."""
+    page = boxes(
+        tall=[500, 0, 700, 500],
+        upper=[100, 0, 300, 200],
+        lower=[100, 300, 300, 500],
+    )
+    assert propose(page) == ["tall", "upper", "lower"]
+
+
+def test_boxes_no_line_can_separate_are_read_down_and_rightmost_first():
+    page = boxes(A=[0, 0, 400, 300], B=[200, 100, 600, 400])
+    assert propose(page) == ["A", "B"]
+
+
+def test_a_pair_the_file_and_the_boxes_disagree_about_is_named():
+    page = boxes(first=[500, 0, 700, 200], second=[100, 0, 300, 200])
+    page[0]["order"], page[1]["order"] = 2, 1
+    assert disagreements(page) == [("second", "first", False)]
+
+
+def test_a_file_that_agrees_with_the_boxes_says_nothing():
+    page = boxes(first=[500, 0, 700, 200], second=[100, 0, 300, 200])
+    page[0]["order"], page[1]["order"] = 1, 2
+    assert disagreements(page) == []
+
+
+def test_a_pair_separable_both_ways_says_so_rather_than_settling_it():
+    """`07/10`: a narrow panel beside a wide one, lettering high in one and low
+    in the other, so a horizontal line passes between them as cleanly as the
+    vertical one. The cut takes the horizontal and is wrong, and no rule over
+    the boxes could have known — the ruled border is in the artwork."""
+    page = boxes(low=[587, 734, 637, 881], high=[485, 336, 536, 579])
+    page[0]["order"], page[1]["order"] = 1, 2
+    (_, _, both), = disagreements(page)
+    assert both
+
+
+def test_a_pair_only_one_line_separates_is_a_real_disagreement():
+    page = boxes(above=[100, 0, 700, 200], below=[100, 300, 700, 500])
+    page[0]["order"], page[1]["order"] = 2, 1
+    (_, _, both), = disagreements(page)
+    assert not both

@@ -12,6 +12,13 @@ Build a contact sheet of the annotated pages, two to four at a time, and settle
 panels, right-to-left and top-down within a panel. A bubble drawn across a panel
 border belongs to the panel its tail comes from.
 
+`regions … --order` proposes that order from the boxes while you number a page,
+and `regions … --todo` names every pair it and the file disagree about once the
+page is numbered. **The second is the one that has to be answered** — the
+proposal can be accepted wholesale and nothing would ever show it. Reading order
+is the largest piece of hand work in a chapter and the one field no check catches
+when it is wrong.
+
 Print the working file beside the sheet: `uv run python -m manga_honyaku.regions series/<work> <chapter>` gives every
 box with the size the Japanese was lettered at, the `room` that follows, and the
 reading. The sheet says where a region is on the page; only the file says what is

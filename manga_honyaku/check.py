@@ -62,7 +62,7 @@ def compare(data: dict, image: Image.Image, reader) -> list[tuple]:
     moved = []
     for region in data["regions"]:
         rid = region["id"]
-        fresh = settle(read(image, region["box"], reader))
+        fresh = settle(read(image, region["box"], reader)[0])
         if fresh == recorded[rid]:
             continue
         holders = [other for other in elsewhere.get(fresh, []) if other != rid]

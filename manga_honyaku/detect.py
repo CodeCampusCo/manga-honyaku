@@ -42,6 +42,20 @@ TEXT = {
     "text_free": {"prefix": "F", "placement": "free"},
 }
 
+# Between this and `conf` a detection is not a region — see `nearly`. A drawn
+# sound scores like the artwork it is part of: the same ぽにょん drawn twice on
+# `07/19` scored 0.382 over one woman and 0.15 over the other.
+FLOOR = 0.15
+
+# The shortest side a candidate can have, as a share of page height. Under it the
+# model returns screentone and the strokes of characters boxed elsewhere.
+BIGGEST_SLIVER = 0.03
+
+# How much of a candidate the regions must already stand on before it stops being
+# a loss. An area rather than a point: one candidate 79% covered by two adjacent
+# boxes had its centre in the gap between them.
+ALREADY = 0.5
+
 
 def warn(message: str) -> None:
     print(f"warning: {message}", file=sys.stderr)
@@ -80,8 +94,19 @@ def load_detector():
     return model, processor
 
 
-def detect(image: Image.Image, model, processor, conf: float = 0.35, imgsz: int = 640):
-    """Return [(label, [x1, y1, x2, y2], score)] for every detection, unsorted."""
+def detect(
+    image: Image.Image,
+    model,
+    processor,
+    conf: float = 0.35,
+    imgsz: int = 640,
+    floor: float = FLOOR,
+):
+    """Return [(label, [x1, y1, x2, y2], score)] for every detection, unsorted.
+
+    Down to `floor`, not to `conf`. The model ran either way, and `dedupe` keeps
+    the confident box where a weak one covers the same thing.
+    """
     inputs = processor(
         images=image,
         return_tensors="pt",
@@ -92,7 +117,7 @@ def detect(image: Image.Image, model, processor, conf: float = 0.35, imgsz: int 
         outputs = model(**inputs)
     result = processor.post_process_object_detection(
         outputs,
-        threshold=conf,
+        threshold=min(conf, floor),
         target_sizes=[(image.height, image.width)],
     )[0]
 
@@ -129,6 +154,43 @@ def resolve_bubble(box: list[float], bubbles: list[list[float]]):
     return min(holding, key=lambda b: (b[2] - b[0]) * (b[3] - b[1]))
 
 
+def covered(box: list[float], regions: list[dict]) -> float:
+    """How much of this box the regions already stand on.
+
+    Summed rather than unioned, so two regions overlapping each other count their
+    shared part twice; the answer is clamped, and `--overlaps` owns that pair.
+    """
+    area = (box[2] - box[0]) * (box[3] - box[1])
+    if area <= 0:
+        return 1.0
+    total = 0.0
+    for region in regions:
+        other = region["box"]
+        width = min(box[2], other[2]) - max(box[0], other[0])
+        height = min(box[3], other[3]) - max(box[1], other[1])
+        if width > 0 and height > 0:
+            total += width * height
+    return min(1.0, total / area)
+
+
+def nearly(found, regions: list[dict], height: int, conf: float) -> list[dict]:
+    """Text the detector saw and did not draw a region for.
+
+    Most weak boxes are the parts of a region it also found whole, and the parts
+    are not a loss. What survives stands on a piece of the page no region covers.
+    """
+    out = []
+    for name, box, score in found:
+        if name not in TEXT or score >= conf:
+            continue
+        if min(box[2] - box[0], box[3] - box[1]) < BIGGEST_SLIVER * height:
+            continue
+        if covered(box, regions) > ALREADY:
+            continue
+        out.append({"box": box, "placement": TEXT[name]["placement"], "score": score})
+    return sorted(out, key=lambda c: -c["score"])
+
+
 def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) -> dict:
     """Build the page file.
 
@@ -141,8 +203,8 @@ def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) ->
     of them would otherwise surface two stages later as a bubble whose text was
     quietly left in place.
     """
-    bubbles = [f[1] for f in found if f[0] == "bubble"]
-    text = [f for f in found if f[0] in TEXT]
+    bubbles = [f[1] for f in found if f[0] == "bubble" and f[2] >= conf]
+    text = [f for f in found if f[0] in TEXT and f[2] >= conf]
     text.sort(key=lambda f: (f[0], f[1][1]))  # placement, then down the page
 
     counters: dict[str, int] = {}
@@ -179,6 +241,7 @@ def page_file(page: Path, image: Image.Image, found, conf: float, imgsz: int) ->
         "img_height": image.height,
         "detector": {"model": DETECTOR, "conf": conf, "imgsz": imgsz},
         "regions": regions,
+        "candidates": nearly(found, regions, image.height, conf),
     }
 
 
@@ -204,8 +267,10 @@ def main() -> None:
         data = page_file(scan, image, found, args.conf, args.imgsz)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
-        counts = {c: sum(1 for f in found if f[0] == c) for c in sorted({f[0] for f in found})}
-        print(f"{page}  {out}  {counts}")
+        kept = [f for f in found if f[2] >= args.conf]
+        counts = {c: sum(1 for f in kept if f[0] == c) for c in sorted({f[0] for f in kept})}
+        nearby = len(data["candidates"])
+        print(f"{page}  {out}  {counts}" + (f"  +{nearby} nearly" if nearby else ""))
 
 
 if __name__ == "__main__":
