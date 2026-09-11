@@ -1,7 +1,13 @@
-# Working on this
+# Developing the tool
 
-`CONTRIBUTING.md` is how to change the code. This is how the change gets decided,
-and it is written down because most of it was learned by getting it wrong.
+**If you are here to translate a chapter, this file is not for you.** Nothing in
+it is method, and one thing in it will mislead you: it says the translated pages
+are disposable, which is true of the project and not of your chapter. Go back to
+`AGENTS.md` and the work's `handoff.md`.
+
+This is for whoever is changing the tool itself. `CONTRIBUTING.md` is how to
+change the code; this is how the change gets decided, written down because most
+of it was learned by getting it wrong.
 
 **The pages are not the product.** This is a general manga translation tool that
 happens to have chapters of one work lying around it. Everything under
