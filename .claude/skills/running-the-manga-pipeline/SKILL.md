@@ -21,6 +21,16 @@ have run before anybody opens one. Nothing named is every page; a name that is a
 page; a name that is a directory is every page under it, so a chapter is asked
 for the way it is stored.
 
+**A box the detector got wrong is not permanent, and `prepare --retag` is why.**
+`prepare` will not overwrite a working file, which reads as *the geometry is
+settled* and is not what it means. Edit a region's `box` — widen it over a glyph
+the detector clipped, trim it off a balloon it landed on — correct its `source`
+in the same breath, then `prepare --retag series/<work> <page>`: it re-measures
+`size` and the `room` that follows and touches nothing else, so the roles,
+reading order, speakers and translations all stand. It prints how many regions
+it changed, which is how you check it did what you meant. `--force` is the other
+switch and is the destructive one: it rewrites the working file from scratch.
+
 ## Reading an image
 
     uv run python -m manga_honyaku.sheet series/<work> <page> <page> --rtl -o /tmp/spread.png
@@ -158,6 +168,11 @@ exists, which is why it is what to open a chapter with.
 In a box drawn for vertical Japanese the size is set by the **longest token**,
 not by the length of the line, so a caption lettered half-size is usually fixed
 by a different word of the same meaning rather than a shorter sentence.
+
+**`fit` takes one page and not a chapter**, unlike every stage above it. Given a
+chapter it raises `FileNotFoundError` on a path it built itself, so read the
+traceback as the argument being wrong rather than the work being broken, and
+loop over the pages.
 
 `fit` prints the lines the breaker produced, and **a Thai word broken in the
 wrong place is a real defect** — one chapter shipped `ที|แบ็ค` and another nearly

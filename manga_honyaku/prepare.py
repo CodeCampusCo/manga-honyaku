@@ -182,6 +182,41 @@ def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
     return sorted(found, key=lambda pair: -pair[2])
 
 
+# How much of one drawn region's box another may cover before it is a collision
+# rather than two balloons drawn close. Measured over ten chapters: 27 pairs
+# overlap at all and none by more than 8%, while the one that reached a rendered
+# page — a caption plate whose last line was drawn across a balloon's first —
+# covered 42%.
+COLLIDING = 0.15
+
+
+def colliding(regions: list[dict], drawn) -> list[tuple]:
+    """Pairs of regions that will both be lettered onto the same piece of page.
+
+    `--overlaps` asks a different question — two boxes on one piece of *original*
+    lettering, which is a detector artefact. This is two regions that each hold
+    their own line and will be drawn over each other, and it is silent: `clean`
+    erases both, `render` draws both, and the page comes back with one line
+    across another.
+    """
+    wanted = [r for r in regions if drawn(r)]
+    out = []
+    for i, a in enumerate(wanted):
+        for b in wanted[i + 1:]:
+            width = min(a["box"][2], b["box"][2]) - max(a["box"][0], b["box"][0])
+            height = min(a["box"][3], b["box"][3]) - max(a["box"][1], b["box"][1])
+            if width <= 0 or height <= 0:
+                continue
+            hit = width * height
+            share = max(
+                hit / ((a["box"][2] - a["box"][0]) * (a["box"][3] - a["box"][1])),
+                hit / ((b["box"][2] - b["box"][0]) * (b["box"][3] - b["box"][1])),
+            )
+            if share > COLLIDING:
+                out.append((a, b, share))
+    return sorted(out, key=lambda row: -row[2])
+
+
 def uncovered(regions: list[dict]) -> list[tuple]:
     """Declined regions with a lettered one inside them, and how much of their
     height that lettered part actually covers.

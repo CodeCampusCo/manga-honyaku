@@ -8,9 +8,7 @@ description: Use when choosing a wording that has to fit a manga speech bubble, 
 ## The whole of it
 
 **Set the text into the region's own box, and come down a size while it
-overflows.** That is the method. There is nothing else.
-
-The box is where the original's lettering sat — the detector already gives it,
+overflows.** The box is where the original's lettering sat — the detector already gives it,
 and the artist already chose it. It is the right rectangle for the translation
 for the same reason it was right for the original: it is the shape that fits
 that bubble in that panel. A Japanese bubble is a tall oval because the text ran
@@ -61,6 +59,11 @@ holds altogether, `line` the longest run it holds without a break. A word longer
 than `line` brings the region down however short the sentence is, so a wording
 weighed against `room` alone is a guess.
 
+**`fit` is arithmetic about one region; only the rendered page compares it to its
+neighbours.** A split that buys a size step can still read as a mistake, because
+the same word set whole a page later gives the reader the comparison. Where the
+numbers and the page disagree about a wording, the page decides.
+
 **Ask before you apply, not after.** `fit` measures a candidate against the
 region's own box and draws nothing, which turns the wording pass from a
 render-and-look loop into arithmetic:
@@ -97,6 +100,17 @@ twice.
   lettered at 22px against a tag worth 34 — and dragged the caption sharing its
   utterance down with it. Split into the two ordinary words it is made of, the
   line breaks between them and both captions keep their size.
+
+- **The dictionary is already full of compounds, and one in a narrow box costs
+  the same as a phrase you put there yourself.** `ผู้จัดการ` and `ขอโทษ` are
+  single tokens the segmenter will not break, so in a 99px balloon they set the
+  size at 39 and at 41 where the split halves set it at 49 and 54 — a third
+  more, and the fill goes from a third of the box to nearly all of it. **Try a
+  different word first**: `ตบหน้า` is one token and `ฟาดหน้า` is two, and they
+  letter at 26 and 39 in the same box, so the synonym buys the whole step and
+  costs nothing. Only when no synonym is loose does the space earn its place.
+  **Nothing tells you which words are compounds except `fit`'s line list** — the
+  guess is wrong in both directions.
 
 - **A space is a break point, so a space inside a word cuts the word in half.**
   Thai writes without spaces, so a space in a target reads as a phrase

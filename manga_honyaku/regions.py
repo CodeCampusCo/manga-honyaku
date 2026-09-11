@@ -90,12 +90,13 @@ from pathlib import Path
 from PIL import ImageFont
 
 from manga_honyaku.audit import record, spacing, spelling
+from manga_honyaku.clean import KEEP
 from manga_honyaku.detect import ALREADY, covered
 from manga_honyaku.order import disagreements, propose
 from manga_honyaku.check import settle, says_something, unpaused
 from manga_honyaku.ocr import SURE
 from manga_honyaku.page import Series
-from manga_honyaku.prepare import overlapping, uncovered
+from manga_honyaku.prepare import colliding, overlapping, uncovered
 from manga_honyaku.render import FONT, LINE_SPACING, lexicon, missing_glyphs, settings
 
 
@@ -352,6 +353,15 @@ def main() -> None:
                     frozenset((a["id"], b["id"]))
                     for a, b, _ in overlapping(data["regions"])
                 }
+                said += [
+                    f"{a['id']} and {b['id']} will be drawn over each other — "
+                    f"{share:.0%} of a box is shared, and both hold a line"
+                    for a, b, share in colliding(
+                        data["regions"],
+                        lambda r: r.get("role") and r["role"] not in KEEP
+                        and r.get("status") == "ok",
+                    )
+                ]
                 said += [
                     f"{a} is read before {b} and the boxes say the other way "
                     f"round — " + (

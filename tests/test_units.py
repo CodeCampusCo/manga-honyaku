@@ -21,7 +21,7 @@ from manga_honyaku.ask import TOOLS
 from manga_honyaku.fit import measure, terms, trie
 from manga_honyaku.check import settle, says_something
 from manga_honyaku.audit import split_words
-from manga_honyaku.prepare import (cells, lettered_at, overlapping, tag,
+from manga_honyaku.prepare import (cells, colliding, lettered_at, overlapping, tag,
                                    tag_page, uncovered)
 from manga_honyaku.order import disagreements, propose
 from manga_honyaku.page import Series
@@ -809,3 +809,30 @@ def test_one_box_still_applies_to_every_cell(tmp_path):
         made.append(path)
     sheet, width = build(made, crop=(0, 0, 50, 50))
     assert sheet.height == width
+
+
+# --- two lines drawn onto the same piece of page -----------------------------
+
+def lettered(region):
+    return region.get("role") == "caption"
+
+
+def test_two_regions_that_will_be_drawn_over_each_other_are_reported():
+    """A caption plate landing on a balloon: `clean` erases both, `render` draws
+    both, and neither is readable."""
+    plate = {"id": "F5", "box": [0, 0, 200, 200], "role": "caption"}
+    bubble = {"id": "B1", "box": [100, 100, 300, 300], "role": "caption"}
+    (_, _, share), = colliding([plate, bubble], lettered)
+    assert share > 0.2
+
+
+def test_balloons_drawn_close_are_not_a_collision():
+    near = [{"id": "B1", "box": [0, 0, 100, 100], "role": "caption"},
+            {"id": "B2", "box": [95, 95, 195, 195], "role": "caption"}]
+    assert colliding(near, lettered) == []
+
+
+def test_a_region_nothing_is_drawn_into_cannot_collide():
+    plate = {"id": "F5", "box": [0, 0, 200, 200], "role": "caption"}
+    sound = {"id": "F6", "box": [0, 0, 200, 200], "role": "sfx"}
+    assert colliding([plate, sound], lettered) == []

@@ -190,6 +190,13 @@ page you read and did not record is a page nobody read.
 Keep `chapters/<n>.md` in the work's directory, one entry per page, written from
 the raw scan and not from the rendered output. Four things per page:
 
+**Correct a region's `source` in the same breath as reading its crop.** A reading
+left wrong is a line translated from the OCR rather than from the page, on a page
+you looked at — one chapter turned a word repeated back at a character into a
+grunt that way, and the joke stopped being one. It is also what makes `--repeats`
+miss a repeat, since that matches on `source`. Fix the box in the same pass if the
+box is what is wrong, and `prepare --retag` after.
+
 The review passes read this file and reason from it, so **mark anything you did
 not verify as a guess** — a size you did not ask `fit` for, a claim about part of
 a page you did not frame.
