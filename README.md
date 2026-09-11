@@ -225,9 +225,10 @@ operation, and the failure surfaces as an empty result rather than an error.
 
 ## Contributing
 
-[`CONTRIBUTING.md`](CONTRIBUTING.md). The short of it: you cannot run the
-pipeline without your own scans, but `uv run pytest` runs without any, and
-`master` takes pull requests only.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) is how to change the code;
+[`DEVELOPING.md`](DEVELOPING.md) is how a change gets decided. The short of it:
+you cannot run the pipeline without your own scans, but `uv run pytest` runs
+without any, and `master` takes pull requests only.
 
 ## Licence
 
