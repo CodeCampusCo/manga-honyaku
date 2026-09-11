@@ -229,6 +229,11 @@ operation, and the failure surfaces as an empty result rather than an error.
 pipeline without your own scans, but `uv run pytest` runs without any, and
 `master` takes pull requests only.
 
+[`WORKING.md`](WORKING.md) is the other half — not how to change the code, but
+how a change here gets decided: where a paragraph belongs, why a guard goes in
+the code rather than in prose, and what to ask a session that has just
+translated a chapter.
+
 ## Licence
 
 Apache-2.0; see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). The detection stage
