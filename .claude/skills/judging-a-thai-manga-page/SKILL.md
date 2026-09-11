@@ -71,10 +71,7 @@ remembered. **The lettering itself is incomplete, so there is no whole line to
 carry**, and a translation would have to invent one. The detector is right to
 pass it and `clean` is right to leave it.
 
-`06/14` of `tamagawa` is the case: `ん` alone, in a balloon cut off by the top of
-the page, over a flashback panel. It was reported, chased, and ruled correct.
-Report Japanese left standing anywhere else — that is a real and known failure —
-but not here.
+Report Japanese left standing anywhere else. Not here.
 
 ### A balloon can be mostly empty and still be right
 

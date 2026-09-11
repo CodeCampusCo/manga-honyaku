@@ -136,6 +136,12 @@ def _thai(character: str) -> bool:
     return 0x0E00 <= ord(character) <= 0x0E7F
 
 
+# Thai sets a space before the repetition mark, so `ต่าง ๆ` is one word written
+# correctly and not a word cut in half. The mark is Thai script, so nothing else
+# here tells the two apart.
+REPEAT = "ๆ"
+
+
 def split_words(text: str, custom) -> bool:
     """Whether any space in this line falls inside a word rather than between two."""
     if " " not in text:
@@ -151,6 +157,8 @@ def split_words(text: str, custom) -> bool:
             continue
         before = next((c for c in reversed(text[:i]) if c != " "), "")
         after = next((c for c in text[i + 1:] if c != " "), "")
+        if after == REPEAT:
+            continue
         if _thai(before) and _thai(after) and seen not in bounds:
             return True
     return False

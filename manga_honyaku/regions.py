@@ -75,9 +75,9 @@ the font it describes.
 The other is the boxes the detector nearly drew and nothing has covered since.
 **It is the only report in the pipeline that can see text which is not in the
 working file**, because every other one walks the regions and a sound that was
-never boxed has no region to walk. Most of them are nothing. Look at each once:
-adding a region over it, or deciding it is artwork, takes it off the list either
-way, and a list that clears is a list that goes on being read.
+never boxed has no region to walk. Most of them are nothing. Look at each once —
+but only a region over one takes it off the list, so a chapter answered by
+judgement alone hands the next reader the same lines.
 """
 
 from __future__ import annotations
@@ -89,14 +89,14 @@ from pathlib import Path
 
 from PIL import ImageFont
 
-from manga_honyaku.audit import record
+from manga_honyaku.audit import record, spacing, spelling
 from manga_honyaku.detect import ALREADY, covered
 from manga_honyaku.order import disagreements, propose
-from manga_honyaku.check import settle, says_something
+from manga_honyaku.check import settle, says_something, unpaused
 from manga_honyaku.ocr import SURE
 from manga_honyaku.page import Series
 from manga_honyaku.prepare import overlapping, uncovered
-from manga_honyaku.render import FONT, LINE_SPACING, missing_glyphs, settings
+from manga_honyaku.render import FONT, LINE_SPACING, lexicon, missing_glyphs, settings
 
 
 def widest(region: dict, spacing: float) -> int | None:
@@ -223,9 +223,17 @@ def drifted(rows: list[tuple]) -> bool:
     loses the joke without anything else reporting it.
 
     A region that was declined has no target and is not a disagreement.
+
+    Pauses are settled first. `เอ่อ…` against `เอ่อ……` is one line written twice,
+    and flagged as drift it costs a re-read and teaches the reader to skim the
+    flag — which is the expensive failure, not the false positive.
     """
-    said = {r.get("target") for _, r in rows if r.get("status") == "ok"}
-    return len(said - {None}) > 1
+    said = {
+        unpaused(r["target"])
+        for _, r in rows
+        if r.get("status") == "ok" and r.get("target")
+    }
+    return len(said) > 1
 
 
 def search(work: Series, needle: str) -> None:
@@ -288,6 +296,7 @@ def main() -> None:
     probe = ImageFont.truetype(
         settings(args.series).get("font") or FONT, 40
     ) if args.todo else None
+    custom = lexicon(args.series) if args.todo else None
     if args.repeats:
         groups = repeated(work, ids)
         for heading, picked in (
@@ -321,7 +330,7 @@ def main() -> None:
                     for a, b, cover in overlapping(data["regions"])
                 ]
             if args.todo:
-                said += record(data)
+                said += record(data) + spelling(data) + spacing(data, custom)
                 said += [
                     f"nothing covers {[int(v) for v in c['box']]}, which the "
                     f"detector nearly drew" + (

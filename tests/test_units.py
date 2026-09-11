@@ -27,8 +27,9 @@ from manga_honyaku.order import disagreements, propose
 from manga_honyaku.page import Series
 from manga_honyaku.regions import drifted, repeated, widest
 from manga_honyaku.tally import chapter_of, polite_jp, polite_th
-from manga_honyaku.render import FONT, LINE_SPACING, lay_out, room_for, widths
-from manga_honyaku.sheet import build
+from manga_honyaku.render import (FONT, LINE_SPACING, SMALLEST, UNREADABLE,
+                                  floor_for, lay_out, room_for, widths)
+from manga_honyaku.sheet import around, build
 
 
 # --- what a character costs -------------------------------------------------
@@ -433,6 +434,26 @@ def test_one_japanese_line_answered_two_ways_is_drift():
     assert not drifted([(p, {**r, "target": "เหมือนกัน"}) for p, r in rows])
 
 
+def test_one_line_written_with_two_kinds_of_pause_is_not_drift():
+    """`08/09` against `05/02`: `อืมมม…` and `อืมมม...`. Flagged, it costs a
+    re-read and teaches the reader to skim the flag."""
+    rows = [
+        ("08/09", {"status": "ok", "target": "อืมมม…"}),
+        ("05/02", {"status": "ok", "target": "อืมมม..."}),
+        ("05/14", {"status": "ok", "target": "อืมมม……"}),
+    ]
+    assert not drifted(rows)
+
+
+def test_a_space_is_not_a_pause_and_still_counts():
+    """Thai spaces are lettering decisions, so they are left alone."""
+    rows = [
+        ("a", {"status": "ok", "target": "คุณทามากาวะ"}),
+        ("b", {"status": "ok", "target": "คุณทามา กาวะ"}),
+    ]
+    assert drifted(rows)
+
+
 def test_a_region_nobody_lettered_is_not_a_disagreement():
     """A duplicate box has one region declined and no target on it. That is the
     ordinary case, not two answers to one line."""
@@ -497,6 +518,13 @@ def test_a_space_inside_a_word_is_caught():
     breaker is free to break at a space, so the word comes apart on the page."""
     assert split_words("ล้ม เหลว", None)
     assert split_words("เสียง คราง", None)
+
+
+def test_the_space_thai_sets_before_the_repetition_mark_is_not_a_split():
+    """`ต่าง ๆ` is one word written the conventional way. The mark is Thai
+    script, so nothing else in the check tells it from a word cut in half."""
+    assert not split_words("ต่าง ๆ กัน", None)
+    assert not split_words("เร็ว ๆ นี้", None)
 
 
 def test_a_space_beside_latin_or_digits_is_ordinary_typesetting():
@@ -700,3 +728,57 @@ def test_a_pair_only_one_line_separates_is_a_real_disagreement():
     page[0]["order"], page[1]["order"] = 2, 1
     (_, _, both), = disagreements(page)
     assert not both
+
+
+# --- naming a region instead of four numbers ---------------------------------
+
+def work_with(tmp_path, regions, width=836, height=1180):
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "pages" / "01.agent.json").write_text(json.dumps(
+        {"img_width": width, "img_height": height, "regions": regions}
+    ))
+    return Series(tmp_path)
+
+
+def test_a_region_crop_shows_what_the_region_sits_in(tmp_path):
+    """A box on its own answers what it says; a crop is usually asked which
+    panel it is in."""
+    work = work_with(tmp_path, [{"id": "F8", "box": [400, 500, 500, 600]}])
+    assert around(work, "01", "F8") == (300, 400, 600, 700)
+
+
+def test_a_region_crop_stops_at_the_edge_of_the_page(tmp_path):
+    work = work_with(tmp_path, [{"id": "B1", "box": [10, 10, 110, 110]}])
+    assert around(work, "01", "B1") == (0, 0, 210, 210)
+
+
+def test_naming_a_region_that_is_not_there_fails_loudly(tmp_path):
+    work = work_with(tmp_path, [{"id": "B1", "box": [0, 0, 10, 10]}])
+    with pytest.raises(SystemExit):
+        around(work, "01", "B9")
+
+
+# --- the smallest a work letters at ------------------------------------------
+
+def test_a_work_sets_its_own_floor():
+    assert floor_for({"floor": 7}, 1.0) == 7
+
+
+def test_a_work_that_sets_none_gets_the_default():
+    assert floor_for({}, 1.0) == SMALLEST
+
+
+def test_the_page_scale_carries_the_floor_with_it():
+    """A work scanned at twice the height letters at twice the size."""
+    assert floor_for({"floor": 7}, 2.0) == 14
+
+
+def test_nothing_goes_below_unreadable_however_small_it_is_asked_for():
+    assert floor_for({"floor": 1}, 1.0) == UNREADABLE
+    assert floor_for({"floor": 7}, 0.1) == UNREADABLE
+
+
+def test_fit_measures_against_the_same_floor_render_draws_at():
+    """Reported below it, a size is one the page will never be drawn at."""
+    hair_thin = {"box": [0, 0, 40, 18]}
+    assert measure(hair_thin, "ยินดีต้อนรับ", FONT, None, LINE_SPACING, 40) is None

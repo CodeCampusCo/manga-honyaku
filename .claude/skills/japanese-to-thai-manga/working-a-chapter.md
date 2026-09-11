@@ -16,7 +16,7 @@ what to check before rendering, and which chapters are worth a review pass.
 Which one a region *is* is a reading decision, and these are the four that are
 got wrong.
 
-**Most `title` is `declined`** — 37 of the 63 in this repository — because the
+**Most `title` is `declined`**, because the
 magazine's furniture is printed over the artwork rather than drawn into it, and
 translating it would put a Thai masthead on somebody else's page. The role says
 what a region is; `status` still decides what happens to it.

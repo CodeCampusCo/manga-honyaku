@@ -17,7 +17,7 @@ What both you and this project can run is the arithmetic:
 
 ```sh
 uv sync
-uv run pytest        # 28 assertions, about four seconds
+uv run pytest        # about four seconds
 ```
 
 Every test there covers a bug that was real. If you change how a size is

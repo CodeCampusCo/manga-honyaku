@@ -42,9 +42,7 @@ from pythainlp.util import Trie
 from manga_honyaku.page import Series
 
 # The project letters in iannnnn's 2005_iannnnnJPG, a Thai comic face, and the
-# bold cut derived from it. Not in this repository: its own name table records
-# "For educations used only" and "All rights reserved", so it is referenced the
-# way the model weights are. Put it under fonts/ or point these at it.
+# bold cut derived from it. Both are under fonts/; NOTICE says on what terms.
 FONT = os.environ.get("MANGA_HONYAKU_FONT", "fonts/iannnnnJPG/2005_iannnnnJPG.ttf")
 FONT_BOLD = os.environ.get(
     "MANGA_HONYAKU_FONT_BOLD", "fonts/iannnnnJPG-selfbold/2005_iannnnnJPG-Bold.ttf"
@@ -78,7 +76,13 @@ ORPHAN_PENALTY = 5000.0
 # faces, Thai against Japanese, so it is set once by eye on a rendered page and
 # then left alone. Nothing about a region changes it.
 K = 1.07
-FLOOR = 9
+
+# The smallest lettering a work will accept, before the page's own scale. A work
+# sets its own as `floor` in lettering.json; this is what a work that has not.
+SMALLEST = 9
+
+# And what nothing may go below whatever a work asks for.
+UNREADABLE = 4
 
 # A page where nothing could be measured still has to be lettered. Ordinary
 # dialogue runs about this fraction of the page's height.
@@ -122,6 +126,22 @@ def missing_glyphs(font: ImageFont.FreeTypeFont, text: str) -> set[str]:
     """
     absent = _signature(font, "\U000f0000")
     return {c for c in set(text) if not c.isspace() and _signature(font, c) == absent}
+
+
+def measured_at(region: dict, page_height: int) -> float:
+    """What the original lettered this region at, or the page's usual size.
+
+    A `size` that is not a number is not a measurement — an earlier vocabulary
+    here named sizes instead of measuring them, and a work carrying one of those
+    names would otherwise reach the arithmetic and stop the run on a traceback.
+    """
+    size = region.get("size")
+    return size if isinstance(size, (int, float)) else TYPICAL * page_height
+
+
+def floor_for(values: dict, scale: float) -> int:
+    """The smallest size this work letters at, in this page's pixels."""
+    return max(UNREADABLE, round(values.get("floor", SMALLEST) * scale))
 
 
 def settings(series: Path) -> dict:
@@ -385,7 +405,7 @@ def render(
         warn(f"{data['page']}: font has no glyph for {''.join(sorted(absent))}")
 
     weights = {"regular": font_path, **(weights or {})}
-    smallest = max(4, round(values.get("floor", FLOOR) * scale))
+    smallest = floor_for(values, scale)
     placements = []
 
     for index, region in enumerate(data["regions"], start=1):
@@ -406,8 +426,7 @@ def render(
             # The size was measured when the page was prepared: what the
             # Japanese was lettered at, in this page's own pixels. Both faces
             # are measured on the same page, so `k` needs no scaling.
-            measured = region.get("size") or TYPICAL * page.height
-            wanted = max(smallest, round(k * measured))
+            wanted = max(smallest, round(k * measured_at(region, page.height)))
         else:
             # Free-floating text takes no step. Its box is the lettering's own
             # extent, drawn around it, so filling that box is the answer the
@@ -472,12 +491,12 @@ def calibrate(work: Series, pages, custom, font: str, values: dict) -> None:
     for page in pages:
         data = json.loads(work.agent(page).read_text())
         scale = data["img_height"] / values.get("page_height", PAGE_HEIGHT)
-        smallest = max(4, round(values.get("floor", FLOOR) * scale))
+        smallest = floor_for(values, scale)
         for r in data["regions"]:
             if not r.get("target") or not r.get("bubble"):
                 continue
             x1, y1, x2, y2 = r["box"]
-            size = r.get("size") or TYPICAL * data["img_height"]
+            size = measured_at(r, data["img_height"])
             regions.append((r["target"], (x1, y1, x2 - x1, y2 - y1), smallest, size))
 
     print(f"{len(regions)} regions with Thai in a bubble")

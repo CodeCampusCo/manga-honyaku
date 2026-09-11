@@ -10,7 +10,7 @@ description: Use when running any stage of the manga pipeline or asking a work w
 ## Every stage takes the work first
 
     uv run python -m manga_honyaku.render series/<work>            # every page
-    uv run python -m manga_honyaku.render series/<work> X0006      # one page
+    uv run python -m manga_honyaku.render series/<work> <page>     # one page
     uv run python -m manga_honyaku.render series/<work> 01/ch02    # a directory
 
 `detect`, `annotate`, `prepare`, `clean`, `render` and `audit` all read their
@@ -23,20 +23,29 @@ for the way it is stored.
 
 ## Reading an image
 
-    uv run python -m manga_honyaku.sheet a.png b.png -o /tmp/look.png
-    uv run python -m manga_honyaku.sheet 16.png 17.png --rtl -o /tmp/spread.png
-    uv run python -m manga_honyaku.sheet page.png --crop 640,280,1060,760 -o /tmp/one.png
+    uv run python -m manga_honyaku.sheet series/<work> <page> <page> --rtl -o /tmp/spread.png
+    uv run python -m manga_honyaku.sheet series/<work> <page> --region B3 -o /tmp/one.png
+    uv run python -m manga_honyaku.sheet series/<work> <page> --show out -o /tmp/done.png
+    uv run python -m manga_honyaku.sheet a.png b.png --crop 640,280,1060,760 -o /tmp/any.png
+
+**Name a work and page ids, the way every other tool here is named.** A page id
+gives the annotated page; `--show raw` gives the scan, `--show out` the rendered
+one. **`--region ID` crops a named region and its surround**, so reading one box
+never means taking coordinates off the sheet and converting them back. Bare image
+paths still work, for anything that is not a page of a work.
 
 It caps each image at the width past which reading stops getting easier and cost
 goes on rising, and `--crop X1,Y1,X2,Y2` takes a box out first. A spread costs
 about 2300 tokens and one bubble about 1000 — **one page and two pages cost the
 same**, so read the spread. There is never a reason to write a resize by hand.
 
-**`--rtl` for a spread in a right-to-left work**, which puts the first page named
-on the right, where the reader starts. Without it the two halves are swapped and
-nothing about the sheet says so: each panel still reads, and the page that came
-after appears to come before. It prints which way round it built every sheet of
-more than one image — that line is the only thing that will tell you.
+The output line ends with the scale it drew at and the crop's origin, so a
+position read off a sheet converts back without the arithmetic.
+
+**`--rtl` for a spread in a right-to-left work**: the first page named goes on
+the right. Without it the halves are swapped and each panel still reads, so
+nothing about the sheet itself says so — which way round it was built is printed
+for every sheet of more than one image.
 
 ## The two that check
 
@@ -47,9 +56,8 @@ Both read their pages the way a stage does: nothing named is the whole work, a
 page id is that page, a directory is every page under it.
 
 `check` reads every region again and reports any holding a line that belongs to
-another region on the same page — the Thai is plausible where it sits and only
-the boxes disagree, which is why a re-read of the page will not find it. Three
-bubbles on X0048 held each other's lines and nothing else found them.
+another region on the same page. The Thai is plausible where it sits and only the
+boxes disagree, so a re-read of the page will not find it.
 
 `audit` checks a finished page against the artwork it actually produced: a region
 erased and never drawn back into, Japanese left under the Thai by `clean`, a
@@ -75,7 +83,7 @@ nothing here installs a command, so a bare `regions` is not on anyone's PATH.
     …manga_honyaku.regions series/<work> 01 --todo    # what the file still leaves unfinished
     …manga_honyaku.regions series/<work> 01 --repeats # what is already answered, in two lists
     …manga_honyaku.regions series/<work> 01/05 --order # a reading order proposed from the boxes
-    …manga_honyaku.chapters series/<work> X0006-X0008 # what the reading found on those pages
+    …manga_honyaku.chapters series/<work> <page>-<page> # what the reading found on those pages
     …manga_honyaku.tally    series/<work>             # the counts a chapter is read back against
     …manga_honyaku.fit      series/<work> 01/05 F1 "…" # what size a candidate line draws at
     …manga_honyaku.fit      series/<work> --replace ก ข # what changing a word costs, everywhere
@@ -87,56 +95,49 @@ themselves say twice. `--overlaps` lists the pairs standing on one piece of
 lettering, half of which the eye does not find. Their output lives only in the session that ran
 them — nothing writes it to disk, so a compaction loses it.
 
-**`--todo` is every check `audit` makes that does not need a rendered page** —
-a region with no role, an `ok` with nothing to draw, a decline with no reason, a
-reading order that is not `1..N` — **so the completeness sweep before `clean` is
-this command and not a script.** One translator here wrote that sweep by hand
-twice, once before `clean` and once at the end, because this line did not say so.
+**`--todo` is every check `audit` makes that needs no rendered page** — a region
+with no role, an `ok` with nothing to draw, an `erase` with one, a decline with no
+reason, a reading order that is not `1..N`, a misspelled polite ending, a space
+inside a Thai word. **The completeness sweep before `clean` is this command.**
 
-It is otherwise a worklist rather than a defect list. It asks about boxes standing
-inside other boxes, which is a decision, not a fault, and about **the boxes the
-detector nearly drew and nothing has covered since** — the one report in the
-pipeline that can see text which is not in the working file. Each line carries
-what the reader made of the box, which is what makes it a decision rather than a
-crop to build: a line reading `ん` beside a page that draws ぽにょん twice answers
-itself. Most are nothing. Adding a region over one or deciding it is artwork
-clears it either way, and a list that clears is a list that goes on being read.
-Drawn sounds are what it is for: `07/19` of the first work here draws one twice,
-once over each woman, and the detector found one of them.
+It is otherwise a worklist rather than a defect list: boxes standing inside other
+boxes, which is a decision and not a fault, and **the boxes the detector nearly
+drew that nothing has covered since** — the one report that can see text which is
+not in the working file. Each line carries what the reader made of the box. Most
+are nothing. **Only a region over it takes one off the list** — judging it artwork
+leaves the line there for whoever reads the chapter next. Drawn sound is most of
+what it finds, because the same sound drawn twice in a panel can clear the
+detector's threshold over one character and not the other.
 
-**`--todo`'s disagreements are what a chapter is not finished without. `--order`
+**`--todo`'s disagreements are what a chapter is not finished without; `--order`
 is what you consult while numbering**, the way `fit` is consulted while wording.
-The asymmetry is the whole design: eight lines you have to answer cannot be
-discharged by accepting them, because answering one leaves a trace in the file
-and not answering leaves the line there next run — whereas a hundred and sixty-two
-proposed numbers can be taken with one keystroke, and a page numbered that way
-and a page numbered by reading are the same file.
+A disagreement you answer leaves a trace in the file and one you ignore is there
+again next run. A proposed order can be taken whole, and a page numbered that way
+cannot be told from one numbered by reading.
 
 `order` is the one field that changes what the reader gets while every check
-stays green: `audit` sorts the numbers and compares them to `1..N`, which a page
-numbered completely and in the wrong sequence passes. **Neither the file nor the
-proposal is an authority.** On one chapter here the file was wrong once — a
-thought cloud sorted before the shop sign above it, from sorting a panel by x and
-forgetting the top-down half — and the geometry was wrong three times. The
-dispute list is the only place either of them was checked.
+stays green: `audit` compares the numbers to `1..N`, which a page numbered
+completely and in the wrong sequence passes. **Neither the file nor the proposal
+is an authority.**
 
-A pair it calls separable **either way** is a question for the artwork: a
-horizontal line passes between the two boxes as cleanly as a vertical one, which
-happens whenever a panel with high lettering sits beside one with low, and only
-the ruled border decides. A pair separated **one way only** is a real
-disagreement — unless a balloon there hangs across a panel border, which is the
-other way the geometry gets it wrong.
+A pair called separable **either way** is a question for the artwork: a horizontal
+line passes between the two boxes as cleanly as a vertical one, which happens
+wherever a panel with high lettering sits beside one with low, and only the ruled
+border decides. A pair separated **one way only** is a real disagreement, unless a
+balloon there hangs across a panel border.
 
-**Two numbers in the default view are a budget, and they answer different
+**Two numbers in the default view are a budget and they answer different
 questions.** `room=` is how many characters the box holds altogether; `line=` is
 the longest run it holds without a break. A word longer than `line=` brings the
 whole region's size down however short the sentence is, so a wording proposed
-against `room=` alone is a guess — `fit` has contradicted one twice here. A `?`
-before the Japanese means the reader was unsure of at least one character of it:
-open that box on the scan before translating it. **What it buys is the other
-direction.** The mark is common — about three in five regions — so it narrows a
-page rather than naming its errors; what is worth trusting is the unmarked
-remainder, where 65 of 66 regions of one chapter needed no correction at all.
+against `room=` alone is a guess.
+
+A `?` before the Japanese means the reader was unsure of at least one character
+of it: open that box on the scan before translating it. It marks a good share of
+a page rather than naming its errors — **what it buys is the unmarked
+remainder**, which is almost always right. A page prepared before the score
+existed carries no marks at all, so on an old chapter the silence means
+unmeasured, not confident.
 
 `ask` is beside them and is not about the work at all — it puts one question to a
 CLI running a different model, and knows how each of them takes a prompt.

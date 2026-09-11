@@ -13,8 +13,10 @@ including the list of what never to report and the shape of the reply.
 
 You will be given a work and a range of pages. The finished pages are
 `series/<work>/out/<...>.png`. View them through
-`uv run python -m manga_honyaku.sheet <page> <page> -o /tmp/look.png`, two at a
-time, right to left.
+`uv run python -m manga_honyaku.sheet <path> <path> --rtl -o /tmp/look.png`, two
+at a time. It takes the paths themselves, not page ids, and `--rtl` is what lays
+them out the way the reader sees them — without it the spread comes out mirrored
+and each panel still reads, so nothing tells you.
 
 **Open nothing else.** Not the original scans, not `pages/*.agent.json`, not
 `glossary.md`, `characters.md`, `chapters/`, or any other file in the work's

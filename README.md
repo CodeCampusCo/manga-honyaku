@@ -102,10 +102,10 @@ check counting a line against its box lived here and was removed, because a size
 step is an accepted price for a fuller line, so the count was reporting
 something that was never work while burying the findings that were.
 
-Two of its checks are silent by construction — `render` counts regions that
-*have* a translation rather than regions it drew, and nothing anywhere reports
-Japanese left under the Thai. Every check in it is there because that failure
-reached a rendered page once and nothing said so.
+Two *failures* are silent without it — `render` counts regions that have a
+translation rather than regions it drew, and nothing else reports Japanese left
+under the Thai. Every check in it is there because that failure reached a
+rendered page once and nothing said so.
 
 Four passes look at a finished chapter, and **the split is by what each is
 allowed to see.** A pass that can see everything checks nothing, because the

@@ -22,19 +22,29 @@ from pythainlp.corpus.common import thai_words
 from pythainlp.util import Trie
 
 from manga_honyaku.page import Series
-from manga_honyaku.render import FONT, LINE_SPACING, lay_out, lexicon, settings
+from manga_honyaku.render import (
+    FONT,
+    LINE_SPACING,
+    PAGE_HEIGHT,
+    SMALLEST,
+    floor_for,
+    lay_out,
+    lexicon,
+    settings,
+)
 
-# Below the floor nothing is readable, and the tool has to agree with `render`
-# about that or it answers a question nobody asked.
-SMALLEST = 7
+def measure(
+    region: dict, text: str, font: str, custom, spacing: float, smallest: int = SMALLEST
+):
+    """The size, the fill and the lines, or None where nothing fits.
 
-
-def measure(region: dict, text: str, font: str, custom, spacing: float):
-    """The size, the fill and the lines, or None where nothing fits."""
+    `smallest` is the work's own floor, which `render` resolves the same way; a
+    size reported below it is a size the page will never be drawn at.
+    """
     x1, y1, x2, y2 = region["box"]
     width, height = x2 - x1, y2 - y1
     laid = lay_out(
-        text, (x1, y1, width, height), font, SMALLEST, max(SMALLEST, int(height)),
+        text, (x1, y1, width, height), font, smallest, max(smallest, int(height)),
         custom, spacing,
     )
     if laid is None:
@@ -56,20 +66,23 @@ def trie(words: set[str]):
     return Trie(set(thai_words()) | words) if words else None
 
 
-def sweep(work: Series, word: str, swap, after_terms: set[str], font, spacing) -> None:
+def sweep(work: Series, word: str, swap, after_terms: set[str], values: dict) -> None:
     """Every region the change touches, what it costs, and what to re-render."""
     before = trie(terms(work.root))
     after = trie(after_terms)
+    font = values.get("font") or FONT
+    spacing = values.get("line_spacing", LINE_SPACING)
     rows, pages = [], []
 
     for page in work.ids([]):
         data = json.loads(work.agent(page).read_text())
+        smallest = floor_for(values, data["img_height"] / values.get("page_height", PAGE_HEIGHT))
         for region in data["regions"]:
             text = region.get("target") or ""
             if word not in text:
                 continue
-            was = measure(region, text, font, before, spacing)
-            now = measure(region, swap(text), font, after, spacing)
+            was = measure(region, text, font, before, spacing, smallest)
+            now = measure(region, swap(text), font, after, spacing, smallest)
             rows.append((page, region, text, was, now))
             if (was and was[0]) != (now and now[0]):
                 pages.append(page)
@@ -134,12 +147,12 @@ def main() -> None:
         if args.replace:
             old, new = args.replace
             after = (listed - {old}) | {new} if old in listed else listed
-            sweep(work, old, lambda t: t.replace(old, new), after, font, spacing)
+            sweep(work, old, lambda t: t.replace(old, new), after, values)
         else:
             if args.add == args.drop:
                 raise SystemExit("--word takes one of --add or --drop")
             after = listed | {args.word} if args.add else listed - {args.word}
-            sweep(work, args.word, lambda t: t, after, font, spacing)
+            sweep(work, args.word, lambda t: t, after, values)
         return
 
     if not args.page:
@@ -147,6 +160,7 @@ def main() -> None:
 
     data = json.loads(work.agent(args.page).read_text())
     regions = {r["id"]: r for r in data["regions"]}
+    smallest = floor_for(values, data["img_height"] / values.get("page_height", PAGE_HEIGHT))
 
     pairs = list(zip(args.pairs[::2], args.pairs[1::2]))
     if not pairs:
@@ -158,7 +172,7 @@ def main() -> None:
             raise SystemExit(f"{args.page} has no region {rid}")
         x1, y1, x2, y2 = region["box"]
         shape = f"{x2 - x1:.0f}x{y2 - y1:.0f}"
-        got = measure(region, text, font, custom, spacing)
+        got = measure(region, text, font, custom, spacing, smallest)
         if got is None:
             print(f"{rid:>4}  {shape}  jp={region.get('size')}  does not fit  {text}")
             continue

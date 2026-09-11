@@ -17,11 +17,8 @@ them. Read the one whose row matches before you do the thing, not after:
 | run a stage, or ask a work what its files hold | `.claude/skills/running-the-manga-pipeline/SKILL.md` |
 | get another read on one line or one term | `.claude/skills/asking-a-second-opinion/SKILL.md` |
 
-If your tool discovers skills on its own it has these already, and if it does not,
-the paths above are the whole of it — nothing here has to fire by name. The
-directory is named after the one tool that cannot be pointed anywhere else, which
-is the whole reason it looks like it belongs to one agent; every tool that can be
-pointed is pointed at it in a committed file.
+If your tool discovers skills on its own it has these already; if it does not, the
+paths above are the whole of it and nothing has to fire by name.
 
 **Start at the work's `handoff.md`.** A work is translated a chapter at a time by
 someone who did not translate the one before it, so that file — not this one —
@@ -47,10 +44,9 @@ it crops, so there is never a reason to write a resize by hand. One page and two
 pages cost the same, so read the spread.
 
 **If you cannot see the sheet, stop. You cannot do this work.** Reading the page
-is not a step that can be handed to something else and reported back — it was
-tried, and the chapter that came out had been translated from a description of
-the artwork. A harness will quietly send the image somewhere that can look, so
-the first sign of it is often a page you never saw. Say so and stop.
+cannot be handed to something else and reported back. A harness may quietly send
+the image somewhere that can look, so the first sign is often a page you never
+saw. Say so and stop.
 
 ## Translating
 
@@ -89,9 +85,9 @@ here; that is why the third value exists.
 
 **`role` says what the region *is*, and the stages read it before they read
 `status`.** These five are the whole vocabulary. Nothing validates the field, so
-a sixth value invented in good faith fails quietly — `tally` prints every
-value a work is using, and a count of 1 beside one is either something new or a
-typo.
+a sixth value invented in good faith fails quietly — `tally` prints every value a
+work uses for `role`, `speaker` and `weight`, and a count of 1 beside one is
+either something new or a typo.
 
 | `role` | What it is | `clean` | `render` |
 | --- | --- | --- | --- |
@@ -122,7 +118,7 @@ region in it carries:
 | `speaker` | you | who says it, by the key `characters.md` uses |
 | `target` | you | the Thai |
 | `utterance` | you | a tag shared by the regions one sentence is cut across |
-| `weight` | you | a named font face, where the work has more than one |
+| `weight` | you | `bold`, where `render` was given a second face to draw it with |
 
 The page itself carries `version`, `page`, `img_width`, `img_height`, `detector`,
 `questions`, and `candidates` — boxes the detector nearly drew, which are not

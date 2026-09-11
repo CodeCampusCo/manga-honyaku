@@ -35,11 +35,20 @@ from manga_honyaku.page import Series
 PAUSE = str.maketrans(dict.fromkeys(".・:：", "…"))
 
 
-def settle(text: str) -> str:
-    text = "".join((text or "").split()).translate(PAUSE)
+def unpaused(text: str) -> str:
+    """The same line with every way of writing a pause written one way.
+
+    Spaces are left alone. On the Japanese side `settle` drops them because
+    nothing there depends on one; a Thai line's spaces are lettering decisions.
+    """
+    text = (text or "").translate(PAUSE)
     while "……" in text:
         text = text.replace("……", "…")
     return text
+
+
+def settle(text: str) -> str:
+    return unpaused("".join((text or "").split()))
 
 
 def says_something(text: str) -> bool:

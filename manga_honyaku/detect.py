@@ -42,10 +42,12 @@ TEXT = {
     "text_free": {"prefix": "F", "placement": "free"},
 }
 
-# Between this and `conf` a detection is not a region — see `nearly`. A drawn
-# sound scores like the artwork it is part of: the same ぽにょん drawn twice on
-# `07/19` scored 0.382 over one woman and 0.15 over the other.
-FLOOR = 0.15
+# Between this and `conf` a detection is not a region — see `nearly`. Drawn sound
+# scores like the artwork it is part of, and the same sound drawn twice in one
+# panel can land either side of `conf`. Measured over one chapter: at this value
+# the list runs under two boxes a page, and below it the count doubles for each
+# step down.
+WEAKEST = 0.10
 
 # The shortest side a candidate can have, as a share of page height. Under it the
 # model returns screentone and the strokes of characters boxed elsewhere.
@@ -100,11 +102,11 @@ def detect(
     processor,
     conf: float = 0.35,
     imgsz: int = 640,
-    floor: float = FLOOR,
+    weakest: float = WEAKEST,
 ):
     """Return [(label, [x1, y1, x2, y2], score)] for every detection, unsorted.
 
-    Down to `floor`, not to `conf`. The model ran either way, and `dedupe` keeps
+    Down to `weakest`, not to `conf`. The model ran either way, and `dedupe` keeps
     the confident box where a weak one covers the same thing.
     """
     inputs = processor(
@@ -117,7 +119,7 @@ def detect(
         outputs = model(**inputs)
     result = processor.post_process_object_detection(
         outputs,
-        threshold=min(conf, floor),
+        threshold=min(conf, weakest),
         target_sizes=[(image.height, image.width)],
     )[0]
 

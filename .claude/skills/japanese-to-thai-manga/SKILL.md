@@ -29,14 +29,10 @@ sequence back as a conversation. `それに…` following a line by the same spe
 means you have the order right; following a line by the other speaker means you
 do not.
 
-**The page is the unit of context, and it is measured, not a preference.** For
-text embedded in an image, one page per call with the units numbered in reading
-order beats every alternative tried: line-by-line loses on every metric, and *so
-does more* — three pages, and a whole volume, both score below a single page
-(Lippmann et al., COLING 2025, JP→EN ChrF: line-by-line < 36.0 page text < 36.6
-+ page image < **36.8** + numbered units in order; 3-page 35.9, whole volume
-35.7). Below the page a line is under-determined — Japanese drops subjects, so a
-bubble alone has to guess, and the documented failure is a first-person line
+**The page is the unit of context.** One page per call, with the units numbered
+in reading order and the image itself in front of you, beats both a smaller unit
+and a larger one. Below the page a line is under-determined — Japanese drops
+subjects, so a bubble alone has to guess, and the failure is a first-person line
 coming out as *you*. Above the page, context dilutes.
 
 So read the page, and do not reach for the chapter to translate from. The
@@ -243,11 +239,10 @@ Japanese builds compound nouns freely and Thai does not. `コーティング量�
 built to the Japanese's shape. Thai says it with a verb: `เคลือบมาเยอะกว่าเจ้า
 อื่นเยอะเลย`.
 
-The same finding comes back from the other direction. A study of 214 Japanese
-sound and manner words in published Thai manga and novel translations found five
-methods, and in order of frequency they are **adverb, verb, left untranslated,
-noun, result phrase** — the two commonest are both predicates and the noun is
-next to last. **When a Japanese noun is doing the work of a verb, translate it
+The same finding comes back from the other direction. Published Thai renderings
+of Japanese sound and manner words reach for **an adverb or a verb first**, leave
+some untranslated, and reach for a noun close to last. **When a Japanese noun is
+doing the work of a verb, translate it
 as a verb.**
 
 ### Words that are each correct and wrong together
@@ -276,10 +271,10 @@ vowel's length carries the feeling: **short is curt or serious** — `ซิ` `�
 `เถอะ` `ละ` — **long is coaxing** — `ซี่` `น่า` `น้า`.
 
 `小口が落ちたぞ!!` came out `โคงุจิตกลงไปแล้ว!!`, which drops `ぞ` — and `ぞ` was
-the whole of the line's voice. Over one volume, **56% of dialogue lines ended
-with no particle at all**, against 33% with a stance particle and 11% with a
-polite one. Some of those are right — an exclamation, a fragment running into
-the next balloon — but a bare majority is worth suspecting.
+the whole of the line's voice. **A bare majority of dialogue lines ending with no
+particle at all is worth suspecting** — some are right, an exclamation or a
+fragment running into the next balloon, but a Thai page that drops them all is
+dropping voice, not economising.
 
 Aspect and reason markers go the same way. `まざっちゃうから...` became
 `มันจะปนกันค่ะ…`, which keeps the fact and loses both the `ちゃう` that says *and

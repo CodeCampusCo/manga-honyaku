@@ -59,8 +59,8 @@ stripes; one stripe wins the overlap and the text is set into a sliver.
 the outline the close ate.**
 
 **Do it as a fallback, not as the rule.** Applied to every bubble the same close
-bridges thin outlines and floods the artwork around them — on one chapter it
-moved 334 of 500 masks and stripped whole bubbles of their outlines, to fix two.
+bridges thin outlines and floods the artwork around them — it moves most of a
+chapter's masks and strips whole bubbles of their outlines, to fix a couple.
 Trigger it on a symptom only the fault produces: **a lone bubble whose interior
 fills under half its outline box.** A conjoined group's box has corners no lobe
 occupies and is legitimately that empty, so leave groups out.
