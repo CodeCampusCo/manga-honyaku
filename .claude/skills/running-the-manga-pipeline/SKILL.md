@@ -177,8 +177,11 @@ loop over the pages.
 `fit` prints the lines the breaker produced, and **a Thai word broken in the
 wrong place is a real defect** — one chapter shipped `ที|แบ็ค` and another nearly
 shipped `คุณชิ|กุระ` in five places. Only the line list shows them. Fix a bad
-break by putting the word in `words.txt` or by choosing a different word, not by
-re-rendering.
+break by choosing a different word, or by putting the word in `words.txt` — but
+those answer different faults. **An entry stops a word being broken *across
+lines*; it does nothing about the breaker cutting mid-word** when the column
+cannot hold the token whole at any usable size. For that the answer is another
+word, or a deliberate space the work records. Never re-rendering.
 
 Its `thai=` is an upper bound for a bubble: `render` caps a bubble at `k × jp`,
 which `fit` does not apply, so a bubble reported far above its Japanese size will

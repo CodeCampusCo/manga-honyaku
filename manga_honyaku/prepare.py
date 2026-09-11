@@ -30,6 +30,7 @@ from pathlib import Path
 
 from PIL import Image
 
+from manga_honyaku.clean import KEEP
 from manga_honyaku.ocr import SURE, load_reader, read
 from manga_honyaku.page import Series
 from manga_honyaku.render import (
@@ -182,27 +183,41 @@ def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
     return sorted(found, key=lambda pair: -pair[2])
 
 
-# How much of one drawn region's box another may cover before it is a collision
-# rather than two balloons drawn close. Measured over ten chapters: 27 pairs
-# overlap at all and none by more than 8%, while the one that reached a rendered
-# page — a caption plate whose last line was drawn across a balloon's first —
-# covered 42%.
+# How much of a box a plate may cover before it is a collision rather than two
+# regions drawn close. Measured over eleven chapters at 15%: silent on everything
+# shipped, and it would have caught both cases that reached a rendered page — a
+# caption plate across a balloon's first line, and one across a drawn sound.
 COLLIDING = 0.15
 
 
-def colliding(regions: list[dict], drawn) -> list[tuple]:
-    """Pairs of regions that will both be lettered onto the same piece of page.
+def erasing(region: dict) -> bool:
+    """Whether `clean` will take this region's box out of the artwork."""
+    return bool(
+        region.get("role")
+        and region["role"] not in KEEP
+        and region.get("status") in ("ok", "erase")
+    )
 
-    `--overlaps` asks a different question — two boxes on one piece of *original*
-    lettering, which is a detector artefact. This is two regions that each hold
-    their own line and will be drawn over each other, and it is silent: `clean`
-    erases both, `render` draws both, and the page comes back with one line
-    across another.
+
+def colliding(regions: list[dict]) -> list[tuple]:
+    """Pairs where a plate that erases lands on something that had to survive.
+
+    `--overlaps` asks a different question — two boxes on one piece of the
+    *original's* lettering, which is a detector artefact. This is a region whose
+    box `clean` will paint out, sitting on a region that holds its own line or on
+    drawn sound the page was meant to keep. It is silent either way: the plate
+    goes down, the thing under it is gone, and nothing measures what is missing.
+
+    `image_text` is left out of the second half. Its boxes are loose and overlap
+    other free text routinely — including it reports thirteen pairs across
+    chapters nobody has found a fault on, which is how a list stops being read.
     """
-    wanted = [r for r in regions if drawn(r)]
+    harmed = lambda r: erasing(r) or r.get("role") == "sfx"
     out = []
-    for i, a in enumerate(wanted):
-        for b in wanted[i + 1:]:
+    for i, a in enumerate(regions):
+        for b in regions[i + 1:]:
+            if not ((erasing(a) and harmed(b)) or (erasing(b) and harmed(a))):
+                continue
             width = min(a["box"][2], b["box"][2]) - max(a["box"][0], b["box"][0])
             height = min(a["box"][3], b["box"][3]) - max(a["box"][1], b["box"][1])
             if width <= 0 or height <= 0:
@@ -336,8 +351,15 @@ def main() -> None:
             tag_page(data["regions"], data["img_height"], style)
             after = [(r.get("size"), r.get("room")) for r in data["regions"]]
             out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
-            moved = sum(a != b for a, b in zip(before, after))
-            print(f"{page}  {moved} of {len(data['regions'])} retagged")
+            # Named and not only counted: a count larger than the edit you made
+            # is the one case the check is for, and it cannot be read.
+            moved = [
+                r["id"] for r, a, b in zip(data["regions"], before, after) if a != b
+            ]
+            print(
+                f"{page}  {len(moved)} of {len(data['regions'])} retagged"
+                + (f": {', '.join(moved)}" if moved else "")
+            )
         return
 
     reader = None if args.no_ocr else load_reader()

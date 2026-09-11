@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
+import tempfile
 import sys
 
 TOOLS = {
@@ -34,14 +35,20 @@ def installed() -> list[str]:
 def ask(tool: str, question: str) -> tuple[bool, str]:
     """What the tool said, or why it said nothing."""
     try:
-        done = subprocess.run(
-            TOOLS[tool](question),
-            capture_output=True,
-            text=True,
-            timeout=TIMEOUT,
-            # Some of them append stdin to the prompt and wait for it to close.
-            stdin=subprocess.DEVNULL,
-        )
+        # In an empty directory: these are agents with a filesystem, and run in
+        # the work's own they read it. One went through a skill unasked and
+        # echoed it back, which turns "somebody who does not know the work" from
+        # the premise of the question into a request.
+        with tempfile.TemporaryDirectory() as elsewhere:
+            done = subprocess.run(
+                TOOLS[tool](question),
+                capture_output=True,
+                text=True,
+                timeout=TIMEOUT,
+                cwd=elsewhere,
+                # Some append stdin to the prompt and wait for it to close.
+                stdin=subprocess.DEVNULL,
+            )
     except subprocess.TimeoutExpired:
         return False, f"gave up after {TIMEOUT // 60} minutes"
     answer = done.stdout.strip()

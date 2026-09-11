@@ -38,6 +38,10 @@ import argparse
 import json
 import re
 from collections import Counter
+
+from pythainlp.tokenize import word_tokenize
+
+from manga_honyaku.audit import ENGINE
 from pathlib import Path
 
 from manga_honyaku.page import Series
@@ -72,7 +76,20 @@ def polite_jp(source: str) -> bool:
 
 
 def polite_th(target: str) -> bool:
-    return any(mark in (target or "") for mark in POLITE_TH)
+    """Whether the line ends on a polite particle.
+
+    The particle has to be its own word at the end. `คับ` sits inside `บังคับ`
+    and `ค่า` inside `ล้ำค่า`, and counted as particles they report a character
+    breaking a rule they have kept for eight chapters. A held vowel arrives as a
+    token of its own after the particle and is dropped.
+    """
+    said = [
+        token for token in word_tokenize(target or "", engine=ENGINE)
+        if token.strip() and any(c.isalpha() for c in token)
+    ]
+    while len(said) > 1 and len(set(said[-1])) == 1:
+        said.pop()
+    return bool(said) and any(said[-1].startswith(mark) for mark in POLITE_TH)
 
 
 def chapter_of(page: str) -> str:

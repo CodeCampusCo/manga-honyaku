@@ -813,26 +813,35 @@ def test_one_box_still_applies_to_every_cell(tmp_path):
 
 # --- two lines drawn onto the same piece of page -----------------------------
 
-def lettered(region):
-    return region.get("role") == "caption"
+def plate(rid, box, role="caption", status="ok"):
+    return {"id": rid, "box": box, "role": role, "status": status}
 
 
-def test_two_regions_that_will_be_drawn_over_each_other_are_reported():
-    """A caption plate landing on a balloon: `clean` erases both, `render` draws
-    both, and neither is readable."""
-    plate = {"id": "F5", "box": [0, 0, 200, 200], "role": "caption"}
-    bubble = {"id": "B1", "box": [100, 100, 300, 300], "role": "caption"}
-    (_, _, share), = colliding([plate, bubble], lettered)
+def test_a_plate_landing_on_a_line_is_reported():
+    """`clean` paints the plate's box out and `render` draws into it, so the
+    line underneath is gone and nothing measures what is missing."""
+    (_, _, share), = colliding([plate("F5", [0, 0, 200, 200]),
+                                plate("B1", [100, 100, 300, 300])])
     assert share > 0.2
 
 
-def test_balloons_drawn_close_are_not_a_collision():
-    near = [{"id": "B1", "box": [0, 0, 100, 100], "role": "caption"},
-            {"id": "B2", "box": [95, 95, 195, 195], "role": "caption"}]
-    assert colliding(near, lettered) == []
+def test_a_plate_landing_on_drawn_sound_is_reported():
+    """The sound is artwork the page was meant to keep; the plate erases it."""
+    got = colliding([plate("F2", [0, 0, 200, 200]),
+                     plate("F3", [100, 100, 300, 300], role="sfx")])
+    assert len(got) == 1
 
 
-def test_a_region_nothing_is_drawn_into_cannot_collide():
-    plate = {"id": "F5", "box": [0, 0, 200, 200], "role": "caption"}
-    sound = {"id": "F6", "box": [0, 0, 200, 200], "role": "sfx"}
-    assert colliding([plate, sound], lettered) == []
+def test_regions_drawn_close_are_not_a_collision():
+    assert colliding([plate("B1", [0, 0, 100, 100]),
+                      plate("B2", [95, 95, 195, 195])]) == []
+
+
+def test_two_regions_that_erase_nothing_cannot_collide():
+    assert colliding([plate("F5", [0, 0, 200, 200], role="sfx"),
+                      plate("F6", [0, 0, 200, 200], role="image_text")]) == []
+
+
+def test_a_declined_region_erases_nothing_and_is_not_a_plate():
+    assert colliding([plate("F5", [0, 0, 200, 200], status="declined"),
+                      plate("B1", [0, 0, 200, 200])]) == []

@@ -90,7 +90,6 @@ from pathlib import Path
 from PIL import ImageFont
 
 from manga_honyaku.audit import record, spacing, spelling
-from manga_honyaku.clean import KEEP
 from manga_honyaku.detect import ALREADY, covered
 from manga_honyaku.order import disagreements, propose
 from manga_honyaku.check import settle, says_something, unpaused
@@ -315,7 +314,11 @@ def main() -> None:
                 print(f"  {said}{flag}")
                 for page, region in rows + elsewhere:
                     answer = region.get("target") or f"({region.get('status') or 'not set'})"
-                    print(f"      {page} {region['id']:<4} → {answer}")
+                    # Who said it, because a wording carried over without its
+                    # speaker is how one character's honorific reaches another's
+                    # mouth — and nothing downstream reads `speaker` at all.
+                    who = region.get("speaker") or "—"
+                    print(f"      {page} {region['id']:<4} {who:<12} → {answer}")
             if not picked:
                 print("  nothing")
         return
@@ -331,6 +334,13 @@ def main() -> None:
                     for a, b, cover in overlapping(data["regions"])
                 ]
             if args.todo:
+                # Nothing is reported twice: `--overlaps` owns a pair standing on
+                # one piece of the original's lettering, and a list repeating
+                # another one is where skipping is learned.
+                twinned = {
+                    frozenset((a["id"], b["id"]))
+                    for a, b, _ in overlapping(data["regions"])
+                }
                 said += record(data) + spelling(data) + spacing(data, custom)
                 said += [
                     f"nothing covers {[int(v) for v in c['box']]}, which the "
@@ -347,20 +357,11 @@ def main() -> None:
                     for big, inside, share in uncovered(data["regions"])
                     if share < 0.85
                 ]
-                # Not reported twice: `--overlaps` owns the pair, and a list
-                # repeating another one is where skipping is learned.
-                twinned = {
-                    frozenset((a["id"], b["id"]))
-                    for a, b, _ in overlapping(data["regions"])
-                }
                 said += [
-                    f"{a['id']} and {b['id']} will be drawn over each other — "
-                    f"{share:.0%} of a box is shared, and both hold a line"
-                    for a, b, share in colliding(
-                        data["regions"],
-                        lambda r: r.get("role") and r["role"] not in KEEP
-                        and r.get("status") == "ok",
-                    )
+                    f"{a['id']}'s plate lands on {b['id']} — {share:.0%} of a "
+                    f"box is shared, and `clean` paints out what is under it"
+                    for a, b, share in colliding(data["regions"])
+                    if frozenset((a["id"], b["id"])) not in twinned
                 ]
                 said += [
                     f"{a} is read before {b} and the boxes say the other way "

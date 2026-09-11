@@ -1,8 +1,7 @@
 # Working a chapter: the record, the roles, and when to review
 
-Tool names here are written short — `regions --todo`, `check`, `fit`. Nothing
-installs a command, so each is `uv run python -m manga_honyaku.<tool>
-series/<work> …`; the full forms are in
+Tool names here are written short — `regions --todo`, `check`, `fit`. The full
+forms are in
 [`../running-the-manga-pipeline/SKILL.md`](../running-the-manga-pipeline/SKILL.md).
 
 Everything here is about the chapter rather than the line. The craft of composing

@@ -85,7 +85,8 @@ back, so a later page has something to refer to.
 
 Read each cell as *first person → second person*. The axis is **distance and
 power, not affection** — a character can be fond of someone they stay formal
-with, and that gap is often the scene.
+with, and that gap is often the scene. **`characters.md` overrides every row
+here** for anyone it names.
 
 | Speaker | Stranger | Knows by sight | Friend, familiar | Very close | Someone above them |
 | --- | --- | --- | --- | --- | --- |
