@@ -45,20 +45,9 @@ of it, and that number then joins a column counting something else.
 
 ## What goes here, and what goes in the work's own files
 
-This file holds **method, and facts about the language pair** — that Thai marks
-politeness where Japanese marks self-image, that `หนู` is a child's word, that
-`さん` is `คุณ`. Those are true of the next manga too, and re-deriving them per
-work would mean deciding the same thing again and having the two decisions drift.
-
-A work's own directory holds **what reading that work produced**: who its
-characters are and how each one speaks, its terms, its unbreakable words, what it
-has not answered yet. The grid above says what a register becomes in Thai;
-`characters.md` says which register a given character has. Neither can do the
-other's job.
-
 The test when something new is learned: *would this still be true of a different
-manga by a different artist?* If yes it belongs here. If a page, a face or a
-measurement told you, it belongs to the work that told you.
+manga by a different artist?* If yes it belongs in a skill. If a page, a face or
+a measurement told you, it belongs to the work that told you.
 
 ## Keep the series files current as you go
 
@@ -201,6 +190,10 @@ page you read and did not record is a page nobody read.
 Keep `chapters/<n>.md` in the work's directory, one entry per page, written from
 the raw scan and not from the rendered output. Four things per page:
 
+The review passes read this file and reason from it, so **mark anything you did
+not verify as a guess** — a size you did not ask `fit` for, a claim about part of
+a page you did not frame.
+
 ```markdown
 ## <page id>
 Art — the panels: how many, how they read, which are cuts to somewhere else.
@@ -269,16 +262,9 @@ a row wrote their own regex against a work's `style.md` before finding that out.
 
 ## Going back over a chapter that is already rendered
 
-**This is not about where `proofread-against-source` sits in the sequence.** That
-is settled in `AGENTS.md`: it runs before `clean`, on the working file, because it
-needs no rendered page. What follows is the different question of *which* chapters
-are worth spending a restricted pass on at all — a decision that applies to the
-review passes both, and that has been answered "not this one" before.
-
-Two such jobs are easy to bundle, because on the first work they fell at the same
-moment — the end of a volume. **One protects the chapters that come after it. The
-other repairs chapters already out.** Their triggers are not the same, and only
-the second one wants to be batched.
+Two jobs, easy to confuse because they fall at the same moment. **One protects
+the chapters that come after it. The other repairs chapters already out.** Only
+the second wants to be batched.
 
 ### Review a chapter when what it settles will be inherited
 
@@ -321,6 +307,18 @@ Rewrite the notes files at the sweep, **whole and once** — not once per chapte
 Seven partial edits to one file produce a file with seven voices in it. A single
 chapter's review adds to `questions.md` and to `handoff.md` and leaves the rest
 alone.
+
+### When two passes disagree, the answer is usually a third thing
+
+They see different halves on purpose, so a finding from one can cost what the
+other is there to protect — a term made consistent across a chapter can arrive as
+a token too wide for the box it lands in, and the pass that judges the page will
+then call that region the worst thing on it. Neither is wrong, and because they
+run in sequence the later one reads as overruling the earlier.
+
+**Take neither.** Find the wording that satisfies both, price it, and record that
+it came from the pair. It is usually there: a root kept visible with a shorter
+tail, a compound split into the two ordinary words it is made of.
 
 ### What a review looks at, in this order, because each narrows the next
 

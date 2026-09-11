@@ -782,3 +782,30 @@ def test_fit_measures_against_the_same_floor_render_draws_at():
     """Reported below it, a size is one the page will never be drawn at."""
     hair_thin = {"box": [0, 0, 40, 18]}
     assert measure(hair_thin, "ยินดีต้อนรับ", FONT, None, LINE_SPACING, 40) is None
+
+
+# --- one sheet, boxes off several pages --------------------------------------
+
+def test_each_cell_can_take_its_own_box(tmp_path):
+    """Ten candidates off ten pages is one sheet, not ten runs and a combine."""
+    from PIL import Image
+
+    made = []
+    for shade in (0, 255):
+        path = tmp_path / f"{shade}.png"
+        Image.new("RGB", (100, 100), (shade, shade, shade)).save(path)
+        made.append(path)
+    sheet, width = build(made, crop=[(0, 0, 50, 50), (0, 0, 100, 100)])
+    assert sheet.width == 2 * width
+
+
+def test_one_box_still_applies_to_every_cell(tmp_path):
+    from PIL import Image
+
+    made = []
+    for shade in (0, 255):
+        path = tmp_path / f"{shade}.png"
+        Image.new("RGB", (100, 100), (shade, shade, shade)).save(path)
+        made.append(path)
+    sheet, width = build(made, crop=(0, 0, 50, 50))
+    assert sheet.height == width

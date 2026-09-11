@@ -25,14 +25,20 @@ for the way it is stored.
 
     uv run python -m manga_honyaku.sheet series/<work> <page> <page> --rtl -o /tmp/spread.png
     uv run python -m manga_honyaku.sheet series/<work> <page> --region B3 -o /tmp/one.png
+    uv run python -m manga_honyaku.sheet series/<work> --region 01/05:F1 02/11:B3 -o /tmp/few.png
     uv run python -m manga_honyaku.sheet series/<work> <page> --show out -o /tmp/done.png
     uv run python -m manga_honyaku.sheet a.png b.png --crop 640,280,1060,760 -o /tmp/any.png
 
 **Name a work and page ids, the way every other tool here is named.** A page id
 gives the annotated page; `--show raw` gives the scan, `--show out` the rendered
-one. **`--region ID` crops a named region and its surround**, so reading one box
-never means taking coordinates off the sheet and converting them back. Bare image
-paths still work, for anything that is not a page of a work.
+one. **`--region` crops named regions and their surrounds**, one to a cell, and
+each may name its own page — a worklist spread over ten pages is one sheet.
+Reading one box never means taking coordinates off the sheet and converting them
+back. Bare image paths still work, for anything that is not a page of a work.
+
+Cells are all as tall as the tallest, so crops of very different shapes waste the
+budget and the sheet comes back too small to read. The line says so when it
+happens; build those in two runs, by shape.
 
 It caps each image at the width past which reading stops getting easier and cost
 goes on rising, and `--crop X1,Y1,X2,Y2` takes a box out first. A spread costs
@@ -82,7 +88,7 @@ nothing here installs a command, so a bare `regions` is not on anyone's PATH.
     …manga_honyaku.regions series/<work> 01 --overlaps # region pairs on the same lettering
     …manga_honyaku.regions series/<work> 01 --todo    # what the file still leaves unfinished
     …manga_honyaku.regions series/<work> 01 --repeats # what is already answered, in two lists
-    …manga_honyaku.regions series/<work> 01/05 --order # a reading order proposed from the boxes
+    …manga_honyaku.regions series/<work> 01 --order   # a reading order proposed from the boxes
     …manga_honyaku.chapters series/<work> <page>-<page> # what the reading found on those pages
     …manga_honyaku.tally    series/<work>             # the counts a chapter is read back against
     …manga_honyaku.fit      series/<work> 01/05 F1 "…" # what size a candidate line draws at

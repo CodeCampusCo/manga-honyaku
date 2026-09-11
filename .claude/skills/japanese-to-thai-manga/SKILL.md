@@ -8,9 +8,7 @@ description: Use when translating Japanese manga dialogue into Thai — reading 
 ## Read the page before you translate any of it
 
 Build a contact sheet of the annotated pages, two to four at a time, and settle
-**reading order and speaker attribution first**. Right-to-left within a row of
-panels, right-to-left and top-down within a panel. A bubble drawn across a panel
-border belongs to the panel its tail comes from.
+**reading order and speaker attribution first**.
 
 `regions … --order` proposes that order from the boxes while you number a page,
 and `regions … --todo` names every pair it and the file disagree about once the
@@ -72,6 +70,17 @@ character would have in a Thai edition of a Japanese comic** — not the one tha
 matches the Japanese word, and not the one the situation would call for if the
 scene were Thai.
 
+**The grid is personas, not people.** A row is a speaker-type and its distance
+from whoever is addressed. Meeting a character, take the row that fits as their
+base and write them into `characters.md`; where no row fits, write the persona
+yourself, from how that kind of character should sound. Either way it is fixed
+from then on.
+
+**A bit part is not a persona.** Someone who turns up twice, usually without a
+name, takes what the moment calls for — chosen again each time and not written
+into `characters.md`. Name them off their appearance only where they may come
+back, so a later page has something to refer to.
+
 ### The pair, by speaker and by distance
 
 Read each cell as *first person → second person*. The axis is **distance and
@@ -101,15 +110,8 @@ What the grid is actually saying:
 - **It is never a second person.** Japanese already has ちゃん and くん for
   addressing a child, and Thai manga transliterates those — see the honorifics
   below. An elder addresses a junior as `เธอ` or by name.
-- **The male side has no counterpart.** Boys and men are both `ผม`, moving to
-  `ฉัน` when close. There is no child form to reach for and none is needed.
 - **`เรา` is not used as first person.** Closeness is carried by the second
   person — `เธอ`, `นาย`, `แก` — while the first person stays `ฉัน`.
-- **A name works as either person**, which is what the Japanese is already doing
-  with `ハルカちゃんは…`. It is the safest choice while a relationship is still
-  being established.
-- **The `very close` cell of the adult rows is character, not rule.** `เธอ` or
-  `แก` depending on who the person is.
 
 A register that escalates reads better than one that starts at the ceiling. Give
 a character `ฉัน` while he is still arguing and `กู` only in the panel where he
@@ -247,19 +249,8 @@ as a verb.**
 
 ### Words that are each correct and wrong together
 
-Thai calls this คู่คำ; the error is a *collocational clash*, and it is the exact
-shape of "accurate but reads wrong":
-
-| wrong | right |
-| --- | --- |
-| เปียโน**อันนี้** | เปียโน**หลังนี้** |
-| อากาศร้อน**แรง** | อากาศร้อน**ระอุ** |
-| น้ำตา**ตกหล่น** | น้ำตา**ร่วงหล่น** |
-| ปรบมือ**เร็วๆ** | ปรบมือ**รัวๆ** |
-| พระสงฆ์ 3 **องค์** | พระสงฆ์ 3 **รูป** |
-
-A pair you had to think about is a pair worth recording in the work's
-`glossary.md`, the same as a term.
+A คู่คำ you had to think about — `เปียโนหลังนี้` over `เปียโนอันนี้` — is a pair
+worth recording in the work's `glossary.md`, the same as a term.
 
 ### The final particle is information, not decoration
 
@@ -282,9 +273,8 @@ that would be a shame* and the `から` that says *that's why*.
 
 ### An idiom translated by its parts inverts
 
-`覚悟を決める` is *to steel yourself*, and came out `ทำใจ`, which is *to resign
-yourself* — the opposite stance. When a phrase is idiomatic, ask what it is for
-before what it says; an accurate rendering of the parts can invert the speaker.
+`覚悟を決める` is *to steel yourself* and came out `ทำใจ`, *to resign yourself* —
+the opposite stance, from an accurate rendering of the parts.
 
 ## Thai lengthens by opening the vowel
 
@@ -305,11 +295,6 @@ been withheld, and three circles say that in either script.
 
 These need no deciding per work; a work's own file records only where it departs.
 
-- **Sound effects are artwork.** Not translated, not painted over. They were
-  drawn into the page.
-- **Text inside the drawing is translated and recorded, and the drawing is left
-  alone** — signs, phone screens, flyers, product labels. The Thai reaches the
-  reader through the working file rather than by overwriting the picture.
 - **`…` at the end of a line is a character trailing off,** not an ellipsis of
   omitted words. Thai keeps the `…` and lets the sentence stay unfinished.
 - **Keep the question mark wherever the Japanese has one.** Thai does not need it

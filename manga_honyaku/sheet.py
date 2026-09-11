@@ -92,12 +92,13 @@ def build(
     paths: list[Path],
     columns: int | None = None,
     width: int | None = None,
-    crop: tuple[int, int, int, int] | None = None,
+    crop=None,
     rtl: bool = False,
 ):
+    """One box taken out of every image, or a list with one box per image."""
     images = [Image.open(p).convert("RGB") for p in paths]
-    if crop:
-        images = [i.crop(crop) for i in images]
+    boxes = crop if isinstance(crop, list) else [crop] * len(images)
+    images = [i.crop(b) if b else i for i, b in zip(images, boxes)]
     columns = columns or len(images)
     rows = -(-len(images) // columns)
     tallest = max(i.height / i.width for i in images)
@@ -132,7 +133,12 @@ def main() -> None:
         metavar="X1,Y1,X2,Y2",
         help="take this box out of every image first, in the images' own pixels",
     )
-    ap.add_argument("--region", help="with one page: crop this region and its surround")
+    ap.add_argument(
+        "--region",
+        nargs="+",
+        metavar="ID | PAGE:ID",
+        help="crop these regions and their surrounds, one per cell",
+    )
     ap.add_argument(
         "--show",
         choices=sorted(SHOWN),
@@ -148,21 +154,33 @@ def main() -> None:
 
     work = None
     images = args.images
+    ids: list[str] = []
     if images[0].is_dir():
         work = Series(images[0])
-        ids = [str(p) for p in images[1:]] or work.ids([])
-        images = pages(work, ids, args.show)
+        ids = [str(p) for p in images[1:]]
 
     crop = None
-    if args.crop:
+    if args.region:
+        if work is None:
+            raise SystemExit("--region wants a work")
+        # Each region names its own page, or takes the one page given. Ten boxes
+        # off ten pages is one sheet, which is what the candidate list asks for.
+        wanted = [
+            spec.split(":", 1) if ":" in spec else (ids[0] if len(ids) == 1 else None, spec)
+            for spec in args.region
+        ]
+        if any(page is None for page, _ in wanted):
+            raise SystemExit("name the page: --region 09/01:F1, or give one page id")
+        ids = [page for page, _ in wanted]
+        crop = [around(work, page, rid) for page, rid in wanted]
+    elif args.crop:
         got = [int(v) for v in args.crop.replace(" ", "").split(",")]
         if len(got) != 4:
             raise SystemExit("--crop wants four numbers: X1,Y1,X2,Y2")
         crop = tuple(got)
-    if args.region:
-        if work is None or len(images) != 1:
-            raise SystemExit("--region wants a work and exactly one page")
-        crop = around(work, ids[0], args.region)
+
+    if work is not None:
+        images = pages(work, ids or work.ids([]), args.show)
 
     sheet, width = build(images, args.columns, args.width, crop, args.rtl)
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -174,12 +192,18 @@ def main() -> None:
         order = "  right to left" if args.rtl else "  left to right"
     # The scale is printed so that a position read off the sheet converts back
     # without the conversion being worked out first.
-    shown = Image.open(images[0])
-    across = (crop[2] - crop[0]) if crop else shown.width
+    # The scale converts a position read off the sheet back to the page, so it is
+    # printed only where there is one of it: cells cropped to different shapes
+    # each have their own.
+    boxes = crop if isinstance(crop, list) else [crop] * len(images)
+    where = ""
+    if len(set(boxes)) == 1:
+        box = boxes[0]
+        across = (box[2] - box[0]) if box else Image.open(images[0]).width
+        where = f"  {width / across:.3f}x" + (f" from {box[0]},{box[1]}" if box else "")
     print(
         f"{args.out}  {sheet.width}x{sheet.height}  {width}px each"
-        f"  ~{cost} tokens{order}{note}  {width / across:.3f}x"
-        + (f" from {crop[0]},{crop[1]}" if crop else "")
+        f"  ~{cost} tokens{order}{note}{where}"
     )
 
 
