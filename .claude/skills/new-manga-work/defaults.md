@@ -28,15 +28,16 @@ The columns are **distance and power, not affection**.
 | คุณหนู, a young master of rank | ผม → คุณ (+ครับ) | ผม → คุณ (+ครับ) | ผม → คุณ (+ครับ) | ผม, ฉัน → คุณ, นาย, แก | กระผม → ท่าน, คุณ (+ครับ) |
 | By the book, formal | ผม (m), ดิฉัน (f) → คุณ (+ครับ/ค่ะ) | ผม, ดิฉัน → คุณ (+ครับ/ค่ะ) | ผม, ฉัน → คุณ | ผม, ฉัน → คุณ | ผม, ดิฉัน → **ท่าน** (+ครับ/ค่ะ) |
 | Speaks only when needed | — → คุณ | — → คุณ, name | — → name | — → name | — → คุณ |
-| Archaic, a period character | ข้า → เจ้า | ข้า → เจ้า | ข้า → เจ้า, แก (m) | ข้า → แก (m), เจ้า | ข้า → **ท่าน** (+ขอรับ m / เจ้าค่ะ f) |
 | An elder, speaking down | ฉัน → เธอ | ฉัน → เธอ, name | ฉัน → name, เธอ | ฉัน → แก | ผม, ดิฉัน → ท่าน |
-| Thug, villain | ฉัน → แก | ฉัน → แก | ฉัน → แก, พวกแก | **กู → มึง**, only past control | ผม → คุณ, ท่าน |
+| Thug, villain, modern setting | ฉัน → แก | ฉัน → แก | ฉัน → แก, พวกแก | **กู → มึง**, only past control | ผม → คุณ, ท่าน |
+| **Any character in a period setting** | ข้า → เจ้า | ข้า → เจ้า | ข้า → เจ้า, แก (m) | ข้า → แก (m), เจ้า | ข้า → **ท่าน** (+ขอรับ m / เจ้าค่ะ f) |
 
 What the grid cannot show:
 
 - **`หนู` is never a second person, `เรา` never a first.**
-- **A period character never takes `ผม`, `ฉัน`, `ดิฉัน` or `เธอ`, in any
-  column.** `แก` is also what is said to an enemy.
+- **In a period setting no character takes `ผม`, `ฉัน`, `ดิฉัน` or `เธอ`, in
+  any column, whatever their gender or part** — that row replaces every row
+  above it. `แก` is also what is said to an enemy.
 - **Speaks only when needed drops the first person wherever Thai lets a
   sentence stand without one**, and takes their own type's row where it cannot.
 - **A boyish woman never takes a man's particle.** `ฮะ` and `ครับ` are not her
