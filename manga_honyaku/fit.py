@@ -3,8 +3,9 @@
 Not a stage — it draws nothing and writes nothing, so it is safe to run on a page
 mid-edit.
 
-Each line reports the box, the size the Japanese was lettered at, the size the
-Thai would be drawn at, how much of the box that fills, and the lines the breaker
+Each line reports the rectangle the Thai goes into — the region's `box`, or its
+`at` where it has one — the `size` measured from it, the size the Thai would be
+drawn at, how much of the rectangle that fills, and the lines the breaker
 produced. `--replace` and `--word` report instead every region a change touches,
 worst first, and end with the pages whose rendering would differ.
 
@@ -31,6 +32,7 @@ from manga_honyaku.render import (
     lay_out,
     lexicon,
     settings,
+    where,
 )
 
 def measure(
@@ -40,8 +42,12 @@ def measure(
 
     `smallest` is the work's own floor, which `render` resolves the same way; a
     size reported below it is a size the page will never be drawn at.
+
+    Priced against `at` where the region has one, so that a wording is judged
+    against the space it will actually occupy rather than the column the
+    Japanese sits in — which is what `render` will do with it.
     """
-    x1, y1, x2, y2 = region["box"]
+    x1, y1, x2, y2 = where(region)
     width, height = x2 - x1, y2 - y1
     laid = lay_out(
         text, (x1, y1, width, height), font, smallest, max(smallest, int(height)),
@@ -98,9 +104,9 @@ def sweep(work: Series, word: str, swap, after_terms: set[str], values: dict) ->
         return now[0] - was[0]
 
     for page, region, text, was, now in sorted(rows, key=step):
-        x1, y1, x2, y2 = region["box"]
+        x1, y1, x2, y2 = where(region)
         shape = f"{x2 - x1:.0f}x{y2 - y1:.0f}"
-        head = f"{page} {region['id']:>4}  {shape}  jp={region.get('size')}"
+        head = f"{page} {region['id']:>4}  {shape}  size={region.get('size')}"
         if was is None or now is None:
             gone = "does not fit" if now is None else "fits again"
             print(f"{head}  {gone}  {text}")
@@ -170,15 +176,15 @@ def main() -> None:
         region = regions.get(rid)
         if region is None:
             raise SystemExit(f"{args.page} has no region {rid}")
-        x1, y1, x2, y2 = region["box"]
+        x1, y1, x2, y2 = where(region)
         shape = f"{x2 - x1:.0f}x{y2 - y1:.0f}"
         got = measure(region, text, font, custom, spacing, smallest)
         if got is None:
-            print(f"{rid:>4}  {shape}  jp={region.get('size')}  does not fit  {text}")
+            print(f"{rid:>4}  {shape}  size={region.get('size')}  does not fit  {text}")
             continue
         size, fill, lines = got
         print(
-            f"{rid:>4}  {shape}  jp={region.get('size')}  thai={size}"
+            f"{rid:>4}  {shape}  size={region.get('size')}  thai={size}"
             f"  fills {fill:.0%}  {lines}"
         )
 

@@ -54,7 +54,8 @@ uv run python -m manga_honyaku.prepare series/<work>
 ```
 
 This runs before `lettering.json` exists. `size` changes again only when a box
-does; `room` is re-measured by `--retag` whenever `lettering.json` moves.
+does — or when a region is given an `at`, which stands in for its box in every
+measurement; `room` is re-measured by `--retag` whenever `lettering.json` moves.
 
 OCR runs here into `source`, and each region gets a `size` — a number in the
 page's own pixels, measured from its box and the Japanese in it.
@@ -117,6 +118,26 @@ Then render a few pages and build two sheets, one `--show out` and one
 guess that is off by a third is obvious to anyone looking and invisible to every
 measurement you can take. Expect two or three rounds; each round is one number
 and one re-render.
+
+**Then the second number, once `k` has stopped moving.**
+
+```sh
+uv run python -m manga_honyaku.regions series/<work> --bar
+```
+
+It prints the smallest size this work letters a free caption or line of dialogue
+at, times `k`, and that goes into `lettering.json` as `gloss` beside `floor` and
+`k`. It is the bar a rectangle has to clear before `regions --space` will offer
+it as somewhere to gloss a region into — putting the Thai elsewhere on the page
+where painting the Japanese out would take the artwork with it. `floor` cannot
+serve as it: `floor` is the hard legibility limit, and on the first work here it
+is 7 against a gloss bar of 21, so it admits rectangles that letter a sentence a
+third the size of any caption the artist drew.
+
+It waits until here because both the things it is made of arrive here: `role`,
+which the translator writes while reading, and `k`. It needs no Thai of its own —
+the smallest size is a fact about the artist, and `prepare` measured it — so
+unlike `k` it takes one pass and is not re-opened.
 
 ## 6. Then hand over
 

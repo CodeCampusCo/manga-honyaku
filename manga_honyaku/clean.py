@@ -15,6 +15,10 @@ follow and no way to know what the artwork behind it looked like, so nothing
 subtler is available without an inpainting model. On a page margin the result is
 invisible; over drawn artwork it is a white patch, and that is the trade.
 
+Where that patch would cost artwork the page needs, the region is `glossed` and
+nothing here touches it at all: the Japanese stays where the artist drew it, and
+`render` draws the Thai elsewhere on the page, at the region's `at`.
+
 Which free-floating regions get erased is the agent's call, not this stage's: a
 sound effect is artwork and must survive, and only a reader can tell one from a
 line of unbubbled speech. A region with no role yet is left alone.
@@ -45,6 +49,10 @@ PAPER = 200
 # left for a different reason: erasing it would leave a hole with nothing to put
 # in it.
 KEEP = {"sfx", "image_text"}
+
+# Statuses that erase nothing: `declined` has nothing to put in the hole, and
+# `glossed` puts the Thai elsewhere on the page, leaving the artwork whole.
+LEAVE = {"declined", "glossed"}
 
 
 def _touches_edge(stats: np.ndarray, i: int, h: int, w: int) -> bool:
@@ -224,7 +232,7 @@ def clean(page: Image.Image, data: dict) -> tuple[Image.Image, Image.Image]:
         for r in data["regions"]
         if r.get("role")
         and r.get("role") not in KEEP
-        and r.get("status") != "declined"
+        and r.get("status") not in LEAVE
     ]
     found: dict[str, np.ndarray] = {}
     for group in joined([r for r in wanted if r.get("bubble")]):

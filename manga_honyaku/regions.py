@@ -1,7 +1,8 @@
 """Tool `regions`: what the working file holds, and where a line was set before.
 
 Not a stage — it reads `pages/<id>.agent.json` and prints, so it is safe to run
-on a page that is being edited.
+on a page that is being edited. `--take` is the one exception and writes one
+field of one region; everything else here only looks.
 
     uv run python -m manga_honyaku.regions series/<work> 03        # a chapter
     uv run python -m manga_honyaku.regions series/<work> 03/05     # one page
@@ -10,6 +11,8 @@ on a page that is being edited.
     uv run python -m manga_honyaku.regions series/<work> 03 --todo
     uv run python -m manga_honyaku.regions series/<work> 03 --repeats
     uv run python -m manga_honyaku.regions series/<work> 03/05 --order
+    uv run python -m manga_honyaku.regions series/<work> 03/05 --space F1
+    uv run python -m manga_honyaku.regions series/<work> --bar
 
 The default view is the one a chapter cannot be read without: every region with
 its box, the size the Japanese was lettered at, the `room` that follows from it,
@@ -59,7 +62,16 @@ It finds strings, so it finds neither a pun nor a paraphrase: `ティーバッ�
 `Tバック` are the joke of that same chapter and are two different strings. What it
 is for is the repeat that must not drift, not the reading.
 
-`--overlaps` is a worklist, not a check: see `prepare.overlapping`.
+`--overlaps` is a worklist, not a check: see `prepare.overlapping`. It asks its
+question twice, of two different rectangles: two `box`es on one piece of the
+*original's* lettering, which is a detector artefact and a decision to take; and
+two `at`s sharing any space at all, which is Thai drawn over Thai and has no
+innocent reading.
+
+`--space` offers the blank rectangles one region's Thai could be glossed into,
+`--take` writes the chosen one into its `at`, and `--bar` prints the size a
+candidate has to reach. The rule they exist to keep — that no coordinate is ever
+read off a picture or typed back — and everything they measure is `space.py`.
 
 `--order` proposes a reading order from the boxes and says nothing about whether
 the file agrees; `--todo` says where it does not, pair by pair. Which of the two
@@ -97,6 +109,7 @@ from manga_honyaku.ocr import SURE
 from manga_honyaku.page import Series
 from manga_honyaku.prepare import colliding, overlapping, uncovered
 from manga_honyaku.render import FONT, LINE_SPACING, lexicon, missing_glyphs, settings
+from manga_honyaku.space import bar_report, report
 
 
 def widest(region: dict, spacing: float) -> int | None:
@@ -273,14 +286,39 @@ def main() -> None:
         action="store_true",
         help="lines these pages say twice, and what the rest of the work said",
     )
+    ap.add_argument(
+        "--space",
+        metavar="ID",
+        help="blank rectangles on the page this region's Thai could be glossed "
+        "into, nearest to its own box first",
+    )
+    ap.add_argument(
+        "--take",
+        metavar="LETTER",
+        help="with --space: write that rectangle into the region's `at`",
+    )
+    ap.add_argument(
+        "--bar",
+        action="store_true",
+        help="the smallest size this work letters a free sentence at, which is "
+        "what `--space` holds a rectangle to",
+    )
     args = ap.parse_args()
 
     work = Series(args.series)
     if args.match:
         search(work, args.match)
         return
+    if args.bar:
+        bar_report(work, args.series)
+        return
 
     ids = work.ids(args.pages)
+    if args.space:
+        if len(ids) != 1:
+            raise SystemExit("--space asks about one region, so name one page")
+        report(work, args.series, ids[0], args.space, args.take)
+        return
     if args.order:
         for page in ids:
             data = json.loads(work.agent(page).read_text())
@@ -332,6 +370,15 @@ def main() -> None:
                     f"{a['id']} and {b['id']} cover the same text"
                     f" ({cover:.0%}) — keep one, decline the other"
                     for a, b, cover in overlapping(data["regions"])
+                ]
+                # Any overlap at all, where the same threshold would be far too
+                # generous: two glosses share no lettering to argue about, and
+                # whatever they share is Thai drawn over Thai.
+                said += [
+                    f"{a['id']} and {b['id']} gloss into the same space"
+                    f" ({cover:.0%} of the smaller) — one is drawn over the "
+                    f"other; `--space` on either offers somewhere else"
+                    for a, b, cover in overlapping(data["regions"], 0, field="at")
                 ]
             if args.todo:
                 # Nothing is reported twice: `--overlaps` owns a pair standing on

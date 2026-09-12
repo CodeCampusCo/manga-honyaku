@@ -154,8 +154,28 @@ While you write the entry:
   chyron whose story is in the lettered post beside it — or when losing it costs
   nothing. **When the scene does not work without it, draw it**: move the role to
   `caption` for writing in the artwork, `dialogue` for a sound in a balloon
-  `clean` can follow. There is no third value — a region either erases and is
-  drawn into, or it does neither.
+  `clean` can follow.
+- **Where erasing the box would take the artwork with it, gloss it instead.** A
+  free box is the bounding rectangle of a vertical Japanese column, so painting
+  it out paints out whatever the artist drew beside the glyphs — a head, a phone
+  screen. `status: glossed` erases nothing: the Japanese stays where it was
+  drawn, and the Thai goes somewhere else on the page, at `at`.
+  - Run `regions --space <id>`, look at the sheet it draws, and answer with a
+    letter. `--take <letter>` writes `at`. **Never type coordinates.**
+  - Candidates come back nearest first. **Take the nearest one that does not
+    cover something that matters** — a face, a hand, clothing, a logo. Texture
+    does not matter: tile, water, sky, hatching and screentone are reconstructed
+    by the eye and cost nothing. A line that runs through and gets broken costs
+    more than a large flat area, and an object costs most.
+  - A candidate flagged as inside the drawing rather than in the page margin is a
+    warning to look harder, not a reason to skip it.
+  - **Where nothing fits at all** — a colour opener returns no candidate — take a
+    strip one horizontal line of the Thai deep, flush to a page corner, with the
+    text aligned to that corner's side. Never a block: a block's shape is the
+    Japanese column's shape, and Thai reads across, so it covers several times the
+    artwork one line does. Bottom-left is the natural first look — where the eye
+    leaves a right-to-left page, and usually nearest the chapter title — but
+    nearest still decides.
 - **`caption` against `dialogue` is thinking against saying aloud**, not
   formatting. File a narrator's interior voice as `caption`.
 

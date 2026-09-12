@@ -23,6 +23,10 @@ box with the size the Japanese was lettered at, the `room` that follows, and the
 reading. The sheet says where a region is on the page; only the file says what is
 in it and how much of it there is room for.
 
+Where a region's own box cannot be painted out without taking artwork with it,
+its line is drawn elsewhere on the page instead: `regions … --space` offers the
+places, and [`working-a-chapter.md`](working-a-chapter.md) says how to choose.
+
 Attribution is where the guessing goes wrong, and the check is cheap: read the
 sequence back as a conversation. `それに…` following a line by the same speaker
 means you have the order right; following a line by the other speaker means you

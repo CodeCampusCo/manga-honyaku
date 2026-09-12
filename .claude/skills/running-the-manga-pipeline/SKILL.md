@@ -101,6 +101,9 @@ nothing here installs a command, so a bare `regions` is not on anyone's PATH.
     …manga_honyaku.regions series/<work> 01 --todo    # what the file still leaves unfinished
     …manga_honyaku.regions series/<work> 01 --repeats # what is already answered, in two lists
     …manga_honyaku.regions series/<work> 01 --order   # a reading order proposed from the boxes
+    …manga_honyaku.regions series/<work> 01/05 --space F1 # where this region's Thai could go instead
+    …manga_honyaku.regions series/<work> 01/05 --space F1 --take c # writes that spot into `at`
+    …manga_honyaku.regions series/<work> --bar        # the smallest size this work glosses at
     …manga_honyaku.chapters series/<work> <page>-<page> # what the reading found on those pages
     …manga_honyaku.tally    series/<work>             # the counts a chapter is read back against
     …manga_honyaku.fit      series/<work> 01/05 F1 "…" # what size a candidate line draws at
@@ -112,6 +115,23 @@ chapter already settled, with the wording it used, and what these pages
 themselves say twice. `--overlaps` lists the pairs standing on one piece of
 lettering, half of which the eye does not find. Their output lives only in the session that ran
 them — nothing writes it to disk, so a compaction loses it.
+
+**`--space` is for a region whose artwork cannot be painted out.** It lists the
+rectangles this page has where that region's Thai would fit and read, nearest
+first, and writes `build/<page>.space.png` with them lettered a, b, c. A spot
+flagged *in the drawing* passes the same brightness test as paper and may be
+skin, cloth or sky; a spot in the page edge is paper by construction. **The
+four corner strips come last and are not blank at all** — they punch, and are
+set at the bar rather than at the region's own weight because a hole is paid for
+in artwork. Take one with `--take <letter>`, which writes the rectangle into `at`
+and the status to `glossed`; **no coordinate is ever typed**, which is the point
+of the flag. Nothing separates a gutter from the next panel, so the picture is
+the only thing that will tell you a spot sits inside a neighbour.
+
+**`--bar` is the number `--space` measures against**, and it goes in
+`lettering.json` as `gloss`. It is the smallest size the artist letters a free
+caption at, times `k`, so it needs `role` and a settled `k` and is read off the
+work rather than chosen.
 
 **`--todo` is every check `audit` makes that needs no rendered page** — a region
 with no role, an `ok` with nothing to draw, an `erase` with one, a decline with no

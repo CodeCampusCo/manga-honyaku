@@ -41,6 +41,7 @@ from manga_honyaku.render import (
     room_for,
     settings,
     warn,
+    where,
     widths,
 )
 
@@ -88,6 +89,10 @@ def lettered_at(box: list[float], source: str) -> float | None:
     A region holding only a pause is excluded: one character in a box sized for a
     beat of silence measures as enormous lettering, and the dots were drawn at
     ordinary size.
+
+    The box measured is `at` where a region has one. The question this answers
+    is how large the Thai is set, and on a glossed region that is decided by the
+    rectangle it is drawn into and not by the one the Japanese sits in.
     """
     if not any(unicodedata.category(c).startswith(("L", "N")) for c in source):
         return None
@@ -112,9 +117,9 @@ def tag(entry: dict, size: float | None, style: dict) -> None:
         # size, so there is no budget to state.
         entry.pop("room", None)
         return
-    at = max(1, round(style.get("k", K) * entry["size"]))
+    thai = max(1, round(style.get("k", K) * entry["size"]))
     room = room_for(
-        entry["box"], at, style.get("line_spacing", LINE_SPACING), style["one"]
+        where(entry), thai, style.get("line_spacing", LINE_SPACING), style["one"]
     )
     # A box too small to hold one line at its own size has no budget to state,
     # and a stated zero reads as "write nothing".
@@ -133,7 +138,7 @@ def tag_page(entries: list[dict], height: int, style: dict) -> None:
     rather than a constant carried in from another book. A size already on such
     a region is kept: it is the only judgement that region has ever had.
     """
-    measured = [lettered_at(e["box"], e.get("source") or "") for e in entries]
+    measured = [lettered_at(where(e), e.get("source") or "") for e in entries]
     known = sorted(m for m in measured if m)
     usual = known[len(known) // 2] if known else TYPICAL * height
     for entry, size in zip(entries, measured):
@@ -145,7 +150,9 @@ def tag_page(entries: list[dict], height: int, style: dict) -> None:
         tag(entry, size, style)
 
 
-def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
+def overlapping(
+    regions: list[dict], threshold: float = 0.85, field: str = "box"
+) -> list[tuple]:
     """Region pairs standing on the same lettering, largest coverage first.
 
     `detect` drops a duplicate only when both boxes came back under the same
@@ -166,12 +173,18 @@ def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
     the shape that matters is containment: a box drawn around a whole phrase and
     a second box around one of its columns overlap very little as a fraction of
     the pair, and completely as a fraction of the smaller.
+
+    `field` asks the same question of a different rectangle. Over `at` it is not
+    about the original's lettering at all: two glosses sharing any space at all
+    are Thai drawn over Thai, which is why the caller lowers the threshold to
+    nothing rather than reusing this one.
     """
     found = []
-    for i, a in enumerate(regions):
-        for b in regions[i + 1 :]:
-            ax1, ay1, ax2, ay2 = a["box"]
-            bx1, by1, bx2, by2 = b["box"]
+    boxed = [r for r in regions if r.get(field)]
+    for i, a in enumerate(boxed):
+        for b in boxed[i + 1 :]:
+            ax1, ay1, ax2, ay2 = a[field]
+            bx1, by1, bx2, by2 = b[field]
             wide = min(ax2, bx2) - max(ax1, bx1)
             tall = min(ay2, by2) - max(ay1, by1)
             if wide <= 0 or tall <= 0:

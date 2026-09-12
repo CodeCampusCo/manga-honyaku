@@ -14,6 +14,10 @@ already chose it, and it is already the right shape: tall and narrow where the
 Japanese ran down a bubble. Set the Thai into it, let the line breaker fill it,
 and come down a size while it overflows.
 
+A region carrying `at` is the exception to both. `at` is a rectangle elsewhere on
+the page, and it stands in for `box` in every measurement below; the Japanese
+stays where it was drawn, so there is no mask and none is wanted.
+
 Thai needs no complex-text shaping here. Its marks stack above and below the base
 letter, and in a font that gives them zero advance — every Thai comic face does —
 basic layout puts them in the right place. A font that positions marks through
@@ -126,6 +130,11 @@ def missing_glyphs(font: ImageFont.FreeTypeFont, text: str) -> set[str]:
     """
     absent = _signature(font, "\U000f0000")
     return {c for c in set(text) if not c.isspace() and _signature(font, c) == absent}
+
+
+def where(region: dict) -> list[float]:
+    """The rectangle this region's Thai is measured against, and drawn into."""
+    return region.get("at") or region["box"]
 
 
 def measured_at(region: dict, page_height: int) -> float:
@@ -412,13 +421,13 @@ def render(
         target = region.get("target")
         if not target:
             continue
-        mask = masks == index
-        if not mask.any():
+
+        if not region.get("at") and not (masks == index).any():
             # clean left this one alone, so there is nowhere to put the Thai.
             continue
 
         # Where the original's lettering sat, and so where this goes.
-        x1, y1, x2, y2 = region["box"]
+        x1, y1, x2, y2 = where(region)
         box = (x1, y1, x2 - x1, y2 - y1)
         bx, by, bw, bh = box
 
@@ -437,7 +446,7 @@ def render(
         if laid is None:
             warn(f"{data['page']} {region['id']}: {target!r} does not fit")
             continue
-        placements.append((region, box, mask, face, custom, laid))
+        placements.append((region, box, face, custom, laid))
 
     # One sentence lettered at two sizes reads as two sentences. Where regions
     # share an utterance they were one line in the original and are lettered
@@ -448,7 +457,7 @@ def render(
         if group:
             shared[group] = min(shared.get(group, 10**6), laid[0].size)
 
-    for region, box, mask, face, custom, laid in placements:
+    for region, box, face, custom, laid in placements:
         bx, by, bw, bh = box
         group = region.get("utterance")
         if group and shared[group] != laid[0].size:

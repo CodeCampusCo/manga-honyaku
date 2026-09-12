@@ -12,6 +12,8 @@ from __future__ import annotations
 import json
 import unicodedata
 
+import numpy as np
+
 import pytest
 from PIL import ImageFont
 
@@ -30,6 +32,8 @@ from manga_honyaku.tally import chapter_of, polite_jp, polite_th
 from manga_honyaku.render import (FONT, LINE_SPACING, SMALLEST, UNREADABLE,
                                   floor_for, lay_out, room_for, widths)
 from manga_honyaku.sheet import around, build
+from manga_honyaku.space import (BLOCK, blank, block, gap, margin, nearest,
+                                 rectangles, share, spaces, where)
 
 
 # --- what a character costs -------------------------------------------------
@@ -845,3 +849,117 @@ def test_two_regions_that_erase_nothing_cannot_collide():
 def test_a_declined_region_erases_nothing_and_is_not_a_plate():
     assert colliding([plate("F5", [0, 0, 200, 200], status="declined"),
                       plate("B1", [0, 0, 200, 200])]) == []
+
+
+# --- where a gloss goes -----------------------------------------------------
+
+def paper(height=160, width=160):
+    return np.full((height, width), 255, np.uint8)
+
+
+def test_at_stands_in_for_the_box_everywhere_and_only_where_it_is_set():
+    assert where({"box": [0, 0, 10, 10]}) == [0, 0, 10, 10]
+    assert where({"box": [0, 0, 10, 10], "at": [5, 5, 9, 9]}) == [5, 5, 9, 9]
+
+
+def test_a_glossed_region_is_measured_from_the_rectangle_it_is_drawn_into():
+    """The whole of the `at` rule: `box` says where the Japanese sits and
+    nothing else reads it for a size."""
+    box = [0, 0, 100, 400]
+    assert lettered_at(box, "ああああ") == pytest.approx(100.0)
+    same = {"box": box, "at": [0, 0, 50, 200], "source": "ああああ"}
+    tag_page([same], 1180, {"one": 0.5})
+    assert same["size"] == 50
+
+
+def test_a_budget_is_counted_against_the_at_when_there_is_one():
+    style = {"k": 1.0, "line_spacing": LINE_SPACING, "one": 0.5}
+    wide = {"box": [0, 0, 100, 100], "bubble": [0, 0, 100, 100], "source": "ああ"}
+    narrow = dict(wide, at=[0, 0, 50, 100])
+    tag(wide, 10, style)
+    tag(narrow, 10, style)
+    assert narrow["room"] < wide["room"]
+
+
+def test_two_glosses_in_one_gutter_are_found_and_a_box_pair_is_not():
+    regions = [
+        {"id": "F1", "box": [0, 0, 10, 10], "at": [100, 100, 200, 200]},
+        {"id": "F2", "box": [500, 500, 510, 510], "at": [150, 150, 250, 250]},
+        {"id": "F3", "box": [900, 900, 910, 910]},
+    ]
+    assert not overlapping(regions)
+    pairs = overlapping(regions, 0, field="at")
+    assert [(a["id"], b["id"]) for a, b, _ in pairs] == [("F1", "F2")]
+
+
+# --- the blank rectangles a page has ----------------------------------------
+
+def test_a_speck_does_not_split_a_margin_and_a_stroke_does():
+    """The bug this is for: one pixel of scan noise in a clean margin cuts it
+    into two halves too narrow to use."""
+    speckled = paper()
+    speckled[80, 80] = 0
+    assert blank(speckled, [], None).all()
+
+    drawn = paper()
+    drawn[76:84, 76:84] = 0
+    assert not blank(drawn, [], None).all()
+
+
+def test_dark_but_featureless_is_not_blank():
+    """Black type has to read on it, and there is no white plate under a gloss."""
+    shadowed = paper()
+    shadowed[64:96] = 150
+    grid = blank(shadowed, [], None)
+    assert not grid[8:12].any()
+    assert grid[:8].all()
+
+
+def test_every_region_takes_its_own_box_out_of_the_page():
+    region = {"box": [40, 40, 80, 80]}
+    grid = blank(paper(), [region], region)
+    assert not grid[6, 6]
+    assert grid[0, 0]
+
+
+def test_a_rectangle_is_reported_once_and_not_once_per_row_it_grew_through():
+    grid = np.ones((4, 4), bool)
+    assert rectangles(grid) == [(0, 0, 4, 4)]
+
+
+def test_a_rectangle_is_maximal_in_both_directions():
+    grid = np.ones((4, 4), bool)
+    grid[0, 0] = False
+    found = {(x1, y1, x2, y2) for x1, y1, x2, y2 in rectangles(grid)}
+    assert found == {(1, 0, 4, 4), (0, 1, 4, 4)}
+
+
+def test_distance_is_the_gap_and_not_the_centres():
+    assert gap((0, 0, 10, 10), (0, 0, 10, 10)) == 0
+    assert gap((20, 0, 30, 10), (0, 0, 10, 10)) == 10
+
+
+def test_a_block_is_placed_as_near_the_lettering_as_its_rectangle_allows():
+    assert nearest(10, 10, (0, 0, 100, 100), [200, 0, 210, 10]) == (90, 0, 100, 10)
+    assert nearest(10, 10, (0, 0, 100, 100), [40, 40, 50, 50]) == (40, 40, 50, 50)
+
+
+def test_the_page_edge_is_flagged_and_the_middle_of_the_drawing_is_not():
+    assert margin((0, 40, 20, 60), 200, 200)
+    assert margin((40, 180, 60, 200), 200, 200)
+    assert not margin((40, 40, 60, 60), 200, 200)
+
+
+def test_what_is_offered_is_trimmed_to_the_text_and_clear_of_the_lettering():
+    """`render` centres a free block in its rectangle, so a rectangle larger
+    than the text leaves the Thai floating in the middle of a strip."""
+    region = {"id": "F1", "box": [0, 0, 40, 400], "target": "ที่เรียกว่ามือโปรไง"}
+    found = spaces(
+        paper(400, 400), [region], region, FONT, None, LINE_SPACING, 21, 60
+    )
+    assert found
+    for box, size, _ in found:
+        assert size >= 21
+        assert box[0] >= region["box"][2]
+        assert (box[2] - box[0]) * (box[3] - box[1]) < 300 * 400
+

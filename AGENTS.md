@@ -73,18 +73,20 @@ failure that reached a page once and nothing said so.
 before any page is read: what an earlier chapter already settled, and which boxes
 stand on the same lettering.
 
-A region's `status` says what happens to it, and the three values answer
+A region's `status` says what happens to it, and the four values answer
 different questions: **`ok`** takes the Japanese out and puts Thai in its place —
 except on `image_text` and `sfx`, where the role wins and `ok` means only that the
 Thai is on record —
 **`declined`** leaves the artwork alone and says why in `reason`, **`erase`**
 takes the Japanese out and puts nothing back — furigana the detector boxed on
-its own, a glyph the interior fill could not reach.
+its own, a glyph the interior fill could not reach — and **`glossed`** leaves the
+Japanese where the artist drew it and puts the Thai somewhere else on the page,
+at `at`.
 
 Never silently skip or soften. `ok` with nothing to draw cannot be told from a
 line somebody forgot, and `declined` is never erased at all, so the page keeps
 the Japanese while the record says it was handled. Both mistakes have been made
-here; that is why the third value exists.
+here; that is why `erase` exists.
 
 **`role` decides whether a region can be erased and drawn into at all; `status`
 decides whether an eligible one is acted on.** These five are the whole
@@ -107,8 +109,9 @@ The last two columns say what happens when `status` is `ok`. Most `title` is
 **Either of the last two can be moved when the scene needs it drawn**, and the
 value it moves to is the one whose shape `clean` can follow: `dialogue` for a
 sound in an ordinary balloon, `caption` for writing in the artwork — which erases
-as a white plate over the drawing, and is accepted here. There is no third
-option: a region either erases and is drawn into, or it does neither.
+as a white plate over the drawing, and is accepted here. Where that plate would
+cost artwork the page needs, `glossed` is the third option: nothing is erased and
+the Thai is drawn elsewhere on the page.
 
 ## The working file
 
@@ -121,6 +124,7 @@ region in it carries:
 | `source` `source_score` | `prepare` | the Japanese, OCR'd, and how sure the reader was of its worst character |
 | `size` `room` | `prepare` | the size the Japanese was lettered at, and the budget |
 | `role` `status` `reason` | you | above |
+| `at` | you | `[x1,y1,x2,y2]`, where the Thai is drawn on a `glossed` region. Present, it stands in for `box` in every measurement, and `box` keeps one job: saying where the Japanese sits |
 | `order` | you | reading order, `1..N` over every region on the page, declined ones included |
 | `speaker` | you | who says it, by the key `characters.md` uses |
 | `target` | you | the Thai |
