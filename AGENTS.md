@@ -11,6 +11,7 @@ them. Read the one whose row matches before you do the thing, not after:
 | --- | --- |
 | bring up a manga nobody has translated here | `.claude/skills/new-manga-work/SKILL.md` |
 | translate a page | `.claude/skills/japanese-to-thai-manga/SKILL.md` |
+| run a chapter end to end, or decide one earns a review | `.claude/skills/running-a-chapter/SKILL.md` |
 | erase lettering, or judge a mask | `.claude/skills/manga-text-removal/SKILL.md` |
 | choose a lettering size or a line break | `.claude/skills/thai-manga-lettering/SKILL.md` |
 | say what is wrong with a rendered page | `.claude/skills/judging-a-thai-manga-page/SKILL.md` |
@@ -23,7 +24,8 @@ paths above are the whole of it and nothing has to fire by name.
 **Start at the work's `handoff.md`.** A work is translated a chapter at a time by
 someone who did not translate the one before it, so that file — not this one —
 says where the chapters stand, what was decided late, and what not to re-run.
-Read it before anything else in `series/<work>/`.
+Read it before anything else in `series/<work>/`, unless a pass's own prompt
+withholds the work's files.
 
 ## Working here
 
@@ -52,7 +54,8 @@ saw. Say so and stop.
 
 Read the whole page before translating any of it, and keep the work's own notes
 current as you go — `characters.md` and `glossary.md` are what make later
-chapters consistent.
+chapters consistent, and `voice.md` is what the translation and the proofreading
+pass both work from.
 
 Record uncertainty in `questions` only when being wrong would change the output.
 
@@ -60,7 +63,7 @@ Record uncertainty in `questions` only when being wrong would change the output.
 `manga_honyaku.ask` — the skill above says what to do with the answer, which is
 weigh it, not take it.
 
-**Before rendering, `check`. After rendering, `audit`.** They do not overlap: one
+**Before `clean`, `check`. After `render`, `audit`.** They do not overlap: one
 re-reads the Japanese and finds a line sitting in a region it does not belong to,
 which is the failure a re-read of the page will not show; the other looks at what
 came out. Both are worth running because every check in them is there for a
@@ -83,8 +86,9 @@ line somebody forgot, and `declined` is never erased at all, so the page keeps
 the Japanese while the record says it was handled. Both mistakes have been made
 here; that is why the third value exists.
 
-**`role` says what the region *is*, and the stages read it before they read
-`status`.** These five are the whole vocabulary. Nothing validates the field, so
+**`role` decides whether a region can be erased and drawn into at all; `status`
+decides whether an eligible one is acted on.** These five are the whole
+vocabulary. Nothing validates the field, so
 a sixth value invented in good faith fails quietly — `tally` prints every value a
 work uses for `role`, `speaker` and `weight`, and a count of 1 beside one is
 either something new or a typo.
@@ -96,6 +100,9 @@ either something new or a typo.
 | `title` | display type that is nobody speaking — the work's own chapter titles and scene headers, and the magazine's masthead, promo strips, credits and logos | erases | draws Thai |
 | `image_text` | writing inside the drawing — a sign, a badge, a screen, a spine | **leaves alone** | **draws nothing** |
 | `sfx` | a sound drawn into the artwork | **leaves alone** | **draws nothing** |
+
+The last two columns say what happens when `status` is `ok`. Most `title` is
+`declined`: the magazine's furniture is left as the artist set it.
 
 **Either of the last two can be moved when the scene needs it drawn**, and the
 value it moves to is the one whose shape `clean` can follow: `dialogue` for a
@@ -110,7 +117,7 @@ region in it carries:
 
 | Field | Written by | What it is |
 | --- | --- | --- |
-| `id` `box` `placement` `score` `bubble` | `detect` | the region and where it sits |
+| `id` `box` `placement` `score` `bubble` | `detect` | `box` is `[x1,y1,x2,y2]` in page pixels; `placement` is `bubble` or `free`, and `id` carries `B` or `F` to match; `bubble` is the enclosing balloon's box, on in-bubble regions only; `score` is the detector's confidence, and a region added by hand has none |
 | `source` `source_score` | `prepare` | the Japanese, OCR'd, and how sure the reader was of its worst character |
 | `size` `room` | `prepare` | the size the Japanese was lettered at, and the budget |
 | `role` `status` `reason` | you | above |
@@ -133,9 +140,9 @@ three are prompt files:
 
 | Pass | Has | Never opens | Runs |
 | --- | --- | --- | --- |
-| `.claude/agents/translate-pages.md` | the Japanese and the notes; it writes | — | the translation |
+| `.claude/agents/translate-pages.md` | the Japanese and the notes; it writes | the rendered pages | before `check` |
 | `.claude/agents/proofread-against-source.md` | the Japanese — **the scans included** — the Thai, and the notes | `out/` | **before `clean`** |
-| `.claude/agents/page-look.md` | the rendered page | the Japanese, the notes | after `render` |
+| `.claude/agents/page-look.md` | the rendered page, and `style.md` | the Japanese, the rest of the notes | after `render` |
 
 Run each in a session of its own. If your tool cannot take away the tools their
 frontmatter names, the third column is yours to keep: a proofreader that has
@@ -143,8 +150,10 @@ opened `out/` has stopped being the one pass that catches a line which is fluent
 sits well, and says the opposite of the original.
 
 The fourth column is a fact, not a preference. The proofreader needs no rendered
-page, so running it before `clean` costs a finding instead of a re-render;
+page, so running it before `clean` makes a finding cost an edit instead of a
+re-render;
 `page-look` judges the page that came out, so there has to be one.
 
-**Run each pass once**, apply what it returns, and go on. Their own files say
-why, and what each one is looking at.
+**Run each pass once per rendering of the chapter**, apply what it returns, and
+go on. Each pass's own file says what it is looking at; the order they go in is
+`.claude/skills/running-a-chapter/SKILL.md`.

@@ -1,21 +1,22 @@
 ---
 name: japanese-to-thai-manga
-description: Use when translating Japanese manga dialogue into Thai — reading order and speaker attribution, composing an utterance whole before cutting it across balloons, choosing pronouns and register, and why an accurate line still reads stiff. Covers keeping a series consistent across chapters and what to check before the pages are lettered.
+description: Use when translating Japanese manga dialogue into Thai — reading order and speaker attribution, composing an utterance whole before cutting it across balloons, matching the original's length against the room the bubble has, and what the work's own files settle.
 ---
 
 # Translating manga into Thai
 
 ## Read the page before you translate any of it
 
-Build a contact sheet of the annotated pages, two to four at a time, and settle
+Build a contact sheet of the annotated pages — the spread, or up to four — and settle
 **reading order and speaker attribution first**.
 
 `regions … --order` proposes that order from the boxes while you number a page,
 and `regions … --todo` names every pair it and the file disagree about once the
 page is numbered. **The second is the one that has to be answered** — the
 proposal can be accepted wholesale and nothing would ever show it. Reading order
-is the largest piece of hand work in a chapter and the one field no check catches
-when it is wrong.
+is the largest piece of hand work in a chapter and the one field `audit` cannot
+catch: it checks the numbers run `1..N`, which a page numbered in entirely the
+wrong sequence passes.
 
 Print the working file beside the sheet: `uv run python -m manga_honyaku.regions series/<work> <chapter>` gives every
 box with the size the Japanese was lettered at, the `room` that follows, and the
@@ -57,128 +58,15 @@ is exactly this: the sequence relation that lets a sentence split across two
 bubbles be joined before it is translated.
 
 **The risk it introduces is real and there is a check for it.** Composing whole
-and then cutting makes it easier for a line to land in the wrong region, and that
-is the one failure re-reading will not show, because the Thai reads plausibly in
-both places. `check` exists for it — run it.
+and then cutting makes it easier for a line to land in the wrong region.
+`check` exists for it — run it.
 
-## Pronouns are not translated, they are re-chosen
+## The work's own files are what binds
 
-This is a rule for manga in general, not a house style for one work. Japanese
-marks age, gender and self-image in the first person; Thai marks *politeness and
-distance*, and the two grids do not line up. **Pick the Thai pronoun the
-character would have in a Thai edition of a Japanese comic** — not the one that
-matches the Japanese word, and not the one the situation would call for if the
-scene were Thai.
-
-**The grid is personas, not people.** A row is a speaker-type and its distance
-from whoever is addressed. Meeting a character, take the row that fits as their
-base and write them into `characters.md`; where no row fits, write the persona
-yourself, from how that kind of character should sound. Either way it is fixed
-from then on.
-
-**A bit part is not a persona.** Someone who turns up twice, usually without a
-name, takes what the moment calls for — chosen again each time and not written
-into `characters.md`. Name them off their appearance only where they may come
-back, so a later page has something to refer to.
-
-### The pair, by speaker and by distance
-
-Read each cell as *first person → second person*. The axis is **distance and
-power, not affection** — a character can be fond of someone they stay formal
-with, and that gap is often the scene. **`characters.md` overrides every row
-here** for anyone it names.
-
-| Speaker | Stranger | Knows by sight | Friend, familiar | Very close | Someone above them |
-| --- | --- | --- | --- | --- | --- |
-| Young woman | ฉัน → คุณ | ฉัน → คุณ | ฉัน → เธอ, name | ฉัน → เธอ, name | ฉัน → คุณ (+ค่ะ) |
-| Girl, a child | **หนู** → คุณ | **หนู** → คุณ | ฉัน → เธอ, name | ฉัน → เธอ, name | **หนู** → คุณ (+ค่ะ) |
-| Young man, boy | ผม → คุณ | ผม → คุณ, name | ฉัน → นาย, name | ฉัน → แก, นาย | ผม → คุณ (+ครับ) |
-| Adult woman | ฉัน → คุณ | ฉัน → คุณ, name | ฉัน → เธอ | ฉัน → เธอ or แก | ฉัน, ดิฉัน → คุณ (+ค่ะ) |
-| Adult man | ผม → คุณ | ผม → คุณ, name | ฉัน → นาย | ฉัน → แก | ผม → คุณ, ท่าน |
-| An elder, speaking down | ฉัน → เธอ | ฉัน → เธอ, name | ฉัน → name, เธอ | ฉัน → แก | ผม, ดิฉัน → ท่าน |
-| Thug, villain | ฉัน → แก | ฉัน → แก | ฉัน → แก, พวกแก | **กู → มึง**, only past control | ผม → คุณ, ท่าน |
-
-What the grid is actually saying:
-
-- **`หนู` is a child's word.** It marks the speaker as a child talking to an
-  adult, and that is the whole of its range. A teenager or a young woman is
-  `ฉัน` in every column, including to someone above her — the deference is on
-  the particle, not on the pronoun. Reaching for `หนู` because a woman is young
-  or junior or being polite is the single most common way to make a translated
-  page read as Thai television rather than as manga.
-- **Even a child drops it among friends.** `หนู` is for the gap in rank, so it
-  disappears the moment there is not one.
-- **It is never a second person.** Japanese already has ちゃん and くん for
-  addressing a child, and Thai manga transliterates those — see the honorifics
-  below. An elder addresses a junior as `เธอ` or by name.
-- **`เรา` is not used as first person.** Closeness is carried by the second
-  person — `เธอ`, `นาย`, `แก` — while the first person stays `ฉัน`.
-
-A register that escalates reads better than one that starts at the ceiling. Give
-a character `ฉัน` while he is still arguing and `กู` only in the panel where he
-stops arguing, and the shift does work the vocabulary alone cannot. The grid is a
-starting position, not a lookup table.
-
-The grid covers the cases a work would otherwise write down for itself: a
-working adult woman is `ฉัน` however deferential the line, and a villain reaches
-`กู` at the moment he stops choosing words. Nothing about either belongs in a
-work's own file — what the character actually says is already in the working
-file, page by page.
-
-## Honorifics carry the same information — read them
-
-Japanese name suffixes do work Thai has its own forms for, so the original is
-telling you which Thai word to reach for.
-
-| Japanese | Thai | How |
-| --- | --- | --- |
-| さん | **คุณ** | Fits nearly everywhere. Thai readers also read `ซัง`, but `คุณ` is the one to use, so that it is the same in every work and never a thing to decide. |
-| ちゃん | **จัง** — transliterate | Adult to a girl, and to boys too. The role Thai fills with `หนู`, but manga Thai does not use `หนู` here. |
-| くん | **คุง** — transliterate | Adult to a child; a senior to a junior they are close to — a student, a junior at work. |
-| 様 | **ท่าน** | Never transliterate. |
-| 先生 | **อาจารย์**, **หมอ**, **ทนาย** — from context | Closer to *master* than to *teacher*: any credentialed expert, including a mangaka. Thai defaults to "อาจารย์ = schoolteacher" but does accept `อาจารย์` for a mangaka. Read the panel before choosing. |
-| 先輩 / 後輩 | **พี่** / **น้อง** | Kinship words work as pronouns in Thai and land this better than a literal translation. |
-
-**A bare name stays bare.** Where the Japanese drops the suffix, so does the
-Thai: `忍って` is the name as a vocative, with nothing in front of it.
-
-**A suffix on a role rather than a name takes the Thai kinship or title form** —
-`バイト君` is `น้องพาร์ทไทม์`, `店長さん` is `คุณผู้จัดการร้าน`. Transliterating a
-role produces nonsense.
-
-## Politeness lands once per utterance
-
-A three-bubble sentence takes one `ค่ะ` / `ครับ`, on the last bubble — the
-particle belongs to the utterance, which is the unit everything else here is
-composed in too.
-
-Who gets one at all follows the same distance the pronouns do. A woman speaking
-politely ends with `ค่ะ`. **Men among themselves take no particle**: `ครับ`
-between peers reads as sarcasm, and is for speaking to someone above them.
-`はい` answering a question is itself `ค่ะ` or `ครับ`, and does not count as the
-sentence-final particle.
-
-Give the same treatment to a pronoun split across bubbles: `私 / 頑張ります!`
-is `ฉัน` then `จะตั้งใจทำให้เต็มที่ค่ะ!`, not `ฉัน` then `ฉันจะ…`.
-
-### `นะ` takes `คะ`, `น่ะ` takes `ค่ะ` — the tone mark matches or it is wrong
-
-Four spellings are in circulation and two of them are misspellings:
-
-| | |
-| --- | --- |
-| **`นะคะ`** | correct |
-| **`น่ะค่ะ`** | correct |
-| `นะค่ะ` | **wrong** |
-| `น่ะคะ` | **wrong** |
-
-The particles agree: no tone mark on both, or a mái èk on both. Mixed across the
-pair is an error, and **Thai writers make it constantly**, so it cannot be judged
-by whether a line looks like ordinary writing — that instinct is what produces
-it. It is a rule, and it is deterministic, so `audit` checks it.
-
-Where the particle is doing no work, drop it and let the bare `ค่ะ` or `คะ`
-carry the politeness on its own.
+`voice.md` says how this work sounds in Thai and how far it goes toward Thai
+idiom, `characters.md` what each person's first and second person are, and
+`glossary.md` what a name suffix becomes. These three are what binds; do not
+reach for a rule of your own over them.
 
 ## Match the original's length, not only its sense
 
@@ -221,96 +109,10 @@ has.** A phrase repeated for emphasis in Japanese that Thai does not need, a
 pronoun the Thai can drop, a transliteration that could be a translation — those
 are yours to spend. The hedge that carries the speaker's hesitation is not.
 
-## Why an accurate line still reads stiff
+## The record around the line
 
-Every fault below produces Thai in which **no word is wrong**. Checking the
-translation for accuracy cannot find any of them, which is why they survive a
-whole volume.
-
-The governing rule, from Thai translation teaching: carry the original's
-structure and word order across *as far as it holds* — and **the moment the Thai
-sounds ขัดหู, abandon the structure, not the wording.** Nudging words inside a
-Japanese-shaped sentence never repairs it. `Not until I filled my glass did I
-notice that it was broken` has three Thai renderings; the first two keep the
-shape and *do not communicate*, and only the third — which rebuilds the sentence
-as Thai — does. The failure here is stopping at the first two.
-
-### A noun in Japanese is usually a verb in Thai
-
-Japanese builds compound nouns freely and Thai does not. `コーティング量がズバ抜
-けてる` came out `ปริมาณที่เคลือบมามันเหนือชั้นกว่าใครเพื่อน` — a noun phrase
-built to the Japanese's shape. Thai says it with a verb: `เคลือบมาเยอะกว่าเจ้า
-อื่นเยอะเลย`.
-
-The same finding comes back from the other direction. Published Thai renderings
-of Japanese sound and manner words reach for **an adverb or a verb first**, leave
-some untranslated, and reach for a noun close to last. **When a Japanese noun is
-doing the work of a verb, translate it
-as a verb.**
-
-### Words that are each correct and wrong together
-
-A คู่คำ you had to think about — `เปียโนหลังนี้` over `เปียโนอันนี้` — is a pair
-worth recording in the work's `glossary.md`, the same as a term.
-
-### The final particle is information, not decoration
-
-Japanese marks stance on the sentence end — `よ ね ぞ わ の さ ぜ` — and **Thai has
-its own system in the same slot**, so the information is in the source and
-dropping it is a choice. Thai's particles split into stance (`นะ` `สิ` `ล่ะ`
-`หรอก` `เลย` `ไง` `แหละ` `เนี่ย` `ว่ะ`) and politeness (`ค่ะ` `ครับ`), and the
-vowel's length carries the feeling: **short is curt or serious** — `ซิ` `นะ`
-`เถอะ` `ละ` — **long is coaxing** — `ซี่` `น่า` `น้า`.
-
-`小口が落ちたぞ!!` came out `โคงุจิตกลงไปแล้ว!!`, which drops `ぞ` — and `ぞ` was
-the whole of the line's voice. **A bare majority of dialogue lines ending with no
-particle at all is worth suspecting** — some are right, an exclamation or a
-fragment running into the next balloon, but a Thai page that drops them all is
-dropping voice, not economising.
-
-Aspect and reason markers go the same way. `まざっちゃうから...` became
-`มันจะปนกันค่ะ…`, which keeps the fact and loses both the `ちゃう` that says *and
-that would be a shame* and the `から` that says *that's why*.
-
-### An idiom translated by its parts inverts
-
-`覚悟を決める` is *to steel yourself* and came out `ทำใจ`, *to resign yourself* —
-the opposite stance, from an accurate rendering of the parts.
-
-## Thai lengthens by opening the vowel
-
-A syllable held is a syllable whose vowel opens: `ちゃ〜ん` is `จางงง`, where the
-`ั` of `จัง` becomes `า` and the final consonant runs on.
-
-The same move carries the symbols a Thai comic face has no glyph for — **♥ ♡ ★
-☆ ♪ 「」 ○**. They are tone markers, so render them the way Thai marks tone: in
-the wording and the drawn-out vowel. Where a character ends most of her lines
-with `♥`, she reads as herself in Thai through the vowels and the word choice,
-never through a particle she would not otherwise use.
-
-Where the original uses a CJK bracket or a censoring circle, take the shape:
-`【】` becomes `[]` and `◯◯◯` becomes `OOO`. What `◯◯◯` says is that a word has
-been withheld, and three circles say that in either script.
-
-## Conventions that hold across works
-
-These need no deciding per work; a work's own file records only where it departs.
-
-- **`…` at the end of a line is a character trailing off,** not an ellipsis of
-  omitted words. Thai keeps the `…` and lets the sentence stay unfinished.
-- **Keep the question mark wherever the Japanese has one.** Thai does not need it
-  — `เหรอ` and `ปะ` already mark the question — but in a bubble it is part of the
-  lettering's rhythm rather than grammar, and dropping it flattens a beat the
-  artist drew. A question the Japanese wrote without one gets none.
-- **Text drawn on a slant is lettered level.** Nothing rotates text, and level
-  Thai beside a skewed phone screen reads fine at print size.
-
-## The record, the roles, and reviewing
-
-Composing the line is one half. The other is the record around it — which value a
-region takes, which file a decision belongs in, what to write down page by page,
-what to verify before rendering, and which chapters earn a review pass.
-
-That is [`working-a-chapter.md`](working-a-chapter.md), beside this file. Read it
-before filing a region or closing a chapter; you do not need it to translate a
-sentence.
+Composing the line is one half. The other is
+[`working-a-chapter.md`](working-a-chapter.md), beside this file. Read it before
+opening the chapter and again before closing it;
+some of it is what you write while the page is still in front of you. A pass that
+only reads and reports does not need it.

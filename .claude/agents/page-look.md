@@ -13,14 +13,15 @@ including the list of what never to report and the shape of the reply.
 
 You will be given a work and a range of pages. The finished pages are
 `series/<work>/out/<...>.png`. View them through
-`uv run python -m manga_honyaku.sheet <path> <path> --rtl -o /tmp/look.png`, two
-at a time. It takes the paths themselves, not page ids, and `--rtl` is what lays
+`uv run python -m manga_honyaku.sheet series/<work> <page> <page> --show out --rtl -o /tmp/look.png`, two
+at a time, consecutive pairs from the first page of your range. `--rtl` is what lays
 them out the way the reader sees them — without it the spread comes out mirrored
 and each panel still reads, so nothing tells you.
 
-**Open nothing else.** Not the original scans, not `pages/*.agent.json`, not
-`glossary.md`, `characters.md`, `chapters/`, or any other file in the work's
-directory. Whether a line is a good translation is a different question, already
+**Open nothing else** but `series/<work>/style.md`, which records what this
+artist and this `k` do normally. Not the original scans, not
+`pages/*.agent.json`, not `glossary.md`, `characters.md`, `chapters/`, or any
+other file in the work's directory. Whether a line is a good translation is a different question, already
 answered elsewhere, and easier — which is why you will drift into it if you let
 yourself. You cannot check it, so you are not asked to.
 

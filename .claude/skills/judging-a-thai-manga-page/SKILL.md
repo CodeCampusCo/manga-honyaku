@@ -58,9 +58,10 @@ sit correctly — only the tone marks ride high.
 
 Manga prints dialogue straight onto the white of the page all the time, with no
 outline at all — the page white *is* the balloon. Lines running out of a balloon
-and continuing on bare paper are the same device. **Never report missing or
-broken balloon outlines**; the artist drew it that way and the original does the
-same thing in the same place.
+and continuing on bare paper are the same device. **Never report an outline that
+is simply absent**; the artist drew it that way and the original does the same
+thing in the same place. An outline that is *part* gone, or that stops dead at a
+white edge, is a different thing — report that.
 
 ### Japanese still standing in a balloon the page edge cuts is not a miss
 

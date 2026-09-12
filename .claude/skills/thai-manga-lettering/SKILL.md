@@ -16,8 +16,9 @@ down it, so the box comes out tall and narrow, and Thai set into it stacks into
 short lines on its own. `อ๋อ อันนี้เอง` becomes `อ๋อ / อันนี้ / เอง` because the
 column is narrow, not because anything decided it should.
 
-Overflow has exactly one answer: a smaller size. Not a different column, not a
-finer break point, not a special case for this bubble.
+Overflow has exactly one answer *in the renderer*: a smaller size. Not a
+different column, not a finer break point, not a special case for this bubble.
+The answers in the wording are below.
 
 ## When it will not fit
 

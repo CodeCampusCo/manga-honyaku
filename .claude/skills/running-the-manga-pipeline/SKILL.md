@@ -27,7 +27,9 @@ settled* and is not what it means. Edit a region's `box` — widen it over a gly
 the detector clipped, trim it off a balloon it landed on — correct its `source`
 in the same breath, then `prepare --retag series/<work> <page>`: it re-measures
 `size` and the `room` that follows and touches nothing else, so the roles,
-reading order, speakers and translations all stand. It prints how many regions
+reading order, speakers and translations all stand. **Run `clean` again as well
+where the box was a free-placement one** — its box is the mask, so a re-render
+alone leaves the old erasure exactly where it was. It prints how many regions
 it changed, which is how you check it did what you meant. `--force` is the other
 switch and is the destructive one: it rewrites the working file from scratch.
 
