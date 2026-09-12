@@ -59,8 +59,8 @@ stripes; one stripe wins the overlap and the text is set into a sliver.
 the outline the close ate.**
 
 **Do it as a fallback, not as the rule.** Applied to every bubble the same close
-bridges thin outlines and floods the artwork around them — on one chapter it
-moved 334 of 500 masks and stripped whole bubbles of their outlines, to fix two.
+bridges thin outlines and floods the artwork around them — it moves most of a
+chapter's masks and strips whole bubbles of their outlines, to fix a couple.
 Trigger it on a symptom only the fault produces: **a lone bubble whose interior
 fills under half its outline box.** A conjoined group's box has corners no lobe
 occupies and is legitimately that empty, so leave groups out.
@@ -91,7 +91,8 @@ nothing but a wider crop.
 A sound effect drawn as lettering is artwork. So is a sign, a product label, a
 phone screen. What they say reaches the reader through the translation record,
 not by overwriting the drawing — so mark them and skip them, and let the
-lettering stage find no mask and draw nothing.
+lettering stage find no mask and draw nothing. Where the translator moved the
+role to `dialogue` or `caption`, follow the new role: that region erases.
 
 **Only a reader can tell a sound effect from a line of unbubbled speech**, so
 that call belongs to whoever translated the page, not to this stage. A region
@@ -119,5 +120,5 @@ return code.
 | Text crammed into a sliver of a bubble | Toned interior; stripes labelled apart |
 | A white hole where a grey bubble was | Repainted with white instead of its own paper |
 | A panel rule cut at a caption's edge | Margin added to a free region's box |
-| The Japanese still showing under the Thai | Region kept as artwork but given a target |
+| The Japanese standing with nothing drawn over it | Role left as `image_text` or `sfx` after the scene needed it drawn |
 | A blank page and a zero exit code | A silently-swallowed failure; look at the image |

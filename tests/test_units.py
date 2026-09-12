@@ -12,19 +12,28 @@ from __future__ import annotations
 import json
 import unicodedata
 
+import numpy as np
+
 import pytest
 from PIL import ImageFont
 
 from manga_honyaku.chapters import chosen, entries
-from manga_honyaku.fit import measure
+from manga_honyaku.detect import nearly
+from manga_honyaku.ask import TOOLS
+from manga_honyaku.fit import measure, terms, trie
 from manga_honyaku.check import settle, says_something
 from manga_honyaku.audit import split_words
-from manga_honyaku.prepare import (cells, lettered_at, overlapping, tag,
+from manga_honyaku.prepare import (cells, colliding, lettered_at, overlapping, tag,
                                    tag_page, uncovered)
+from manga_honyaku.order import disagreements, propose
 from manga_honyaku.page import Series
-from manga_honyaku.regions import drifted, repeated
+from manga_honyaku.regions import drifted, repeated, widest
 from manga_honyaku.tally import chapter_of, polite_jp, polite_th
-from manga_honyaku.render import FONT, LINE_SPACING, lay_out, room_for, widths
+from manga_honyaku.render import (FONT, LINE_SPACING, SMALLEST, UNREADABLE,
+                                  floor_for, lay_out, room_for, widths)
+from manga_honyaku.sheet import around, build
+from manga_honyaku.space import (BLOCK, blank, block, gap, margin, nearest,
+                                 rectangles, share, spaces, where)
 
 
 # --- what a character costs -------------------------------------------------
@@ -429,6 +438,26 @@ def test_one_japanese_line_answered_two_ways_is_drift():
     assert not drifted([(p, {**r, "target": "เหมือนกัน"}) for p, r in rows])
 
 
+def test_one_line_written_with_two_kinds_of_pause_is_not_drift():
+    """`08/09` against `05/02`: `อืมมม…` and `อืมมม...`. Flagged, it costs a
+    re-read and teaches the reader to skim the flag."""
+    rows = [
+        ("08/09", {"status": "ok", "target": "อืมมม…"}),
+        ("05/02", {"status": "ok", "target": "อืมมม..."}),
+        ("05/14", {"status": "ok", "target": "อืมมม……"}),
+    ]
+    assert not drifted(rows)
+
+
+def test_a_space_is_not_a_pause_and_still_counts():
+    """Thai spaces are lettering decisions, so they are left alone."""
+    rows = [
+        ("a", {"status": "ok", "target": "คุณทามากาวะ"}),
+        ("b", {"status": "ok", "target": "คุณทามา กาวะ"}),
+    ]
+    assert drifted(rows)
+
+
 def test_a_region_nobody_lettered_is_not_a_disagreement():
     """A duplicate box has one region declined and no target on it. That is the
     ordinary case, not two answers to one line."""
@@ -495,6 +524,13 @@ def test_a_space_inside_a_word_is_caught():
     assert split_words("เสียง คราง", None)
 
 
+def test_the_space_thai_sets_before_the_repetition_mark_is_not_a_split():
+    """`ต่าง ๆ` is one word written the conventional way. The mark is Thai
+    script, so nothing else in the check tells it from a word cut in half."""
+    assert not split_words("ต่าง ๆ กัน", None)
+    assert not split_words("เร็ว ๆ นี้", None)
+
+
 def test_a_space_beside_latin_or_digits_is_ordinary_typesetting():
     """Only Thai on both sides makes a space a word-splitter. Without this the
     check reports every price, every `AV`, every bracket — three of its four
@@ -520,3 +556,410 @@ def test_a_declined_box_a_lettered_part_barely_covers_is_reported():
     part = {"id": "F4", "box": [0, 0, 100, 150], "status": "ok"}
     (_, inside, share), = uncovered([whole, part])
     assert [r["id"] for r in inside] == ["F4"] and share < 0.4
+
+
+def test_terms_reads_words_txt(tmp_path):
+    """`words.txt` is one term per line, and blank lines are not terms."""
+    (tmp_path / "words.txt").write_text("ฮารุกะ\n\n  ชิกุระ  \n")
+    assert terms(tmp_path) == {"ฮารุกะ", "ชิกุระ"}
+
+
+def test_terms_without_the_file(tmp_path):
+    """A work that has settled no term of its own is not an error."""
+    assert terms(tmp_path) == set()
+
+
+def test_trie_of_nothing_is_nothing():
+    """`render` takes None for "no custom dictionary", so this must agree."""
+    assert trie(set()) is None
+    assert trie({"ฮารุกะ"}) is not None
+
+
+def test_a_listed_term_stops_the_segmenter_splitting_it():
+    """Why `words.txt` exists: unlisted, a transliteration falls apart.
+
+    This is also why listing one costs something — an unsplittable token cannot
+    wrap, so it is the token that overflows a narrow box.
+    """
+    from manga_honyaku.render import tokenise
+
+    loose = [token for token, _ in tokenise("ฮารุกะ", trie(set()))]
+    held = [token for token, _ in tokenise("ฮารุกะ", trie({"ฮารุกะ"}))]
+    assert len(loose) > 1
+    assert held == ["ฮารุกะ"]
+
+
+def test_every_tool_puts_the_question_in_its_argv():
+    """The whole reason `ask` exists: each CLI takes a prompt differently.
+
+    `agy`'s `-p` swallows the next word, so its prompt has to be attached to the
+    flag — written apart it runs a turn against a flag name and says so.
+    """
+    question = "which Thai word carries this"
+    for name, build in TOOLS.items():
+        argv = build(question)
+        assert argv[0] == name
+        assert any(question in part for part in argv), name
+    assert f"-p={question}" in TOOLS["agy"](question)
+
+
+# --- the boxes the detector nearly drew --------------------------------------
+
+def weak(box, score=0.2):
+    return ("text_free", box, score)
+
+
+def test_a_weak_box_on_text_already_boxed_is_not_a_loss():
+    """Most near misses are the parts of a region the detector also found whole.
+
+    Reported, they would bury the one case worth having: a drawn sound nothing
+    covers at all.
+    """
+    regions = [{"box": [100, 100, 300, 400]}]
+    assert nearly([weak([120, 120, 280, 380])], regions, 1180, 0.35) == []
+
+
+def test_a_weak_box_nothing_covers_is_kept():
+    """`07/19`: one ぽにょん scored 0.38 and its mirror 0.15, so the page was
+    lettered with half a symmetrical gag and nothing could say so."""
+    got = nearly([weak([113, 581, 249, 804], 0.17)], [{"box": [709, 567, 829, 760]}], 1180, 0.35)
+    assert [c["score"] for c in got] == [0.17]
+
+
+def test_a_sliver_is_not_lettering():
+    """Under the threshold the model returns strokes and screentone, not text."""
+    assert nearly([weak([500, 600, 508, 800])], [], 1180, 0.35) == []
+
+
+def test_a_confident_detection_is_a_region_and_never_a_candidate():
+    assert nearly([weak([0, 0, 200, 300], 0.9)], [], 1180, 0.35) == []
+
+
+# --- the half of the budget room does not state ------------------------------
+
+def test_the_longest_run_is_the_budget_for_one_line():
+    """`room` is the whole box; a token wider than one line brings the size down
+    however short the line is, which is what `room` alone cannot say."""
+    region = {"box": [0, 0, 120, 300], "size": 30, "room": 24}
+    assert widest(region, LINE_SPACING) == 24 // int(300 // (30 * LINE_SPACING))
+
+
+def test_a_region_with_no_budget_has_no_run():
+    assert widest({"box": [0, 0, 120, 300], "size": 30}, LINE_SPACING) is None
+    assert widest({"box": [0, 0, 120, 300], "room": 24}, LINE_SPACING) is None
+
+
+# --- which way round a sheet is read -----------------------------------------
+
+def pages(tmp_path):
+    from PIL import Image
+
+    made = []
+    for shade in (0, 255):
+        path = tmp_path / f"{shade}.png"
+        Image.new("RGB", (100, 140), (shade, shade, shade)).save(path)
+        made.append(path)
+    return made
+
+
+def test_the_first_page_named_is_on_the_left_by_default(tmp_path):
+    sheet, width = build(pages(tmp_path))
+    assert sheet.getpixel((width // 2, 10)) == (0, 0, 0)
+
+
+def test_rtl_puts_the_first_page_named_on_the_right(tmp_path):
+    """A spread laid out the other way still reads panel by panel, so nothing
+    about the sheet itself says it is mirrored."""
+    sheet, width = build(pages(tmp_path), rtl=True)
+    assert sheet.getpixel((width + width // 2, 10)) == (0, 0, 0)
+
+
+# --- the order nothing else checks -------------------------------------------
+
+def boxes(**named):
+    return [{"id": rid, "box": box} for rid, box in named.items()]
+
+
+def test_a_tier_is_read_right_to_left_and_tiers_top_to_bottom():
+    page = boxes(
+        A=[500, 0, 700, 200], B=[100, 0, 300, 200],
+        C=[500, 300, 700, 500], D=[100, 300, 300, 500],
+    )
+    assert propose(page) == ["A", "B", "C", "D"]
+
+
+def test_a_tall_panel_on_the_right_is_read_before_both_beside_it():
+    """No horizontal line crosses the page, so the cut has to go the other way
+    first — which is the layout a naive sort by row gets wrong."""
+    page = boxes(
+        tall=[500, 0, 700, 500],
+        upper=[100, 0, 300, 200],
+        lower=[100, 300, 300, 500],
+    )
+    assert propose(page) == ["tall", "upper", "lower"]
+
+
+def test_boxes_no_line_can_separate_are_read_down_and_rightmost_first():
+    page = boxes(A=[0, 0, 400, 300], B=[200, 100, 600, 400])
+    assert propose(page) == ["A", "B"]
+
+
+def test_a_pair_the_file_and_the_boxes_disagree_about_is_named():
+    page = boxes(first=[500, 0, 700, 200], second=[100, 0, 300, 200])
+    page[0]["order"], page[1]["order"] = 2, 1
+    assert disagreements(page) == [("second", "first", False)]
+
+
+def test_a_file_that_agrees_with_the_boxes_says_nothing():
+    page = boxes(first=[500, 0, 700, 200], second=[100, 0, 300, 200])
+    page[0]["order"], page[1]["order"] = 1, 2
+    assert disagreements(page) == []
+
+
+def test_a_pair_separable_both_ways_says_so_rather_than_settling_it():
+    """`07/10`: a narrow panel beside a wide one, lettering high in one and low
+    in the other, so a horizontal line passes between them as cleanly as the
+    vertical one. The cut takes the horizontal and is wrong, and no rule over
+    the boxes could have known — the ruled border is in the artwork."""
+    page = boxes(low=[587, 734, 637, 881], high=[485, 336, 536, 579])
+    page[0]["order"], page[1]["order"] = 1, 2
+    (_, _, both), = disagreements(page)
+    assert both
+
+
+def test_a_pair_only_one_line_separates_is_a_real_disagreement():
+    page = boxes(above=[100, 0, 700, 200], below=[100, 300, 700, 500])
+    page[0]["order"], page[1]["order"] = 2, 1
+    (_, _, both), = disagreements(page)
+    assert not both
+
+
+# --- naming a region instead of four numbers ---------------------------------
+
+def work_with(tmp_path, regions, width=836, height=1180):
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "pages" / "01.agent.json").write_text(json.dumps(
+        {"img_width": width, "img_height": height, "regions": regions}
+    ))
+    return Series(tmp_path)
+
+
+def test_a_region_crop_shows_what_the_region_sits_in(tmp_path):
+    """A box on its own answers what it says; a crop is usually asked which
+    panel it is in."""
+    work = work_with(tmp_path, [{"id": "F8", "box": [400, 500, 500, 600]}])
+    assert around(work, "01", "F8") == (300, 400, 600, 700)
+
+
+def test_a_region_crop_stops_at_the_edge_of_the_page(tmp_path):
+    work = work_with(tmp_path, [{"id": "B1", "box": [10, 10, 110, 110]}])
+    assert around(work, "01", "B1") == (0, 0, 210, 210)
+
+
+def test_naming_a_region_that_is_not_there_fails_loudly(tmp_path):
+    work = work_with(tmp_path, [{"id": "B1", "box": [0, 0, 10, 10]}])
+    with pytest.raises(SystemExit):
+        around(work, "01", "B9")
+
+
+# --- the smallest a work letters at ------------------------------------------
+
+def test_a_work_sets_its_own_floor():
+    assert floor_for({"floor": 7}, 1.0) == 7
+
+
+def test_a_work_that_sets_none_gets_the_default():
+    assert floor_for({}, 1.0) == SMALLEST
+
+
+def test_the_page_scale_carries_the_floor_with_it():
+    """A work scanned at twice the height letters at twice the size."""
+    assert floor_for({"floor": 7}, 2.0) == 14
+
+
+def test_nothing_goes_below_unreadable_however_small_it_is_asked_for():
+    assert floor_for({"floor": 1}, 1.0) == UNREADABLE
+    assert floor_for({"floor": 7}, 0.1) == UNREADABLE
+
+
+def test_fit_measures_against_the_same_floor_render_draws_at():
+    """Reported below it, a size is one the page will never be drawn at."""
+    hair_thin = {"box": [0, 0, 40, 18]}
+    assert measure(hair_thin, "ยินดีต้อนรับ", FONT, None, LINE_SPACING, 40) is None
+
+
+# --- one sheet, boxes off several pages --------------------------------------
+
+def test_each_cell_can_take_its_own_box(tmp_path):
+    """Ten candidates off ten pages is one sheet, not ten runs and a combine."""
+    from PIL import Image
+
+    made = []
+    for shade in (0, 255):
+        path = tmp_path / f"{shade}.png"
+        Image.new("RGB", (100, 100), (shade, shade, shade)).save(path)
+        made.append(path)
+    sheet, width = build(made, crop=[(0, 0, 50, 50), (0, 0, 100, 100)])
+    assert sheet.width == 2 * width
+
+
+def test_one_box_still_applies_to_every_cell(tmp_path):
+    from PIL import Image
+
+    made = []
+    for shade in (0, 255):
+        path = tmp_path / f"{shade}.png"
+        Image.new("RGB", (100, 100), (shade, shade, shade)).save(path)
+        made.append(path)
+    sheet, width = build(made, crop=(0, 0, 50, 50))
+    assert sheet.height == width
+
+
+# --- two lines drawn onto the same piece of page -----------------------------
+
+def plate(rid, box, role="caption", status="ok"):
+    return {"id": rid, "box": box, "role": role, "status": status}
+
+
+def test_a_plate_landing_on_a_line_is_reported():
+    """`clean` paints the plate's box out and `render` draws into it, so the
+    line underneath is gone and nothing measures what is missing."""
+    (_, _, share), = colliding([plate("F5", [0, 0, 200, 200]),
+                                plate("B1", [100, 100, 300, 300])])
+    assert share > 0.2
+
+
+def test_a_plate_landing_on_drawn_sound_is_reported():
+    """The sound is artwork the page was meant to keep; the plate erases it."""
+    got = colliding([plate("F2", [0, 0, 200, 200]),
+                     plate("F3", [100, 100, 300, 300], role="sfx")])
+    assert len(got) == 1
+
+
+def test_regions_drawn_close_are_not_a_collision():
+    assert colliding([plate("B1", [0, 0, 100, 100]),
+                      plate("B2", [95, 95, 195, 195])]) == []
+
+
+def test_two_regions_that_erase_nothing_cannot_collide():
+    assert colliding([plate("F5", [0, 0, 200, 200], role="sfx"),
+                      plate("F6", [0, 0, 200, 200], role="image_text")]) == []
+
+
+def test_a_declined_region_erases_nothing_and_is_not_a_plate():
+    assert colliding([plate("F5", [0, 0, 200, 200], status="declined"),
+                      plate("B1", [0, 0, 200, 200])]) == []
+
+
+# --- where a gloss goes -----------------------------------------------------
+
+def paper(height=160, width=160):
+    return np.full((height, width), 255, np.uint8)
+
+
+def test_at_stands_in_for_the_box_everywhere_and_only_where_it_is_set():
+    assert where({"box": [0, 0, 10, 10]}) == [0, 0, 10, 10]
+    assert where({"box": [0, 0, 10, 10], "at": [5, 5, 9, 9]}) == [5, 5, 9, 9]
+
+
+def test_a_glossed_region_is_measured_from_the_rectangle_it_is_drawn_into():
+    """The whole of the `at` rule: `box` says where the Japanese sits and
+    nothing else reads it for a size."""
+    box = [0, 0, 100, 400]
+    assert lettered_at(box, "ああああ") == pytest.approx(100.0)
+    same = {"box": box, "at": [0, 0, 50, 200], "source": "ああああ"}
+    tag_page([same], 1180, {"one": 0.5})
+    assert same["size"] == 50
+
+
+def test_a_budget_is_counted_against_the_at_when_there_is_one():
+    style = {"k": 1.0, "line_spacing": LINE_SPACING, "one": 0.5}
+    wide = {"box": [0, 0, 100, 100], "bubble": [0, 0, 100, 100], "source": "ああ"}
+    narrow = dict(wide, at=[0, 0, 50, 100])
+    tag(wide, 10, style)
+    tag(narrow, 10, style)
+    assert narrow["room"] < wide["room"]
+
+
+def test_two_glosses_in_one_gutter_are_found_and_a_box_pair_is_not():
+    regions = [
+        {"id": "F1", "box": [0, 0, 10, 10], "at": [100, 100, 200, 200]},
+        {"id": "F2", "box": [500, 500, 510, 510], "at": [150, 150, 250, 250]},
+        {"id": "F3", "box": [900, 900, 910, 910]},
+    ]
+    assert not overlapping(regions)
+    pairs = overlapping(regions, 0, field="at")
+    assert [(a["id"], b["id"]) for a, b, _ in pairs] == [("F1", "F2")]
+
+
+# --- the blank rectangles a page has ----------------------------------------
+
+def test_a_speck_does_not_split_a_margin_and_a_stroke_does():
+    """The bug this is for: one pixel of scan noise in a clean margin cuts it
+    into two halves too narrow to use."""
+    speckled = paper()
+    speckled[80, 80] = 0
+    assert blank(speckled, [], None).all()
+
+    drawn = paper()
+    drawn[76:84, 76:84] = 0
+    assert not blank(drawn, [], None).all()
+
+
+def test_dark_but_featureless_is_not_blank():
+    """Black type has to read on it, and there is no white plate under a gloss."""
+    shadowed = paper()
+    shadowed[64:96] = 150
+    grid = blank(shadowed, [], None)
+    assert not grid[8:12].any()
+    assert grid[:8].all()
+
+
+def test_every_region_takes_its_own_box_out_of_the_page():
+    region = {"box": [40, 40, 80, 80]}
+    grid = blank(paper(), [region], region)
+    assert not grid[6, 6]
+    assert grid[0, 0]
+
+
+def test_a_rectangle_is_reported_once_and_not_once_per_row_it_grew_through():
+    grid = np.ones((4, 4), bool)
+    assert rectangles(grid) == [(0, 0, 4, 4)]
+
+
+def test_a_rectangle_is_maximal_in_both_directions():
+    grid = np.ones((4, 4), bool)
+    grid[0, 0] = False
+    found = {(x1, y1, x2, y2) for x1, y1, x2, y2 in rectangles(grid)}
+    assert found == {(1, 0, 4, 4), (0, 1, 4, 4)}
+
+
+def test_distance_is_the_gap_and_not_the_centres():
+    assert gap((0, 0, 10, 10), (0, 0, 10, 10)) == 0
+    assert gap((20, 0, 30, 10), (0, 0, 10, 10)) == 10
+
+
+def test_a_block_is_placed_as_near_the_lettering_as_its_rectangle_allows():
+    assert nearest(10, 10, (0, 0, 100, 100), [200, 0, 210, 10]) == (90, 0, 100, 10)
+    assert nearest(10, 10, (0, 0, 100, 100), [40, 40, 50, 50]) == (40, 40, 50, 50)
+
+
+def test_the_page_edge_is_flagged_and_the_middle_of_the_drawing_is_not():
+    assert margin((0, 40, 20, 60), 200, 200)
+    assert margin((40, 180, 60, 200), 200, 200)
+    assert not margin((40, 40, 60, 60), 200, 200)
+
+
+def test_what_is_offered_is_trimmed_to_the_text_and_clear_of_the_lettering():
+    """`render` centres a free block in its rectangle, so a rectangle larger
+    than the text leaves the Thai floating in the middle of a strip."""
+    region = {"id": "F1", "box": [0, 0, 40, 400], "target": "ที่เรียกว่ามือโปรไง"}
+    found = spaces(
+        paper(400, 400), [region], region, FONT, None, LINE_SPACING, 21, 60
+    )
+    assert found
+    for box, size, _ in found:
+        assert size >= 21
+        assert box[0] >= region["box"][2]
+        assert (box[2] - box[0]) * (box[3] - box[1]) < 300 * 400
+
