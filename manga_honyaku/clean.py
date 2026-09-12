@@ -163,6 +163,19 @@ def interiors(gray: np.ndarray, group: list[dict]) -> dict[str, np.ndarray]:
     # lobe and those boxes overlap only in the waist, so the only pixels in
     # dispute are the ones in that overlap, and they go to the nearer lobe.
     rows, cols = np.mgrid[y1:y2, x1:x2]
+    # Ink outside the lettering is artwork. A balloon drawn as a ring of separate
+    # ticks encloses nothing, so the paper runs straight out of it and the ticks
+    # stand in the middle of what the flood claims; repainting the claim takes
+    # the balloon's edge with it. Painting paper over paper costs nothing, so the
+    # claim keeps all the paper it found and gives back every dark pixel that is
+    # not where the lettering sat. A glyph that overruns its box is the same
+    # trade the box already makes, and `audit` reports what it leaves.
+    lettering = np.zeros_like(combined)
+    for region in group:
+        lx1, ly1, lx2, ly2 = (int(v) for v in region["box"])
+        lettering[max(ly1 - y1, 0) : max(ly2 - y1, 0), max(lx1 - x1, 0) : max(lx2 - x1, 0)] = True
+    combined = combined & (paper.astype(bool) | lettering)
+
     owned = []
     for region in group:
         bx1, by1, bx2, by2 = region["bubble"]
