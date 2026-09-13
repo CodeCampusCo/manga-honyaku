@@ -32,8 +32,9 @@ from manga_honyaku.tally import chapter_of, polite_jp, polite_th
 from manga_honyaku.render import (FONT, LINE_SPACING, SMALLEST, UNREADABLE,
                                   floor_for, lay_out, room_for, widths)
 from manga_honyaku.sheet import around, build
-from manga_honyaku.space import (BLOCK, blank, block, gap, margin, nearest,
-                                 rectangles, share, spaces, where)
+from manga_honyaku.space import (BLOCK, blank, block, corners, gap, margin,
+                                 nearest, reading, rectangles, share, spaces,
+                                 where)
 
 
 # --- what a character costs -------------------------------------------------
@@ -899,7 +900,7 @@ def test_a_speck_does_not_split_a_margin_and_a_stroke_does():
     into two halves too narrow to use."""
     speckled = paper()
     speckled[80, 80] = 0
-    assert blank(speckled, [], None).all()
+    assert blank(speckled, [], None)[2:-2, 2:-2].all()
 
     drawn = paper()
     drawn[76:84, 76:84] = 0
@@ -912,14 +913,25 @@ def test_dark_but_featureless_is_not_blank():
     shadowed[64:96] = 150
     grid = blank(shadowed, [], None)
     assert not grid[8:12].any()
-    assert grid[:8].all()
+    assert grid[2:8, 2:-2].all()
 
 
 def test_every_region_takes_its_own_box_out_of_the_page():
     region = {"box": [40, 40, 80, 80]}
     grid = blank(paper(), [region], region)
     assert not grid[6, 6]
-    assert grid[0, 0]
+    assert grid[2, 2]
+
+
+def test_the_trim_is_never_offered_however_clean_the_paper():
+    """Type with no air outside it stops reading as part of the page, so the
+    outer `PAD` is taken out before any rectangle is looked for."""
+    grid = blank(paper(), [], None)
+    assert not grid[0].any()
+    assert not grid[:, 0].any()
+    assert not grid[-1].any()
+    assert not grid[:, -1].any()
+    assert grid[2:-2, 2:-2].all()
 
 
 def test_a_rectangle_is_reported_once_and_not_once_per_row_it_grew_through():
@@ -948,6 +960,41 @@ def test_the_page_edge_is_flagged_and_the_middle_of_the_drawing_is_not():
     assert margin((0, 40, 20, 60), 200, 200)
     assert margin((40, 180, 60, 200), 200, 200)
     assert not margin((40, 40, 60, 60), 200, 200)
+
+
+def test_a_corner_strip_is_never_offered_over_another_region():
+    """A gloss erases nothing, so a strip over the magazine's own furniture
+    sets Thai on top of printed Japanese — worse than the plate it avoids."""
+    region = {"id": "F1", "box": [180, 180, 220, 380], "target": "ที่เรียกว่ามือโปรไง"}
+    alone = corners(region, [region], paper(400, 400), FONT, None, LINE_SPACING, 21)
+    assert alone
+
+    furniture = {"id": "F2", "box": [0, 0, 400, 60]}
+    fewer = corners(
+        region, [region, furniture], paper(400, 400), FONT, None, LINE_SPACING, 21
+    )
+    assert len(fewer) < len(alone)
+    assert all(box[1] >= 60 for box, _, _ in fewer)
+
+
+def test_a_strip_takes_as_few_lines_as_the_corner_will_hold():
+    """One line needs the whole text's width, which on a long caption crosses
+    whatever the page has on that band. It never stops being wider than tall."""
+    region = {"id": "F1", "box": [180, 180, 220, 380], "target": "ที่เรียกว่ามือโปรไงล่ะคุณ"}
+    for box, _, _ in corners(
+        region, [region], paper(400, 400), FONT, None, LINE_SPACING, 21
+    ):
+        assert box[2] - box[0] > box[3] - box[1]
+
+
+def test_a_spot_says_how_far_out_of_sequence_it_would_read():
+    """`--todo` asks whether the file and the geometry already disagree; this
+    isolates what the candidate itself does."""
+    first = {"id": "B1", "box": [200, 0, 300, 100], "order": 1}
+    second = {"id": "B2", "box": [0, 0, 100, 100], "order": 2}
+    regions = [first, second]
+    assert reading(regions, second, (0, 0, 100, 100)) == 0
+    assert reading(regions, second, (320, 0, 400, 100)) == -1
 
 
 def test_what_is_offered_is_trimmed_to_the_text_and_clear_of_the_lettering():
