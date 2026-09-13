@@ -1,13 +1,15 @@
 ---
 name: judging-a-thai-manga-page
-description: Use when looking at finished translated manga pages and judging only how they look — lettering out of proportion to the box holding it, balloons that sit wrong, line breaks that stop the eye. Knows what this face and this format do normally, so the things that look like faults but are not do not get reported. Not for judging a translation.
+description: Use when reading finished translated manga pages as a reader of the translated edition and judging them — lettering out of proportion to the box holding it, balloons that sit wrong, line breaks that stop the eye, a line that does not read. Knows what this face and this format do normally, so the things that look like faults but are not do not get reported. Not for checking a translation against its source.
 ---
 
 # Judging a Thai manga page
 
-You are looking at printed pages and saying where the **page** goes wrong. Not
-the translation — you cannot check that and must not try. Somebody judging a book
-from across a table, who has never seen the original and does not need to.
+You are reading printed pages and saying where the **page** goes wrong — how it
+is set, and whether it reads. Somebody who bought the translated edition, has
+never seen the original and does not need to. **Whether the Thai carries what
+the Japanese carried was settled before you**, by a pass that had both; asking it
+again is work already done, and you have nothing to do it with.
 
 **Read the pages right to left**, the way the book is read: rightmost panel
 first, and within a panel, right to left and top down. View them through
@@ -119,7 +121,7 @@ looked at and accepted as readable. **Do not report it.**
 
 ## What to report
 
-Three things, and the bar for each is that **you would notice it while reading**,
+Five things, and the bar for each is that **you would notice it while reading**,
 not that it is measurably imperfect.
 
 1. **Lettering out of proportion to the box it sits in.** A large box holding
@@ -142,6 +144,13 @@ not that it is measurably imperfect.
 3. **A line break that stops the eye** — a word split where it should not be, a
    last line holding one stray fragment, text so narrow it comes out one or two
    characters per line.
+4. **A line that does not read.** Thai that comes out stiff, that nobody would
+   say aloud, or that you had to go over twice to take. **Say what you would put
+   instead.** Yours is the only ear in this pipeline that is free of the
+   Japanese, and a wording nobody can fault against the source can still be one
+   no reader would choose.
+5. **A page that does not read as a page** — two beats that do not connect, a
+   line you cannot attribute, a page you finished without knowing what happened.
 
 Report nothing you would not defend with the page in front of you. A pass that
 finds two hundred things has said nothing.
@@ -150,15 +159,19 @@ finds two hundred things has said nothing.
 
 Per point: **the page**, **where on the page** — describe the position and what
 the balloon looks like well enough that someone with the page open finds it in
-one go, since you have no region ids — and **what is wrong**.
+one go, since you have no region ids — and **what is wrong**. On a point about
+the wording, add what you would put in its place.
 
-**Do not diagnose the cause and do not propose new wording.** Both need the
-translation and the working files, which you do not have. Three different causes
+**A wording you offer may be turned down** — once the source is open it may not
+say what the original says, and once it is priced it may not fit the box.
+**Write the point so it still stands without it**: the line that stopped you is
+the finding, and the words are a suggestion.
+
+**Do not diagnose why a page is set the way it is.** Three different causes
 produce small lettering — a term that cannot be broken, a size inherited from the
 original, and a sentence longer than its box — and code downstream tells them
-apart from data you cannot see. Your job is to say *this one is out of
-proportion*; saying why is somebody else's, and guessing at it makes your report
-harder to use.
+apart from data you cannot see. Say *this one is out of proportion*; saying why
+is somebody else's, and guessing at it makes your report harder to use.
 
 End with three numbers: pages looked at, points reported, and roughly how many
 balloons a page carries — so the count can be read as a proportion.

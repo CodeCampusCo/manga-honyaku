@@ -29,9 +29,10 @@ forms are in
    write the number into `style.md`** — the one file that pass may read.
 6. The read-back below, then `handoff.md`.
 
-**`page-look` is the only pass that repeats.** Carry a `page-look` fix that
-changes what a line *says*, rather than how it is set, to the read-back: nothing
-reads it against the source again. What each pass may see is in
+**`page-look` is the only pass that repeats.** **Check a wording it proposes
+against the source before you apply it** — it has no Japanese and you do, and
+`fit` prices it. Name in the read-back the lines you changed that way; no pass
+reads the chapter against the source again. What each pass may see is in
 `AGENTS.md`; if your tool cannot take away the tools their frontmatter names,
 that column is yours to keep.
 
