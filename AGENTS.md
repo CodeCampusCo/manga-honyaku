@@ -50,8 +50,7 @@ the page cannot be handed to something else and reported back as your own. Not
 every model that runs here has eyes, and a harness will quietly hand the image to
 something that does: fourteen pages of one chapter were uploaded to a third
 party's bucket before anybody knew images were leaving the machine at all.
-[`docs/agents.md`](docs/agents.md) lists the readers that exist and what each one
-costs. Which to use is the person's call, and one of the answers is to send the
+Which reader to use is the person's call, and one of the answers is to send the
 page nowhere and have them read it to you.
 
 ## Translating
