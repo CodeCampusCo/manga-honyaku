@@ -30,7 +30,8 @@ from pathlib import Path
 
 from PIL import Image
 
-from manga_honyaku.ocr import load_reader, read
+from manga_honyaku.clean import KEEP
+from manga_honyaku.ocr import SURE, load_reader, read
 from manga_honyaku.page import Series
 from manga_honyaku.render import (
     FONT,
@@ -40,6 +41,7 @@ from manga_honyaku.render import (
     room_for,
     settings,
     warn,
+    where,
     widths,
 )
 
@@ -87,6 +89,10 @@ def lettered_at(box: list[float], source: str) -> float | None:
     A region holding only a pause is excluded: one character in a box sized for a
     beat of silence measures as enormous lettering, and the dots were drawn at
     ordinary size.
+
+    The box measured is `at` where a region has one. The question this answers
+    is how large the Thai is set, and on a glossed region that is decided by the
+    rectangle it is drawn into and not by the one the Japanese sits in.
     """
     if not any(unicodedata.category(c).startswith(("L", "N")) for c in source):
         return None
@@ -111,9 +117,9 @@ def tag(entry: dict, size: float | None, style: dict) -> None:
         # size, so there is no budget to state.
         entry.pop("room", None)
         return
-    at = max(1, round(style.get("k", K) * entry["size"]))
+    thai = max(1, round(style.get("k", K) * entry["size"]))
     room = room_for(
-        entry["box"], at, style.get("line_spacing", LINE_SPACING), style["one"]
+        where(entry), thai, style.get("line_spacing", LINE_SPACING), style["one"]
     )
     # A box too small to hold one line at its own size has no budget to state,
     # and a stated zero reads as "write nothing".
@@ -132,7 +138,7 @@ def tag_page(entries: list[dict], height: int, style: dict) -> None:
     rather than a constant carried in from another book. A size already on such
     a region is kept: it is the only judgement that region has ever had.
     """
-    measured = [lettered_at(e["box"], e.get("source") or "") for e in entries]
+    measured = [lettered_at(where(e), e.get("source") or "") for e in entries]
     known = sorted(m for m in measured if m)
     usual = known[len(known) // 2] if known else TYPICAL * height
     for entry, size in zip(entries, measured):
@@ -144,7 +150,9 @@ def tag_page(entries: list[dict], height: int, style: dict) -> None:
         tag(entry, size, style)
 
 
-def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
+def overlapping(
+    regions: list[dict], threshold: float = 0.85, field: str = "box"
+) -> list[tuple]:
     """Region pairs standing on the same lettering, largest coverage first.
 
     `detect` drops a duplicate only when both boxes came back under the same
@@ -165,12 +173,18 @@ def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
     the shape that matters is containment: a box drawn around a whole phrase and
     a second box around one of its columns overlap very little as a fraction of
     the pair, and completely as a fraction of the smaller.
+
+    `field` asks the same question of a different rectangle. Over `at` it is not
+    about the original's lettering at all: two glosses sharing any space at all
+    are Thai drawn over Thai, which is why the caller lowers the threshold to
+    nothing rather than reusing this one.
     """
     found = []
-    for i, a in enumerate(regions):
-        for b in regions[i + 1 :]:
-            ax1, ay1, ax2, ay2 = a["box"]
-            bx1, by1, bx2, by2 = b["box"]
+    boxed = [r for r in regions if r.get(field)]
+    for i, a in enumerate(boxed):
+        for b in boxed[i + 1 :]:
+            ax1, ay1, ax2, ay2 = a[field]
+            bx1, by1, bx2, by2 = b[field]
             wide = min(ax2, bx2) - max(ax1, bx1)
             tall = min(ay2, by2) - max(ay1, by1)
             if wide <= 0 or tall <= 0:
@@ -180,6 +194,55 @@ def overlapping(regions: list[dict], threshold: float = 0.85) -> list[tuple]:
             if cover > threshold:
                 found.append((a, b, cover))
     return sorted(found, key=lambda pair: -pair[2])
+
+
+# How much of a box a plate may cover before it is a collision rather than two
+# regions drawn close. Measured over eleven chapters at 15%: silent on everything
+# shipped, and it would have caught both cases that reached a rendered page — a
+# caption plate across a balloon's first line, and one across a drawn sound.
+COLLIDING = 0.15
+
+
+def erasing(region: dict) -> bool:
+    """Whether `clean` will take this region's box out of the artwork."""
+    return bool(
+        region.get("role")
+        and region["role"] not in KEEP
+        and region.get("status") in ("ok", "erase")
+    )
+
+
+def colliding(regions: list[dict]) -> list[tuple]:
+    """Pairs where a plate that erases lands on something that had to survive.
+
+    `--overlaps` asks a different question — two boxes on one piece of the
+    *original's* lettering, which is a detector artefact. This is a region whose
+    box `clean` will paint out, sitting on a region that holds its own line or on
+    drawn sound the page was meant to keep. It is silent either way: the plate
+    goes down, the thing under it is gone, and nothing measures what is missing.
+
+    `image_text` is left out of the second half. Its boxes are loose and overlap
+    other free text routinely — including it reports thirteen pairs across
+    chapters nobody has found a fault on, which is how a list stops being read.
+    """
+    harmed = lambda r: erasing(r) or r.get("role") == "sfx"
+    out = []
+    for i, a in enumerate(regions):
+        for b in regions[i + 1:]:
+            if not ((erasing(a) and harmed(b)) or (erasing(b) and harmed(a))):
+                continue
+            width = min(a["box"][2], b["box"][2]) - max(a["box"][0], b["box"][0])
+            height = min(a["box"][3], b["box"][3]) - max(a["box"][1], b["box"][1])
+            if width <= 0 or height <= 0:
+                continue
+            hit = width * height
+            share = max(
+                hit / ((a["box"][2] - a["box"][0]) * (a["box"][3] - a["box"][1])),
+                hit / ((b["box"][2] - b["box"][0]) * (b["box"][3] - b["box"][1])),
+            )
+            if share > COLLIDING:
+                out.append((a, b, share))
+    return sorted(out, key=lambda row: -row[2])
 
 
 def uncovered(regions: list[dict]) -> list[tuple]:
@@ -234,9 +297,20 @@ def reading(
     for region in detected["regions"]:
         entry = {**region, **SLOTS}
         if reader is not None:
-            entry["source"] = read(image, region["box"], reader)
+            entry["source"], entry["source_score"] = read(image, region["box"], reader)
         regions.append(entry)
     tag_page(regions, detected["img_height"], style)
+
+    # Read here because this is the stage holding the scan and the reader. A
+    # coordinate alone cannot be judged without building a crop first.
+    candidates = []
+    for candidate in detected.get("candidates", []):
+        entry = dict(candidate)
+        if reader is not None:
+            entry["source"], entry["source_score"] = read(
+                image, candidate["box"], reader
+            )
+        candidates.append(entry)
 
     return {
         "version": detected["version"],
@@ -245,6 +319,7 @@ def reading(
         "img_height": detected["img_height"],
         "detector": detected["detector"],
         "regions": regions,
+        "candidates": candidates,
         "questions": [],
     }
 
@@ -289,8 +364,15 @@ def main() -> None:
             tag_page(data["regions"], data["img_height"], style)
             after = [(r.get("size"), r.get("room")) for r in data["regions"]]
             out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
-            moved = sum(a != b for a, b in zip(before, after))
-            print(f"{page}  {moved} of {len(data['regions'])} retagged")
+            # Named and not only counted: a count larger than the edit you made
+            # is the one case the check is for, and it cannot be read.
+            moved = [
+                r["id"] for r, a, b in zip(data["regions"], before, after) if a != b
+            ]
+            print(
+                f"{page}  {len(moved)} of {len(data['regions'])} retagged"
+                + (f": {', '.join(moved)}" if moved else "")
+            )
         return
 
     reader = None if args.no_ocr else load_reader()
@@ -305,7 +387,14 @@ def main() -> None:
         scan = None if reader is None else Image.open(work.scan(page)).convert("RGB")
         data = reading(detected, scan, reader, values)
         out.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
-        print(f"{page}  {out}  {len(data['regions'])} regions")
+        doubtful = [
+            r for r in data["regions"]
+            if r.get("source_score") is not None and r["source_score"] < SURE
+        ]
+        print(f"{page}  {out}  {len(data['regions'])} regions", end="")
+        print(f", {len(doubtful)} to check" if doubtful else "")
+        for region in doubtful:
+            print(f"    {region['id']:<4} {region['source_score']:.2f}  {region['source']}")
         for a, b, cover in overlapping(data["regions"]):
             warn(
                 f"{page} {a['id']} and {b['id']}: one covers {cover:.0%} of the "

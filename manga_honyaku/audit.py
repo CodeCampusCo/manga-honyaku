@@ -27,18 +27,23 @@ eye, against an exception list a Thai reader calibrated. **A check whose output
 is never work is not a check**, and this file is only worth running if everything
 it prints is.
 
-`status` has three values and each answers a different question, which is why
-the third had to exist:
+`status` has four values and each answers a different question, which is why the
+last two had to exist:
 
     ok        take the Japanese out and put this Thai in its place
     declined  leave the artwork alone; the reason says why
     erase     take the Japanese out and put nothing back
+    glossed   leave the Japanese where it is; draw this Thai at `at` instead
 
 `erase` is for lettering that has to go and has no Thai — furigana boxed on its
 own, a stray glyph the interior fill could not reach. Written as `ok` with no
 target it is indistinguishable from a line somebody forgot to translate, and
 written as `declined` it is never erased at all, so the page keeps the Japanese
 while the record says it was handled.
+
+`glossed` erases nothing, so the two image checks below skip it. What goes wrong
+instead is `glossed` and `at` coming apart, and neither half of that shows on a
+finished page.
 """
 
 import argparse
@@ -50,7 +55,7 @@ import numpy as np
 from PIL import Image
 from pythainlp.tokenize import word_tokenize
 
-from .clean import KEEP, PAPER
+from .clean import KEEP, LEAVE, PAPER
 from .page import Series
 from .render import ENGINE, lexicon
 
@@ -81,7 +86,7 @@ def cleaned(region: dict) -> bool:
     return bool(
         region.get("role")
         and region.get("role") not in KEEP
-        and region.get("status") != "declined"
+        and region.get("status") not in LEAVE
     )
 
 
@@ -103,6 +108,10 @@ def record(data: dict) -> list[str]:
             out.append(f"{rid}: erase with a target — say which it is")
         if r.get("status") == "declined" and not r.get("reason"):
             out.append(f"{rid}: declined with no reason")
+        if r.get("status") == "glossed" and not (r.get("at") and r.get("target")):
+            out.append(f"{rid}: glossed needs both `at` and a target — nothing drawn")
+        if r.get("at") and r.get("status") != "glossed":
+            out.append(f"{rid}: has `at` but is not glossed — its box is erased too")
     return out
 
 
@@ -136,6 +145,12 @@ def _thai(character: str) -> bool:
     return 0x0E00 <= ord(character) <= 0x0E7F
 
 
+# Thai sets a space before the repetition mark, so `ต่าง ๆ` is one word written
+# correctly and not a word cut in half. The mark is Thai script, so nothing else
+# here tells the two apart.
+REPEAT = "ๆ"
+
+
 def split_words(text: str, custom) -> bool:
     """Whether any space in this line falls inside a word rather than between two."""
     if " " not in text:
@@ -151,6 +166,8 @@ def split_words(text: str, custom) -> bool:
             continue
         before = next((c for c in reversed(text[:i]) if c != " "), "")
         after = next((c for c in text[i + 1:] if c != " "), "")
+        if after == REPEAT:
+            continue
         if _thai(before) and _thai(after) and seen not in bounds:
             return True
     return False
@@ -161,7 +178,8 @@ def spacing(data: dict, custom) -> list[str]:
     return [
         f"{r['id']}: a space falls inside a word — {r['target']!r}"
         for r in data["regions"]
-        if r.get("status") == "ok" and split_words(r.get("target") or "", custom)
+        if r.get("status") in ("ok", "glossed")
+        and split_words(r.get("target") or "", custom)
     ]
 
 
