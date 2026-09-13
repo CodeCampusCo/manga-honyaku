@@ -4,6 +4,16 @@ A manga translation workflow. Code handles geometry — detection, OCR, text
 removal, rendering. An LLM agent handles comprehension — reading order, speaker
 attribution, and the translation itself.
 
+## How it runs
+
+Once per work, before chapter one:
+
+![The first chapter's scans are read; that reading, together with the defaults every Thai edition decides, creates the work's files — voice, characters, glossary, style.](assets/starting-a-work.png)
+
+Every chapter:
+
+![The scans go through detect, annotate and prepare, then translate, proofread against the source, clean, render, audit, and a look at the rendered page — which loops back until nothing is left to fix, and ends in a handoff to the next chapter. The working files carry what each stage needs to the next; the work's files are read and updated alongside.](assets/running-a-chapter.png)
+
 ## Setup
 
 ```sh
