@@ -36,8 +36,8 @@ those are looks at a page rather than numbers. You need no other command to begi
 
 Claude Code, Codex, opencode, goose and the Antigravity CLI read the same
 instructions and the same method files, and what each one needs is committed
-already — [`docs/agents.md`](docs/agents.md) says which file is for which, and two
-of the five need no file at all.
+already — `CONTRIBUTING.md` lists the three files this repository commits for
+them, and `manga_honyaku.ask` puts a question in front of any of them.
 
 ## A work on disk
 
@@ -102,11 +102,10 @@ check counting a line against its box lived here and was removed, because a size
 step is an accepted price for a fuller line, so the count was reporting
 something that was never work while burying the findings that were.
 
-Two of its checks are silent by construction — `render` counts regions that
-*have* a translation rather than regions it drew, and nothing anywhere reports
-Japanese left under the Thai. Every check in it is there because that failure
-reached a rendered page once and nothing said so. `check` and `audit` do not
-overlap: one re-reads the Japanese, the other looks at what came out.
+Two *failures* are silent without it — `render` counts regions that have a
+translation rather than regions it drew, and nothing else reports Japanese left
+under the Thai. Every check in it is there because that failure reached a
+rendered page once and nothing said so.
 
 Four passes look at a finished chapter, and **the split is by what each is
 allowed to see.** A pass that can see everything checks nothing, because the
@@ -117,9 +116,8 @@ Japanese at all; `audit` is this program. A line that is fluent, sits well, and
 says the opposite of the original gets past three of the four.
 
 The first three are prompts in `.claude/agents/`. Every agent here can run them;
-[`docs/agents.md`](docs/agents.md) says how, what the split costs to keep in a
-tool that cannot take a pass's tools away, and which one tool can be handed it as
-a rule instead.
+`CONTRIBUTING.md` says how, and what the split costs to keep in a tool that
+cannot take a pass's tools away.
 
 ```sh
 uv run python -m manga_honyaku.render series/<work> X0006          # one page
@@ -169,14 +167,11 @@ agent has given a role, and never those roled `sfx` or `image_text` — both are
 artwork. On a page margin the white is invisible; over drawn artwork it is a
 visible patch.
 
-A region's `status` says what should happen to it, and the three values answer
-different questions: `ok` takes the Japanese out and puts Thai in its place,
-`declined` leaves the artwork alone and says why, and `erase` takes the Japanese
-out and puts nothing back. The third is for lettering that has to go and has no
-translation — furigana the detector boxed on its own, a glyph the interior fill
-could not reach. Written as `ok` with no translation it cannot be told from a
-line somebody forgot; written as `declined` it is never erased at all, and the
-page keeps the Japanese while the record says it was handled.
+A region carries a `role` saying what it *is* and a `status` saying what happens
+to it, and between them they decide whether `clean` erases and whether `render`
+draws. The values, and what each stage does with them, are the contract in
+[`AGENTS.md`](AGENTS.md) — restating them here would be a second copy of a rule
+that has to be exact.
 
 `render` lays the Thai into each region's own box — where the original's
 lettering sat — breaks it to that column, and comes down a size while it
@@ -241,9 +236,3 @@ work's scans, its translation, and everything derived from them are yours and ar
 not this repository's to carry. Point `raw.txt` at scans you have the right to
 use.
 
-## Design
-
-[`docs/specs/2026-07-26-design.md`](docs/specs/2026-07-26-design.md) is the
-original design — why the work is split this way, and what was tried before what
-is here now. It predates the implementation; where it and the code disagree, the
-code is right, and it says so where it knows it is wrong.

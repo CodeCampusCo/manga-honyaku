@@ -38,6 +38,10 @@ import argparse
 import json
 import re
 from collections import Counter
+
+from pythainlp.tokenize import word_tokenize
+
+from manga_honyaku.audit import ENGINE
 from pathlib import Path
 
 from manga_honyaku.page import Series
@@ -72,7 +76,20 @@ def polite_jp(source: str) -> bool:
 
 
 def polite_th(target: str) -> bool:
-    return any(mark in (target or "") for mark in POLITE_TH)
+    """Whether the line ends on a polite particle.
+
+    The particle has to be its own word at the end. `คับ` sits inside `บังคับ`
+    and `ค่า` inside `ล้ำค่า`, and counted as particles they report a character
+    breaking a rule they have kept for eight chapters. A held vowel arrives as a
+    token of its own after the particle and is dropped.
+    """
+    said = [
+        token for token in word_tokenize(target or "", engine=ENGINE)
+        if token.strip() and any(c.isalpha() for c in token)
+    ]
+    while len(said) > 1 and len(set(said[-1])) == 1:
+        said.pop()
+    return bool(said) and any(said[-1].startswith(mark) for mark in POLITE_TH)
 
 
 def chapter_of(page: str) -> str:
@@ -92,7 +109,7 @@ def gather(work: Series) -> dict:
         )
         for region in data["regions"]:
             book["status"][region.get("status")] += 1
-            for field in ("role", "speaker"):
+            for field in ("role", "speaker", "weight"):
                 if region.get(field):
                     book["vocab"][(field, region[field])] += 1
             if region.get("status") != "ok":
@@ -154,11 +171,12 @@ def main() -> None:
     vocab = Counter()
     for book in found.values():
         vocab += book["vocab"]
-    for field in ("role", "speaker"):
+    for field in ("role", "speaker", "weight"):
         used = sorted(
             ((v, n) for (f, v), n in vocab.items() if f == field), key=lambda kv: -kv[1]
         )
-        print(f"  {field:<9}" + "  ".join(f"{v} {n}" for v, n in used))
+        if used:
+            print(f"  {field:<9}" + "  ".join(f"{v} {n}" for v, n in used))
 
     # A role every other chapter uses heavily and this one does not use at all
     # is not a style: it is a chapter whose regions were tagged wrong. Chapter 4

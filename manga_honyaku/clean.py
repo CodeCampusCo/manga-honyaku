@@ -15,6 +15,10 @@ follow and no way to know what the artwork behind it looked like, so nothing
 subtler is available without an inpainting model. On a page margin the result is
 invisible; over drawn artwork it is a white patch, and that is the trade.
 
+Where that patch would cost artwork the page needs, the region is `glossed` and
+nothing here touches it at all: the Japanese stays where the artist drew it, and
+`render` draws the Thai elsewhere on the page, at the region's `at`.
+
 Which free-floating regions get erased is the agent's call, not this stage's: a
 sound effect is artwork and must survive, and only a reader can tell one from a
 line of unbubbled speech. A region with no role yet is left alone.
@@ -45,6 +49,10 @@ PAPER = 200
 # left for a different reason: erasing it would leave a hole with nothing to put
 # in it.
 KEEP = {"sfx", "image_text"}
+
+# Statuses that erase nothing: `declined` has nothing to put in the hole, and
+# `glossed` puts the Thai elsewhere on the page, leaving the artwork whole.
+LEAVE = {"declined", "glossed"}
 
 
 def _touches_edge(stats: np.ndarray, i: int, h: int, w: int) -> bool:
@@ -163,6 +171,19 @@ def interiors(gray: np.ndarray, group: list[dict]) -> dict[str, np.ndarray]:
     # lobe and those boxes overlap only in the waist, so the only pixels in
     # dispute are the ones in that overlap, and they go to the nearer lobe.
     rows, cols = np.mgrid[y1:y2, x1:x2]
+    # Ink outside the lettering is artwork. A balloon drawn as a ring of separate
+    # ticks encloses nothing, so the paper runs straight out of it and the ticks
+    # stand in the middle of what the flood claims; repainting the claim takes
+    # the balloon's edge with it. Painting paper over paper costs nothing, so the
+    # claim keeps all the paper it found and gives back every dark pixel that is
+    # not where the lettering sat. A glyph that overruns its box is the same
+    # trade the box already makes, and `audit` reports what it leaves.
+    lettering = np.zeros_like(combined)
+    for region in group:
+        lx1, ly1, lx2, ly2 = (int(v) for v in region["box"])
+        lettering[max(ly1 - y1, 0) : max(ly2 - y1, 0), max(lx1 - x1, 0) : max(lx2 - x1, 0)] = True
+    combined = combined & (paper.astype(bool) | lettering)
+
     owned = []
     for region in group:
         bx1, by1, bx2, by2 = region["bubble"]
@@ -211,7 +232,7 @@ def clean(page: Image.Image, data: dict) -> tuple[Image.Image, Image.Image]:
         for r in data["regions"]
         if r.get("role")
         and r.get("role") not in KEEP
-        and r.get("status") != "declined"
+        and r.get("status") not in LEAVE
     ]
     found: dict[str, np.ndarray] = {}
     for group in joined([r for r in wanted if r.get("bubble")]):

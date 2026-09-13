@@ -58,9 +58,21 @@ sit correctly — only the tone marks ride high.
 
 Manga prints dialogue straight onto the white of the page all the time, with no
 outline at all — the page white *is* the balloon. Lines running out of a balloon
-and continuing on bare paper are the same device. **Never report missing or
-broken balloon outlines**; the artist drew it that way and the original does the
-same thing in the same place.
+and continuing on bare paper are the same device. **Never report an outline that
+is simply absent**; the artist drew it that way and the original does the same
+thing in the same place. An outline that is *part* gone, or that stops dead at a
+white edge, is a different thing — report that.
+
+### Japanese still standing in a balloon the page edge cuts is not a miss
+
+A balloon the page or panel edge slices through, holding a scrap of kana rather
+than a line, is a remembered one — the artist's device for a voice in a
+character's head, drawn as a fragment because that is how it is being
+remembered. **The lettering itself is incomplete, so there is no whole line to
+carry**, and a translation would have to invent one. The detector is right to
+pass it and `clean` is right to leave it.
+
+Report Japanese left standing anywhere else. Not here.
 
 ### A balloon can be mostly empty and still be right
 
@@ -92,11 +104,12 @@ the text is centred in it, so text cannot land outside it.** Do not report text
 running off its plate, in any direction. If something genuinely looks wrong
 there, describe what you see without claiming the type has left its box.
 
-What *is* worth reporting about a plate: one that **erases drawn detail the page
-needs** — an arrow the caption was pointing along, the outline of a tilted card
-or a screen the text sat inside, a panel border a reader uses to follow the row.
-That is a reason to re-cut the region, and it is a different observation from the
-plate merely being visible.
+What *is* worth reporting about a plate: one that **has erased drawing** — a
+face, a head, a hand, an arrow the caption pointed along, the outline of a tilted
+card or a screen the text sat inside, a panel border a reader follows the row by.
+**Report it even though you cannot see what was taken**: a rectangle of flat
+white that the drawing around it runs into and out of is the whole symptom. A
+plate merely visible on a light ground is not worth reporting.
 
 ### A drawn-out vowel broken across lines is accepted
 
