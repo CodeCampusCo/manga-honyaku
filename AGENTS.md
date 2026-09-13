@@ -45,10 +45,13 @@ at the width past which reading stops getting easier and cost goes on rising, an
 it crops, so there is never a reason to write a resize by hand. One page and two
 pages cost the same, so read the spread.
 
-**If you cannot see the sheet, stop. You cannot do this work.** Reading the page
-cannot be handed to something else and reported back. A harness may quietly send
-the image somewhere that can look, so the first sign is often a page you never
-saw. Say so and stop.
+**If you cannot see the sheet, stop and ask. Do not route around it.** Reading
+the page cannot be handed to something else and reported back as your own. Not
+every model that runs here has eyes, and a harness will quietly hand the image to
+something that does: fourteen pages of one chapter were uploaded to a third
+party's bucket before anybody knew images were leaving the machine at all.
+Which reader to use is the person's call, and one of the answers is to send the
+page nowhere and have them read it to you.
 
 ## Translating
 
