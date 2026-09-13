@@ -50,6 +50,10 @@ whole in Thai, then cut it across the regions, giving each piece its own
 region's `room`. Mark the group with `utterance` so `render` letters them at one
 size — one sentence at two sizes reads as two sentences.
 
+**Do not tag a group whose boxes the artist drew at different sizes.** `render`
+letters a group at its tightest member, so tagging an escalation flattens it and
+throws away the bigger half. The work's `style.md` says how far apart is too far.
+
 **Do not close what the original left open.** A balloon that ends mid-clause in
 Japanese ends mid-clause in Thai. Translating balloon by balloon quietly finishes
 each one, and the rhythm goes: `最初はもっとそういうんじゃなくて` runs on into the

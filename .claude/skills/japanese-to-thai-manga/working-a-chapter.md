@@ -155,18 +155,38 @@ While you write the entry:
   nothing. **When the scene does not work without it, draw it**: move the role to
   `caption` for writing in the artwork, `dialogue` for a sound in a balloon
   `clean` can follow.
-- **Where erasing the box would take the artwork with it, gloss it instead.** A
-  free box is the bounding rectangle of a vertical Japanese column, so painting
-  it out paints out whatever the artist drew beside the glyphs — a head, a phone
-  screen. `status: glossed` erases nothing: the Japanese stays where it was
-  drawn, and the Thai goes somewhere else on the page, at `at`.
+- **A free box is glossed where the page has somewhere to put it.** A free box is
+  the bounding rectangle of a vertical Japanese column, so painting it out paints
+  out whatever the artist drew beside the glyphs — a head, a phone screen.
+  `status: glossed` erases nothing: the Japanese stays where the artist drew it
+  and the Thai goes elsewhere on the page, at `at`.
+
+  **Prefer a spot inside a panel to one beside it, whatever the two sizes are.**
+
+  **What the plate would cover decides it — ask what the panel is there to
+  show.** Covering that, gloss. Covering background, a limb, a prop at the edge,
+  **plate it**: the Thai read where the Japanese stood counts for more than a
+  cleaner rectangle elsewhere.
+
+  **Plate it too** where the box stands on ground the plate disappears into — a
+  page margin, empty sky, a flat pale panel floor. A flat *dark* ground is a
+  gloss: a white rectangle on it is a hole, not a repair. And where every spot
+  the page offers is worse than what the plate would destroy. Weigh the two, name
+  in `reason` the spots you turned down, and do not agonise over it.
   - Run `regions --space <id>`, look at the sheet it draws, and answer with a
-    letter. `--take <letter>` writes `at`. **Never type coordinates.**
+    letter. `--take <letter>` writes `at`. **Never type coordinates.** Price the
+    line with `fit` *after* you take a spot, not before.
   - Candidates come back nearest first. **Take the nearest one that does not
     cover something that matters** — a face, a hand, clothing, a logo. Texture
     does not matter: tile, water, sky, hatching and screentone are reconstructed
     by the eye and cost nothing. A line that runs through and gets broken costs
-    more than a large flat area, and an object costs most.
+    more than a large flat area, and an object costs most. **Among spots within
+    half again of the nearest, prefer the page edge, then a corner strip, then
+    one in the drawing.** Then take your best and go on.
+  - **Two labels are measurements, and yours to weigh.** *read N early* or *late*
+    is where a reader would meet the Thai against where the file numbers it.
+    *N% of it drawn on* is a corner strip over artwork; black type on black is
+    gone, not small.
   - A candidate flagged as inside the drawing rather than in the page margin is a
     warning to look harder, not a reason to skip it.
   - **Where nothing fits at all** — a colour opener returns no candidate — take a
@@ -206,3 +226,7 @@ While you write the entry:
 Then hand the chapter back. The passes after this, the stages that draw, and the
 read-back into the work's notes are
 [`../running-a-chapter/SKILL.md`](../running-a-chapter/SKILL.md), and not yours.
+
+**Where a choice will not settle** — a wording, a size, where a gloss goes —
+make the best one you can see, say in the page's `questions` what you were
+choosing between, and hand it on.

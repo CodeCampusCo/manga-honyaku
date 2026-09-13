@@ -109,9 +109,11 @@ The last two columns say what happens when `status` is `ok`. Most `title` is
 **Either of the last two can be moved when the scene needs it drawn**, and the
 value it moves to is the one whose shape `clean` can follow: `dialogue` for a
 sound in an ordinary balloon, `caption` for writing in the artwork — which erases
-as a white plate over the drawing, and is accepted here. Where that plate would
-cost artwork the page needs, `glossed` is the third option: nothing is erased and
-the Thai is drawn elsewhere on the page.
+as a white plate over the drawing. **Where the artist drew anything inside the
+box, `glossed` is the answer** — nothing is erased and the Thai is drawn
+elsewhere on the page, at `at`. The plate stands where the box is on ground it
+disappears into, and last of all where every spot the page offers is worse
+than it.
 
 ## The working file
 
@@ -158,6 +160,7 @@ page, so running it before `clean` makes a finding cost an edit instead of a
 re-render;
 `page-look` judges the page that came out, so there has to be one.
 
-**Run each pass once per rendering of the chapter**, apply what it returns, and
-go on. Each pass's own file says what it is looking at; the order they go in is
+**`page-look` runs again over whatever you re-rendered; the other two run
+once.** Each pass's own file says what it is looking at; the order they go in,
+and when the repeating stops, is
 `.claude/skills/running-a-chapter/SKILL.md`.

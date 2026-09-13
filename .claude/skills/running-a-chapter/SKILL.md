@@ -21,13 +21,17 @@ forms are in
    reading. It needs no rendered page, so a finding here costs an edit instead of
    a re-render.
 4. **`clean`**, then **`render`**, then **`audit`**. Fix what `audit` reports.
-5. **`page-look`**, in its own session, over the rendered pages. Apply, and
-   re-render the pages it names. **Where you rule one of its reports fine
-   because of how this artist draws, write the number into `style.md`** — the one
-   file that pass may read.
+5. **`page-look`**, in its own session, over the rendered pages. Apply, re-render
+   the pages it names, and **send it back over what you re-rendered.** Repeat.
+   **Stop when a round finds nothing you act on, or when acting on a finding
+   would undo one you took last round.**
+   **Where you rule one of its reports fine because of how this artist draws,
+   write the number into `style.md`** — the one file that pass may read.
 6. The read-back below, then `handoff.md`.
 
-Each pass runs once per rendering of the chapter. What each one may see is in
+**`page-look` is the only pass that repeats.** Carry a `page-look` fix that
+changes what a line *says*, rather than how it is set, to the read-back: nothing
+reads it against the source again. What each pass may see is in
 `AGENTS.md`; if your tool cannot take away the tools their frontmatter names,
 that column is yours to keep.
 

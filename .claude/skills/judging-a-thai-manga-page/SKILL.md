@@ -104,11 +104,12 @@ the text is centred in it, so text cannot land outside it.** Do not report text
 running off its plate, in any direction. If something genuinely looks wrong
 there, describe what you see without claiming the type has left its box.
 
-What *is* worth reporting about a plate: one that **erases drawn detail the page
-needs** — an arrow the caption was pointing along, the outline of a tilted card
-or a screen the text sat inside, a panel border a reader uses to follow the row.
-That is a reason to re-cut the region, and it is a different observation from the
-plate merely being visible.
+What *is* worth reporting about a plate: one that **has erased drawing** — a
+face, a head, a hand, an arrow the caption pointed along, the outline of a tilted
+card or a screen the text sat inside, a panel border a reader follows the row by.
+**Report it even though you cannot see what was taken**: a rectangle of flat
+white that the drawing around it runs into and out of is the whole symptom. A
+plate merely visible on a light ground is not worth reporting.
 
 ### A drawn-out vowel broken across lines is accepted
 

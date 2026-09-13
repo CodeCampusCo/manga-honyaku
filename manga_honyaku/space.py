@@ -42,6 +42,7 @@ from PIL import Image, ImageFont
 
 from manga_honyaku.annotate import annotate
 from manga_honyaku.clean import PAPER
+from manga_honyaku.order import propose
 from manga_honyaku.page import Series
 from manga_honyaku.render import (
     FONT,
@@ -72,7 +73,11 @@ AIR = 4
 # anything that does not contain a square this wide.
 SPECK = 3
 
-# What a corner strip keeps between itself and the two page edges it sits in.
+# What any gloss keeps between itself and the page edge. The sweep finds paper
+# right up to the edge and will set type there, and type with no air outside it
+# stops reading as part of the page: it reads as something printed in the
+# margin. The corner strips were given this first; every other spot needs it for
+# the same reason.
 PAD = 10
 
 # How many blank rectangles are worth reading. They come nearest first, so what
@@ -145,6 +150,7 @@ def blank(gray: np.ndarray, regions: list[dict], region: dict) -> np.ndarray:
     ink = (gray <= PAPER).astype(np.uint8)
     ink = cv2.morphologyEx(ink, cv2.MORPH_OPEN, np.ones((SPECK, SPECK), np.uint8))
     free = ink == 0
+    free[:PAD], free[-PAD:], free[:, :PAD], free[:, -PAD:] = False, False, False, False
     for other in regions:
         taken = [other["box"]]
         if other is not region and other.get("at"):
@@ -231,68 +237,134 @@ def nearest(wide: int, tall: int, outer, box) -> tuple[int, int, int, int]:
     return (round(x), round(y), round(x) + wide, round(y) + tall)
 
 
-def one_line(
-    text: str, width: float, font: str, custom, spacing: float, bar: int, wanted: int
+def band(
+    text: str, lines: int, font: str, custom, spacing: float, bar: int, limit: int
 ):
-    """The largest single line this width holds the whole text on.
+    """The narrowest rectangle this text fills in `lines` lines at the bar.
 
-    Advance width is linear in the size, so the first size tried is the answer
-    or a pixel above it, and the walk down ends at once.
+    Widths are tried upward from the even split, because a line cannot be cut
+    inside a word and an even split is therefore a floor rather than an answer.
     """
-    at_bar = ImageFont.truetype(font, bar).getlength(text)
-    if not at_bar:
-        return None
-    for size in range(min(int(bar * width / at_bar), wanted), bar - 1, -1):
-        laid = lay_out(
-            text, (0, 0, width, math.ceil(size * spacing)), font, size, size,
-            custom, spacing,
-        )
-        if laid:
+    tall = math.ceil(bar * spacing) * lines
+    even = math.ceil(ImageFont.truetype(font, bar).getlength(text) / lines)
+    for wide in range(min(even, limit), limit + 1, 4):
+        laid = lay_out(text, (0, 0, wide, tall), font, bar, bar, custom, spacing)
+        if laid and len(laid[1]) <= lines:
             return laid
     return None
 
 
 def corners(
     region: dict,
-    page: tuple[int, int],
+    regions: list[dict],
+    gray: np.ndarray,
     font: str,
     custom,
     spacing: float,
     bar: int,
-    wanted: int,
 ) -> list[tuple]:
     """The four corner-anchored strips, in case the page offers nothing else.
 
     A page can have nowhere blank a gloss fits — `05/00` is a colour opener and
     has none — and the rule that no coordinate is ever typed then leaves nowhere
-    at all to go. So the corners are offered after whatever the page does have:
-    one horizontal line of the text, set into each corner with `PAD` of air.
+    at all to go. So the corners are offered after whatever the page does have,
+    set into each corner with `PAD` of air.
+
+    **A strip is as few lines as will fit the corner it is going into, and never
+    so many that it stops being a strip.** One line needs the whole text's width,
+    which on a long caption is most of the page and crosses whatever the page has
+    on that band; two lines need half of it and cost the same area, so they reach
+    corners one line cannot. The only bound is that it stays wider than it is
+    tall: past that it is a block, which is the shape of the Japanese column this
+    exists to avoid.
 
     **They are not blank and nothing here pretends they are.** Which corner a
     page can spare is a judgement made from the picture, the same as every other
     spot offered.
 
+    What they may not land on is another region — its `box`, where the Japanese
+    is staying, or its `at`, where somebody else's Thai already is. A gloss
+    erases nothing, so a strip over the magazine's next-issue band sets Thai on
+    top of printed Japanese, which is a worse defect than the plate it was
+    called in to avoid. Artwork is what a corner costs; lettering is not
+    artwork.
+
     And because a corner is paid for in artwork, it is set at the bar and not at
     the size the region would take elsewhere: a blank spot may match the weight
     of the line it stands in for, a hole may only be readable.
     """
-    width, height = page
-    laid = one_line(
-        region["target"], width - 2 * PAD, font, custom, spacing, bar, bar
-    )
-    if laid is None:
-        return []
-    wide, tall = block(laid)
-    found = [
-        ((x, y, x + wide, y + tall), laid[0].size, f"{down} {across} corner")
-        for across, x in (("left", PAD), ("right", width - PAD - wide))
-        for down, y in (("top", PAD), ("bottom", height - PAD - tall))
-    ]
+    height, width = gray.shape
+    shapes = []
+    for lines in range(1, 9):
+        laid = band(
+            region["target"], lines, font, custom, spacing, bar, width - 2 * PAD
+        )
+        if laid is None:
+            continue
+        wide, tall = block(laid)
+        if wide <= tall:
+            break
+        shapes.append((wide, tall, laid))
+    taken = [r["box"] for r in regions] + [r["at"] for r in regions if r.get("at")]
+    found = []
+    for across in ("left", "right"):
+        for down in ("top", "bottom"):
+            for wide, tall, laid in shapes:
+                x = PAD if across == "left" else width - PAD - wide
+                y = PAD if down == "top" else height - PAD - tall
+                spot = (x, y, x + wide, y + tall)
+                if any(share(spot, other) for other in taken):
+                    continue
+                ink = swallowed(gray, spot)
+                where_it_is = f"{down} {across} corner"
+                if ink > 0.02:
+                    where_it_is += f", {ink:.0%} of it drawn on"
+                found.append((spot, laid[0].size, where_it_is))
+                break
     return sorted(found, key=lambda row: gap(row[0], region["box"]))
 
 
+def reading(regions: list[dict], region: dict, spot) -> int:
+    """How many regions early or late this spot would have the Thai read.
+
+    The candidate stands in for the region's own box and the page's order is
+    proposed again from the geometry, so the answer isolates what the spot does:
+    zero is in place, negative is early. `--todo` asks the other question, which
+    is whether the file and the geometry already disagree.
+
+    It is a label and not a ranking. A page can have nowhere in sequence at all,
+    and which costs less — a caption read a panel early or one set on a face — is
+    a judgement made from the picture, like every other one here.
+    """
+    here = propose(regions)
+    moved = [
+        dict(r, box=[float(v) for v in spot]) if r["id"] == region["id"] else r
+        for r in regions
+    ]
+    return propose(moved).index(region["id"]) - here.index(region["id"])
+
+
+def out_of_sequence(shift: int) -> str:
+    """That number as the words the report prints, empty where it is in place."""
+    if not shift:
+        return ""
+    return f", read {abs(shift)} {'early' if shift < 0 else 'late'}"
+
+
+def swallowed(gray: np.ndarray, spot) -> float:
+    """How much of this rectangle is ink the Thai would be lost in.
+
+    A gloss draws without erasing, so a corner strip laid over black artwork
+    costs the artwork *and* delivers nothing. Blank rectangles are paper by
+    construction and never need asking; the corner strips are the ones that do.
+    """
+    x1, y1, x2, y2 = (int(v) for v in spot)
+    patch = gray[max(y1, 0):y2, max(x1, 0):x2]
+    return float((patch <= PAPER).mean()) if patch.size else 0.0
+
+
 def margin(box, width: int, height: int) -> bool:
-    """Whether this rectangle reaches the edge of the page.
+    """Whether this rectangle reaches the edge of the page, `PAD` allowed for.
 
     A rectangle that does is paper by construction — nothing was ever drawn out
     there. One that does not passed a brightness test and nothing more, and
@@ -302,10 +374,10 @@ def margin(box, width: int, height: int) -> bool:
     answer.
     """
     return (
-        box[0] <= BLOCK
-        or box[1] <= BLOCK
-        or box[2] >= width - BLOCK
-        or box[3] >= height - BLOCK
+        box[0] <= PAD + BLOCK
+        or box[1] <= PAD + BLOCK
+        or box[2] >= width - PAD - BLOCK
+        or box[3] >= height - PAD - BLOCK
     )
 
 
@@ -369,7 +441,7 @@ def spaces(
     trimmed = []
     for area, fitted in kept:
         box = nearest(*block(fitted), area, region["box"])
-        place = "page edge" if margin(box, width, height) else "in the drawing"
+        place = "page edge" if margin(area, width, height) else "in the drawing"
         trimmed.append((box, fitted[0].size, place))
     return sorted(
         trimmed,
@@ -414,16 +486,20 @@ def report(
     spacing = values.get("line_spacing", LINE_SPACING)
     page = (data["img_width"], data["img_height"])
     wanted = max(bar, round(values.get("k", K) * measured_at(region, page[1])))
+    gray = np.asarray(Image.open(work.scan(page_id)).convert("L"))
     found = spaces(
-        np.asarray(Image.open(work.scan(page_id)).convert("L")),
-        data["regions"], region, face, custom, spacing, bar, wanted,
+        gray, data["regions"], region, face, custom, spacing, bar, wanted,
     )
-    offered = list(
-        zip(
+    offered = [
+        (letter, (spot, size, place + out_of_sequence(
+            reading(data["regions"], region, spot)
+        )))
+        for letter, (spot, size, place) in zip(
             ascii_lowercase,
-            found[:MOST] + corners(region, page, face, custom, spacing, bar, wanted),
+            found[:MOST]
+            + corners(region, data["regions"], gray, face, custom, spacing, bar),
         )
-    )
+    ]
 
     if take:
         chosen = dict(offered).get(take)
