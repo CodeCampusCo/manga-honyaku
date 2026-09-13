@@ -32,8 +32,8 @@ Three passes look at a finished chapter and each is blind to what the others see
 
 - The translator has everything and **cannot see its own errors** — it knows what
   it meant, so it reads its own line as correct.
-- `page-look` sees only the rendered page, no Japanese at all, and judges how it
-  looks. It cannot tell a wrong translation from a right one.
+- `page-look` sees only the rendered page, no Japanese at all, and reads it the
+  way a reader does. It cannot tell a wrong translation from a right one.
 - `audit` is code. It finds what is mechanically wrong and nothing about meaning.
 
 So a line that is fluent, sits well on the page, and says the opposite of the
